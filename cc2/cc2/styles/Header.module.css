@@ -1,0 +1,38 @@
+.headerLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.headerLink:hover {
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.headerLink span {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.headerLink svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .headerLink {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+  }
+
+  .headerLink:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+} 
