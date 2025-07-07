@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import EventCard from '../../components/EventCard';
-import AddEventModal from '../../components/AddEventModal';
+// import AddEventModal from '../../components/AddEventModal';
 
 export default function Events() {
   const { data: session, status } = useSession();
@@ -43,7 +43,7 @@ export default function Events() {
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -220,12 +220,6 @@ export default function Events() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl md:text-5xl font-extrabold drop-shadow-xl tracking-tight">Events</h1>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-lg transition-all"
-          >
-            Add Event
-          </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event) => (
@@ -251,11 +245,7 @@ export default function Events() {
         onSubmit={selectedEvent ? handleEditEvent : handleCreateEvent}
         event={selectedEvent}
       />
-      <AddEventModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddEvent}
-      />
+      {/* AddEventModal removed, now in admin page */}
     </div>
   );
 }

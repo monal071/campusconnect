@@ -5,7 +5,7 @@ import Head from 'next/head';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import AddJobModal from '../../components/AddJobModal';
+// import AddJobModal from '../../components/AddJobModal';
 import PasswordModal from '../../components/PasswordModal';
 
 export default function Jobs() {
@@ -15,7 +15,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
@@ -95,12 +95,6 @@ export default function Jobs() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl md:text-5xl font-extrabold drop-shadow-xl tracking-tight">Jobs</h1>
-          <button
-            onClick={handleAddClick}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-lg transition-all"
-          >
-            Add Job
-          </button>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <input
@@ -156,11 +150,7 @@ export default function Jobs() {
           onClose={() => setShowPasswordModal(false)}
         />
       )}
-      <AddJobModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddJob}
-      />
+      {/* AddJobModal removed, now in admin page */}
     </div>
   );
 }

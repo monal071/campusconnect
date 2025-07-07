@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import AddEventModal from '../components/AddEventModal';
+import AddJobModal from '../components/AddJobModal';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -8,6 +10,17 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showAddJob, setShowAddJob] = useState(false);
+  // Dummy handlers for add event/job (replace with real logic as needed)
+  const handleAddEvent = (eventData) => {
+    setShowAddEvent(false);
+    setMessage('Event added (dummy handler).');
+  };
+  const handleAddJob = (jobData) => {
+    setShowAddJob(false);
+    setMessage('Job added (dummy handler).');
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -98,6 +111,20 @@ export default function AdminPage() {
         <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Welcome, Admin</h1>
         <p className="text-gray-600 dark:text-gray-300 mb-6">You are now logged in as <b>admin</b>.</p>
         {message && <div className="mb-4 text-center text-red-600">{message}</div>}
+        <div className="flex gap-4 mb-8">
+          <button
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg hover:scale-105 transition-transform"
+            onClick={() => setShowAddEvent(true)}
+          >
+            Add Event
+          </button>
+          <button
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold shadow-lg hover:scale-105 transition-transform"
+            onClick={() => setShowAddJob(true)}
+          >
+            Add Job
+          </button>
+        </div>
         <div className="w-full mb-8">
           <h2 className="text-xl font-bold mb-2">Delete Posts</h2>
           <ul className="space-y-2">
@@ -122,6 +149,8 @@ export default function AdminPage() {
             {users.length === 0 && <li className="text-gray-400">No users found.</li>}
           </ul>
         </div>
+        <AddEventModal open={showAddEvent} onClose={() => setShowAddEvent(false)} onSave={handleAddEvent} />
+        <AddJobModal isOpen={showAddJob} onClose={() => setShowAddJob(false)} onAdd={handleAddJob} />
       </div>
     </div>
   );
