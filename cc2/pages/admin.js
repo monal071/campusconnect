@@ -6,15 +6,19 @@ export default function AdminPage() {
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Set admin session in localStorage
-    localStorage.setItem("admin", "true");
-    localStorage.setItem("userId", "admin");
-    localStorage.setItem("name", "admin");
-    fetchPosts();
-    fetchUsers();
-  }, []);
+    if (isAuthenticated) {
+      // Set admin session in localStorage
+      localStorage.setItem("admin", "true");
+      localStorage.setItem("userId", "admin");
+      localStorage.setItem("name", "admin");
+      fetchPosts();
+      fetchUsers();
+    }
+  }, [isAuthenticated]);
 
   const fetchPosts = async () => {
     const res = await fetch("/api/posts");
@@ -56,6 +60,37 @@ export default function AdminPage() {
       setMessage("Failed to delete user.");
     }
   };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === "12345678") {
+      setIsAuthenticated(true);
+      setMessage("");
+    } else {
+      setMessage("Incorrect password");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-pink-800 to-purple-900 p-8">
+        <div className="bg-white/80 dark:bg-gray-900/90 rounded-2xl shadow-2xl p-10 flex flex-col items-center backdrop-blur-lg w-full max-w-md">
+          <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Admin Login</h1>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Enter admin password"
+              className="p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button type="submit" className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow hover:scale-105 transition-transform">Login</button>
+            {message && <div className="text-red-500 text-center">{message}</div>}
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-pink-800 to-purple-900 p-8">

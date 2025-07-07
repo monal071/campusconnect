@@ -30,6 +30,12 @@ export default function Home() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/admin"
+            className="px-8 py-4 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform text-center"
+          >
+            Admin Login
+          </Link>
         </div>
       </div>
     </div>
