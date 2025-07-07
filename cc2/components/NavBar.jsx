@@ -72,27 +72,49 @@ export default function NavBar() {
       </div>
       <div className="flex items-center gap-4 h-12">
         {(session || isGuest) ? (
-          <div className="relative flex items-center h-full">
+          <>
             <button
-              onClick={() => setShowProfileMenu((v) => !v)}
+              onClick={() => setShowProfileMenu(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow hover:scale-105 transition-transform h-12"
               style={{ minWidth: 100 }}
             >
               Profile
             </button>
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg py-2 z-50 border border-gray-200 dark:border-gray-700">
-                <Link href="/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-xl">Dashboard</Link>
-                <div className="px-4 py-2 text-gray-700 dark:text-gray-200 border-t border-b border-gray-100 dark:border-gray-700">{userName}</div>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-xl"
-                >
-                  Logout
-                </button>
-              </div>
+              <>
+                {/* Modal Backdrop */}
+                <div className="fixed inset-0 bg-black bg-opacity-40 z-40" onClick={() => setShowProfileMenu(false)} />
+                {/* Popup below navigation bar */}
+                <div className="fixed left-0 right-0 top-[72px] flex justify-center z-50 pointer-events-none">
+                  <div className="relative w-80 bg-white dark:bg-gray-800 rounded-b-xl shadow-2xl py-4 border border-gray-200 dark:border-gray-700 pointer-events-auto animate-slidefromtop">
+                    {/* Close Button */}
+                    <button
+                      className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl font-bold focus:outline-none"
+                      onClick={() => setShowProfileMenu(false)}
+                      aria-label="Close profile menu"
+                    >
+                      ×
+                    </button>
+                    <Link href="/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-xl">Dashboard</Link>
+                    <div className="px-4 py-2 text-gray-700 dark:text-gray-200 border-t border-b border-gray-100 dark:border-gray-700">{userName}</div>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-xl"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+                <style jsx>{`
+                  @keyframes slidefromtop {
+                    from { transform: translateY(-32px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                  }
+                  .animate-slidefromtop { animation: slidefromtop 0.3s cubic-bezier(.4,0,.2,1); }
+                `}</style>
+              </>
             )}
-          </div>
+          </>
         ) : (
           <>
             <Link href="/login" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">Sign In</Link>
