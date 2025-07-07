@@ -54,14 +54,14 @@ export default function Events() {
           throw new Error('Failed to fetch events');
         }
         const data = await response.json();
-        setEvents(data);
+        // Defensive: ensure events is always an array
+        setEvents(Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : []);
       } catch (error) {
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchEvents();
   }, []);
 
@@ -227,6 +227,7 @@ export default function Events() {
               key={event._id}
               event={event}
               isAuthenticated={!!session}
+              userId={session?.user?.id}
             />
           ))}
         </div>

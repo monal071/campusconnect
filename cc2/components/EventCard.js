@@ -3,8 +3,45 @@ import { motion } from 'framer-motion';
 import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
-export default function EventCard({ event, isAuthenticated }) {
+import { useEffect } from 'react';
+export default function EventCard({ event, isAuthenticated, userId }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [joinedCount, setJoinedCount] = useState(Array.isArray(event.joined) ? event.joined.length : 0);
+  const [hasJoined, setHasJoined] = useState(Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false);
+  useEffect(() => {
+    // Poll for joined count every 5s
+    let interval;
+    const fetchJoined = async () => {
+      try {
+        const res = await fetch(`/api/events`);
+        const data = await res.json();
+        const found = Array.isArray(data) ? data.find(e => e._id === event._id) : Array.isArray(data.data) ? data.data.find(e => e._id === event._id) : null;
+        if (found && Array.isArray(found.joined)) {
+          setJoinedCount(found.joined.length);
+          if (userId) setHasJoined(found.joined.includes(userId));
+        }
+      } catch {}
+    };
+    interval = setInterval(fetchJoined, 5000);
+    return () => clearInterval(interval);
+  }, [event._id, userId]);
+
+  const handleJoin = async (e) => {
+    e.stopPropagation();
+    if (!userId) return;
+    try {
+      const res = await fetch('/api/events', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event._id, userId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setHasJoined(true);
+        setJoinedCount(data.joinedCount);
+      }
+    } catch {}
+  };
 
   const formatDate = (dateString) => {
     try {
@@ -63,30 +100,42 @@ export default function EventCard({ event, isAuthenticated }) {
           {event.description}
         </p>
 
+
         {/* Event Details */}
         <div className="space-y-2">
           <div className="flex items-center text-gray-400">
             <CalendarIcon className="h-5 w-5 mr-2" />
             <span>{formatDate(event.date)}</span>
           </div>
-
           <div className="flex items-center text-gray-400">
             <MapPinIcon className="h-5 w-5 mr-2" />
             <span>{event.location}</span>
           </div>
-
+          <div className="flex items-center text-gray-400">
+            <UserGroupIcon className="h-5 w-5 mr-2" />
+            <span>Joined: {joinedCount}</span>
+          </div>
           {event.maxAttendees && (
             <div className="flex items-center text-gray-400">
-              <UserGroupIcon className="h-5 w-5 mr-2" />
               <span>Max Attendees: {event.maxAttendees}</span>
             </div>
           )}
-
           {event.registrationDeadline && (
             <div className="flex items-center text-gray-400">
               <ClockIcon className="h-5 w-5 mr-2" />
               <span>Registration Deadline: {formatDate(event.registrationDeadline)}</span>
             </div>
+          )}
+          {isAuthenticated && !hasJoined && (
+            <button
+              className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow"
+              onClick={handleJoin}
+            >
+              Join Event
+            </button>
+          )}
+          {isAuthenticated && hasJoined && (
+            <span className="mt-2 px-4 py-2 bg-green-900 text-green-300 rounded-lg shadow">Joined</span>
           )}
         </div>
 
