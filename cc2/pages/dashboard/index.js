@@ -1,556 +1,250 @@
-import { useState, useEffect } from 'react';
-import { useSession, signOut, update } from 'next-auth/react';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import PersonIcon from '@mui/icons-material/Person';
-import EventIcon from '@mui/icons-material/Event';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import MessageIcon from '@mui/icons-material/Message';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import WhatshotIcon from '@mui/icons-material/Whatshot';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AddIcon from '@mui/icons-material/Add';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { Avatar } from '@mui/material';
-import AddEventModal from '../../components/AddEventModal';
-import ConnectionRequests from '../../components/ConnectionRequests';
-import HomeButton from '../../components/HomeButton';
-import Link from 'next/link';
-import { formatDateLong } from '../../util/dateFormat';
 import Head from 'next/head';
-import Header from '../../components/Header';
-import Sidebar from '../../components/Sidebar';
-import Feed from '../../components/Feed';
-import { motion } from 'framer-motion';
-import Toast from '../../components/Toast';
-import Modal from '../../components/Modal';
-import PostEditor from '../../components/PostEditor';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function Dashboard() {
-  const { data: session, update: updateSession } = useSession();
-  const [dashboardData, setDashboardData] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showAddEventModal, setShowAddEventModal] = useState(false);
-  const [showPostModal, setShowPostModal] = useState(false);
+  const { data: session, update } = useSession();
+  const [connections, setConnections] = useState([]);
+  const [name, setName] = useState('');
+  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [notes, setNotes] = useState('');
-  const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState('');
-  const [toast, setToast] = useState(null);
-  const [isPosting, setIsPosting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [quote, setQuote] = useState('');
+  const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/dashboard');
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const data = await response.json();
-        setDashboardData(data);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (session) {
-      fetchDashboardData();
-      loadDashboardContent();
+    if (session?.user) {
+      setName(session.user.name || '');
     }
   }, [session]);
 
-  const handleUpdateProfile = async (updatedProfile) => {
-    try {
-      const response = await fetch('/api/user/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedProfile),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
+  useEffect(() => {
+    async function fetchConnections() {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/connections/users');
+        if (!res.ok) throw new Error('Failed to fetch connections');
+        const data = await res.json();
+        setConnections(data.connections || []);
+      } catch (e) {
+        setError('Could not load connections');
+      } finally {
+        setLoading(false);
       }
-
-      const data = await response.json();
-      
-      // Update the session
-      await updateSession({
-        ...session,
-        user: {
-          ...session.user,
-          name: data.data.name,
-          image: data.data.image,
-          // Add any other session data you want to update
-        }
-      });
-
-      // Update the dashboard data with the new profile information
-      setDashboardData(prev => ({
-        ...prev,
-        user: data.data
-      }));
-
-      // Force a refresh of the dashboard data
-      const dashboardResponse = await fetch('/api/dashboard');
-      const dashboardData = await dashboardResponse.json();
-      setDashboardData(dashboardData);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // You might want to show an error message to the user here
     }
-  };
+    fetchConnections();
+  }, []);
 
-  const handleAddEvent = async (eventData) => {
-    try {
-      setError(null);
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add event');
+  // Fetch a random motivational quote
+  useEffect(() => {
+    async function fetchQuote() {
+      try {
+        const res = await fetch('https://api.quotable.io/random');
+        const data = await res.json();
+        setQuote(data.content);
+      } catch {
+        setQuote('Welcome to your dashboard!');
       }
-
-      const newEvent = await response.json();
-      setEvents(prev => [newEvent, ...prev]);
-      setShowAddEventModal(false);
-    } catch (error) {
-      console.error('Error adding event:', error);
-      setError(error.message);
     }
-  };
+    fetchQuote();
+  }, []);
 
-  const handleEventAction = async (eventId, action) => {
+  // Live clock
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNameChange = (e) => setName(e.target.value);
+
+  const saveName = async () => {
+    setSaving(true);
+    setError('');
     try {
-      const response = await fetch('/api/events/action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ eventId, action }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update event status');
-      }
-
-      // Refresh events after action
-      const eventsResponse = await fetch('/api/events');
-      if (eventsResponse.ok) {
-        const data = await eventsResponse.json();
-        setEvents(data);
-      }
-    } catch (error) {
-      console.error('Error handling event action:', error);
-      setError(error.message);
-    }
-  };
-
-  const isThisMonth = (date) => {
-    const eventDate = new Date(date);
-    const now = new Date();
-    return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
-  };
-
-  const isUpcoming = (date) => {
-    const eventDate = new Date(date);
-    const now = new Date();
-    return eventDate > now;
-  };
-
-  const tabs = [
-    { id: 'overview', name: 'Overview' },
-    { id: 'connections', name: 'Connections' },
-    { id: 'messages', name: 'Messages' },
-  ];
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Tasks and Notes Section */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Quick Notes */}
-              <div className="bg-[#1D1D1D] rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4">Quick Notes</h2>
-                <textarea
-                  value={notes}
-                  onChange={handleNotesChange}
-                  placeholder="Write your notes here..."
-                  className="w-full h-32 p-2 border rounded bg-[#252525] border-gray-700 text-white"
-                />
-              </div>
-
-              {/* Tasks */}
-              <div className="bg-[#1D1D1D] rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4">Tasks</h2>
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newTask}
-                    onChange={(e) => setNewTask(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTask()}
-                    placeholder="Add a new task..."
-                    className="flex-1 p-2 border rounded bg-[#252525] border-gray-700 text-white"
-                  />
-                  <button
-                    onClick={addTask}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Add
-                  </button>
-                </div>
-                <ul className="space-y-2">
-                  {tasks.map((task) => (
-                    <li
-                      key={task.id}
-                      className="flex items-center justify-between p-2 border rounded border-gray-700 bg-[#252525]"
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => toggleTask(task.id)}
-                          className="h-4 w-4"
-                        />
-                        <span className={task.completed ? 'line-through text-gray-500' : 'text-white'}>
-                          {task.text}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        Delete
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Recent Notifications Column */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Recent Notifications */}
-              <div className="bg-[#1D1D1D] rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4">Recent Notifications</h2>
-                <p className="text-gray-400 text-sm mb-6">Stay updated with the latest activities</p>
-                
-                <div className="space-y-4">
-                  {dashboardData?.recentActivity.map((activity, index) => (
-                    <NotificationItem
-                      key={index}
-                      icon={getActivityIcon(activity.type)}
-                      title={activity.title}
-                      time={formatTimeAgo(activity.timestamp)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div className="bg-[#1D1D1D] rounded-xl p-6">
-                <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Link
-                    href="/events"
-                    className="flex items-center gap-3 bg-[#252525] hover:bg-[#2a2a2a] p-4 rounded-lg transition-colors"
-                  >
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                      <EventIcon className="text-blue-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Events</h3>
-                      <p className="text-sm text-gray-400">View upcoming events</p>
-                    </div>
-                  </Link>
-                  {/* Add other quick links here */}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      case 'connections':
-        return <ConnectionRequests />;
-      case 'messages':
-        return null; // Add your messages content here
-      default:
-        return null;
-    }
-  };
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'connection':
-        return <PersonIcon className="text-blue-500" />;
-      case 'event':
-        return <CalendarTodayIcon className="text-green-500" />;
-      case 'message':
-        return <MessageIcon className="text-purple-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const formatTimeAgo = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
-    if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-    return 'Just now';
-  };
-
-  const formatDate = (dateString) => {
-    return formatDateLong(dateString);
-  };
-
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const loadDashboardContent = async () => {
-    try {
-      const [notesResponse, tasksResponse] = await Promise.all([
-        fetch('/api/dashboard/content?type=notes'),
-        fetch('/api/dashboard/content?type=tasks')
-      ]);
-
-      if (notesResponse.ok && tasksResponse.ok) {
-        const notesData = await notesResponse.json();
-        const tasksData = await tasksResponse.json();
-
-        setNotes(notesData.content || '');
-        setTasks(tasksData.content || []);
-      }
-    } catch (error) {
-      showToast('Failed to load dashboard content', 'error');
-    }
-  };
-
-  const saveContent = async (content, type) => {
-    try {
-      const response = await fetch('/api/dashboard/save', {
-        method: 'POST',
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('User ID not found');
+      const res = await fetch(`/api/users?id=${userId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, type }),
+        body: JSON.stringify({ name }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save content');
-      }
-
-      showToast('Changes saved successfully', 'success');
-    } catch (error) {
-      console.error('Error saving content:', error);
-      showToast(`Failed to save changes: ${error.message}`, 'error');
-    }
-  };
-
-  const handleNotesChange = (e) => {
-    setNotes(e.target.value);
-    // Debounce save to avoid too many requests
-    const timeoutId = setTimeout(() => {
-      saveContent(e.target.value, 'notes');
-    }, 1000);
-    return () => clearTimeout(timeoutId);
-  };
-
-  const addTask = async () => {
-    if (!newTask.trim()) return;
-
-    const updatedTasks = [...tasks, { id: Date.now(), text: newTask, completed: false }];
-    setTasks(updatedTasks);
-    setNewTask('');
-    await saveContent(updatedTasks, 'tasks');
-  };
-
-  const toggleTask = async (taskId) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(updatedTasks);
-    await saveContent(updatedTasks, 'tasks');
-  };
-
-  const deleteTask = async (taskId) => {
-    const updatedTasks = tasks.filter(task => task.id !== taskId);
-    setTasks(updatedTasks);
-    await saveContent(updatedTasks, 'tasks');
-  };
-
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  // Add this handler for post submission
-  const handlePostSubmit = async (formData) => {
-    setIsPosting(true);
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) throw new Error('Failed to post');
-      setShowPostModal(false);
-      showToast('Post uploaded!', 'success');
-      // Optionally: refresh feed or dashboard data
+      if (!res.ok) throw new Error('Failed to update name');
+      if (update) await update();
+      setEditing(false);
     } catch (e) {
-      showToast('Failed to upload post', 'error');
+      setError('Could not update name');
     } finally {
-      setIsPosting(false);
+      setSaving(false);
     }
   };
 
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white p-0 md:p-6 flex flex-col">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-      <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 mt-8 md:mt-0 px-6 md:px-0">
-          <div className="mb-6 md:mb-0">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-2 drop-shadow-xl tracking-tight">Dashboard</h1>
-            <p className="text-blue-100 text-lg md:text-xl drop-shadow">Welcome back! Here's what's happening in your network.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-3 rounded-xl shadow-lg font-semibold text-lg transition-all">
-              <NotificationsActiveIcon />
-              <span>Manage Notifications</span>
-            </button>
-            {/* User Profile Menu */}
-            <div className="relative">
-              <button
-                className="flex items-center gap-3 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl shadow-lg transition-all"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                <Avatar
-                  src={session?.user?.image}
-                  alt={session?.user?.name}
-                  sx={{ width: 36, height: 36 }}
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900 via-blue-800 to-purple-900">
+      <Head>
+        <title>Dashboard | CampusConnect</title>
+      </Head>
+      <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto mt-12 flex-1">
+        {/* Profile Card */}
+        <div className="flex flex-col items-center gap-6 bg-white/90 rounded-2xl shadow-xl p-8 w-full max-w-xs min-w-[300px]">
+          <img
+            src={session.user.image || '/default-profile.png'}
+            alt="Profile"
+            className="w-28 h-28 rounded-full border-4 border-indigo-400 shadow-lg mb-2"
+          />
+          <div className="flex flex-col items-center gap-2 w-full">
+            {editing ? (
+              <div className="flex flex-col items-center gap-2 w-full">
+                <input
+                  className="border border-indigo-300 rounded px-4 py-2 w-full text-center"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={saving}
                 />
-                <span className="font-semibold text-lg">{session?.user?.name}</span>
-                <KeyboardArrowDownIcon className={`transform transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
-              </button>
-              {/* Profile Dropdown Menu */}
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white/10 backdrop-blur-xl rounded-xl shadow-2xl py-2 z-50 border border-white/20">
-                  <Link href="/profile" className="flex items-center gap-2 px-4 py-3 hover:bg-white/20 transition-all rounded-xl">
-                    <PersonIcon className="w-5 h-5" />
-                    <span>View Profile</span>
-                  </Link>
-                  <Link href="/settings" className="flex items-center gap-2 px-4 py-3 hover:bg-white/20 transition-all rounded-xl">
-                    <SettingsIcon className="w-5 h-5" />
-                    <span>Settings</span>
-                  </Link>
+                <div className="flex gap-2">
                   <button
-                    onClick={() => signOut()}
-                    className="flex items-center gap-2 px-4 py-3 hover:bg-white/20 transition-all rounded-xl text-red-400 w-full"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                    onClick={saveName}
+                    disabled={saving}
                   >
-                    <LogoutIcon className="w-5 h-5" />
-                    <span>Sign Out</span>
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                    onClick={() => { setEditing(false); setName(session.user.name || ''); }}
+                    disabled={saving}
+                  >
+                    Cancel
                   </button>
                 </div>
-              )}
-            </div>
+                {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-semibold text-indigo-800">{name}</div>
+                <button
+                  className="mt-1 text-indigo-600 underline hover:text-indigo-800"
+                  onClick={() => setEditing(true)}
+                >
+                  Change Name
+                </button>
+              </>
+            )}
+          </div>
+          <div className="mt-4 w-full text-center">
+            <div className="text-lg font-medium text-indigo-900 mb-1">Total Connections</div>
+            {loading ? (
+              <div className="text-gray-600">Loading...</div>
+            ) : error ? (
+              <div className="text-red-600">{error}</div>
+            ) : (
+              <div className="text-3xl font-bold text-indigo-700">{connections.length}</div>
+            )}
           </div>
         </div>
-        {/* Tabs */}
-        <div className="flex gap-6 mb-8 border-b border-white/20 px-6 md:px-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={
-                activeTab === tab.id
-                  ? 'text-white border-b-4 border-blue-500 pb-4 px-2 font-bold text-lg transition-all'
-                  : 'text-blue-200 hover:text-white pb-4 px-2 text-lg transition-all'
-              }
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.name}
-            </button>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col gap-8 justify-between">
+          {/* Welcome & Clock */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/80 rounded-2xl shadow-lg p-8">
+            <div>
+              <h2 className="text-2xl font-bold text-indigo-900 mb-2">Welcome, {name}!</h2>
+              <p className="text-gray-700 text-lg max-w-md">{quote}</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-5xl font-mono text-indigo-700">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+              <span className="text-lg text-gray-600">{time.toLocaleDateString()}</span>
+            </div>
+          </div>
+          {/* Quick Actions, Upcoming Events, News */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Quick Actions */}
+            <div className="bg-white/80 rounded-2xl shadow-lg p-8 flex flex-col items-center">
+              <h3 className="text-xl font-bold text-indigo-900 mb-4">Quick Actions</h3>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <a href="/events" className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg hover:scale-105 transition-transform">Events</a>
+                <a href="/resources" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold shadow-lg hover:scale-105 transition-transform">Resources</a>
+                <a href="/jobs" className="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold shadow-lg hover:scale-105 transition-transform">Jobs</a>
+                <a href="/posts" className="px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold shadow-lg hover:scale-105 transition-transform">Posts</a>
+                <a href="/connections" className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-400 text-white font-bold shadow-lg hover:scale-105 transition-transform">Connections</a>
+                <a href="/profile" className="px-6 py-3 rounded-xl bg-gradient-to-r from-gray-700 to-gray-900 text-white font-bold shadow-lg hover:scale-105 transition-transform">Profile</a>
+              </div>
+            </div>
+            {/* Upcoming Events */}
+            <UpcomingEvents />
+            {/* Announcements or News */}
+            <div className="bg-white/80 rounded-2xl shadow-lg p-8 flex flex-col items-center">
+              <h3 className="text-xl font-bold text-indigo-900 mb-4">Campus News</h3>
+              <ul className="text-gray-700 list-disc pl-5 space-y-2">
+                <li>New event: Tech Talk this Friday!</li>
+                <li>Job fair registrations open now.</li>
+                <li>Resource library updated with new materials.</li>
+                <li>Check your connections for new friend requests.</li>
+              </ul>
+            </div>
+          </div>
+          {/* Footer */}
+          <div className="text-center text-gray-600 text-sm mt-8">
+            &copy; {new Date().getFullYear()} CampusConnect. All rights reserved.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UpcomingEvents() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/events');
+      if (!res.ok) throw new Error('Failed to fetch events');
+      const data = await res.json();
+      // Filter for upcoming events (date in future)
+      const now = new Date();
+      const upcoming = (data.data || []).filter(ev => new Date(ev.date) > now);
+      // Sort by soonest
+      upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(upcoming.slice(0, 5));
+    } catch (e) {
+      setError('Could not load events');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 10000); // refresh every 10s
+    return () => clearInterval(interval);
+  }, [fetchEvents]);
+
+  return (
+    <div className="bg-white/80 rounded-2xl shadow-lg p-8 flex flex-col items-center min-h-[300px] w-full">
+      <h3 className="text-xl font-bold text-indigo-900 mb-4">Upcoming Events</h3>
+      {loading ? (
+        <div className="text-gray-600">Loading...</div>
+      ) : error ? (
+        <div className="text-red-600">{error}</div>
+      ) : events.length === 0 ? (
+        <div className="text-gray-500">No upcoming events</div>
+      ) : (
+        <ul className="w-full space-y-3">
+          {events.map(ev => (
+            <li key={ev._id} className="flex flex-col bg-indigo-50 rounded-lg p-4 shadow">
+              <div className="font-semibold text-indigo-800 text-lg">{ev.title}</div>
+              <div className="text-gray-700 text-sm">{ev.description}</div>
+              <div className="text-indigo-600 text-xs mt-1">{new Date(ev.date).toLocaleString()}</div>
+            </li>
           ))}
-        </div>
-        <div className="flex-1 px-0 md:px-0 pb-8">
-          {renderTabContent()}
-        </div>
-      </div>
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4">
-        <HomeButton />
-        {/* Floating Post Button */}
-        <button
-          onClick={() => setShowPostModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-4 rounded-full shadow-xl font-bold text-lg transition-all focus:outline-none focus:ring-4 focus:ring-purple-300"
-          aria-label="Create Post"
-        >
-          <AddIcon /> Post
-        </button>
-      </div>
-      {/* Post Modal */}
-      <Modal handleClose={() => setShowPostModal(false)} type="post" open={showPostModal}>
-        <PostEditor onSubmit={handlePostSubmit} loading={isPosting} />
-      </Modal>
-      <AddEventModal
-        open={showAddEventModal}
-        onClose={() => setShowAddEventModal(false)}
-        onSave={handleAddEvent}
-      />
-    </div>
-  );
-}
-
-function NotificationItem({ icon, title, time }) {
-  return (
-    <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-[#252525] transition-colors">
-      <div className="p-2 bg-[#252525] rounded-lg">{icon}</div>
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-gray-400 text-sm">{time}</p>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value }) {
-  return (
-    <div className="flex items-center gap-4 p-4 rounded-lg bg-[#1D1D1D] border border-gray-800">
-      <div className="p-2 bg-[#252525] rounded-lg">{icon}</div>
-      <div>
-        <p className="text-2xl font-semibold text-white">{value}</p>
-        <p className="text-gray-400 text-sm">{label}</p>
-      </div>
+        </ul>
+      )}
     </div>
   );
 }
