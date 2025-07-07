@@ -6,7 +6,8 @@ const nextConfig = {
     domains: [
       'rb.gy',
       'images.pexels.com',
-      'www.pexels.com'
+      'www.pexels.com',
+      'lh3.googleusercontent.com' // Added Google user images
     ],
   },
   env: {
