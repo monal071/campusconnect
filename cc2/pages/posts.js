@@ -56,17 +56,17 @@ export default function Posts() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 px-4 w-full">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 mb-8 border border-gray-200 dark:border-gray-800">
+    <div className="w-full min-h-screen pt-10 px-0">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 mb-8 border border-gray-200 dark:border-gray-800 w-full max-w-none">
         <h1 className="text-3xl font-extrabold text-center text-indigo-800 dark:text-white mb-6 tracking-tight">CampusConnect Posts</h1>
         {status === 'loading' ? (
           <div className="text-center text-gray-400">Loading session...</div>
         ) : session ? (
-          <form onSubmit={handleCreate} className="flex items-start gap-3 mb-8 animate-fadein">
+          <form onSubmit={handleCreate} className="flex items-start gap-3 mb-8 animate-fadein w-full">
             <div className="flex-shrink-0">
               <Image src={session.user.image || '/logo.svg'} alt="avatar" width={44} height={44} className="rounded-full border border-gray-200 dark:border-gray-700" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
@@ -74,7 +74,7 @@ export default function Posts() {
                 className="w-full min-h-[48px] max-h-40 p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-vertical transition"
                 maxLength={500}
               />
-              <div className="flex justify-end mt-2">
+              <div className="flex justify-end mt-2 w-full">
                 <button
                   type="submit"
                   className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow hover:scale-105 transition-transform disabled:opacity-50"
