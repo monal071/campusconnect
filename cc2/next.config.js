@@ -4,16 +4,17 @@ const nextConfig = {
   swcMinify: true,
   images: {
     domains: [
-      'rb.gy',
-      'images.pexels.com',
-      'www.pexels.com',
-      'lh3.googleusercontent.com' // Added Google user images
+      "rb.gy",
+      "images.pexels.com",
+      "www.pexels.com",
+      "lh3.googleusercontent.com", // Google user images
+      "cdn.builder.io", // Builder.io CDN for uploaded images
     ],
   },
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
