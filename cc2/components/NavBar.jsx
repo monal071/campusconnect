@@ -63,12 +63,7 @@ export default function NavBar() {
         <Link href="/jobs" className="font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 transition">Jobs</Link>
         <Link href="/posts" className="font-medium text-gray-700 dark:text-gray-200 hover:text-pink-600 transition">Post</Link>
         <Link href="/connections" className="font-medium text-gray-700 dark:text-gray-200 hover:text-green-600 transition bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow hover:scale-105 transition-transform">Connect</Link>
-        <button
-          className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-transform"
-          onClick={() => setShowConnectModal(true)}
-        >
-          + Connect
-        </button>
+        {/* + Connect button removed as requested */}
       </div>
       <div className="flex items-center gap-4 h-12">
         {(session || isGuest) ? (
