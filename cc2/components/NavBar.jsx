@@ -113,7 +113,7 @@ export default function NavBar() {
         ) : (
           <>
             <Link href="/login" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">Sign In</Link>
-            <Link href="/signup" className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold shadow hover:bg-purple-700 transition">Sign Up</Link>
+            {/* Sign Up link removed as requested */}
           </>
         )}
       </div>
