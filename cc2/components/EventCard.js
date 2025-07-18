@@ -126,17 +126,19 @@ export default function EventCard({ event, isAuthenticated, userId }) {
               <span>Registration Deadline: {formatDate(event.registrationDeadline)}</span>
             </div>
           )}
-          {isAuthenticated && !hasJoined && (
-            <button
-              className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow"
-              onClick={handleJoin}
-            >
-              Join Event
-            </button>
-          )}
-          {isAuthenticated && hasJoined && (
-            <span className="mt-2 px-4 py-2 bg-green-900 text-green-300 rounded-lg shadow">Joined</span>
-          )}
+          <div className="flex justify-end">
+            {isAuthenticated && !hasJoined && (
+              <button
+                className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow"
+                onClick={handleJoin}
+              >
+                Join Event
+              </button>
+            )}
+            {isAuthenticated && hasJoined && (
+              <span className="mt-2 px-4 py-2 bg-green-900 text-green-300 rounded-lg shadow">Joined</span>
+            )}
+          </div>
         </div>
 
         {/* Expanded Content */}
@@ -173,24 +175,7 @@ export default function EventCard({ event, isAuthenticated, userId }) {
           </motion.div>
         )}
 
-        {/* Expand/Collapse Indicator */}
-        <motion.div
-          className="absolute bottom-4 right-4 text-gray-400"
-          animate={{ rotate: isExpanded ? 180 : 0 }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </motion.div>
+        {/* Arrow removed as requested */}
       </div>
     </motion.div>
   );
