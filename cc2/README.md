@@ -1,34 +1,132 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# CampusConnect 🎓
 
-## Getting Started
+A modern digital platform designed to enhance campus life by connecting students, facilitating event discovery, and fostering meaningful relationships within the university community.
 
-First, run the development server:
+![CampusConnect Preview](https://cdn.builder.io/o/assets%2F120eb199b6cc47adbce36dcfbc52593e%2Fc15659da75ea420bbc615cd607f1139a?alt=media&token=e0852113-020f-4129-a1d5-fabf881aa6e6&apiKey=120eb199b6cc47adbce36dcfbc52593e)
 
-```bash
-npm run dev
+## ✨ Features
+
+- **🏠 Modern Homepage** - Beautiful hero section with engaging animations
+- **📊 Smart Dashboard** - Personalized hub with quick actions and insights
+- **📅 Event Discovery** - Find and join campus events effortlessly
+- **💼 Job Opportunities** - Access career opportunities and internships
+- **📚 Resource Sharing** - Share and access academic materials
+- **🤝 Social Networking** - Connect with like-minded peers
+- **🎨 Dark/Light Theme** - Modern UI with theme switching
+- **📱 Responsive Design** - Works seamlessly on all devices
+
+## 🚀 Tech Stack
+
+- **Frontend:** Next.js 13, React 18, Tailwind CSS
+- **Backend:** Node.js, Next.js API Routes
+- **Database:** MongoDB with Mongoose
+- **Authentication:** NextAuth.js with Google OAuth
+- **UI Libraries:** Framer Motion, Heroicons, Material-UI
+- **Styling:** Tailwind CSS with custom animations
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- npm or yarn
+- MongoDB database
+- Google OAuth credentials
+
+### 1. Clone the repository
+
+\`\`\`bash
+git clone https://github.com/yourusername/campusconnect.git
+cd campusconnect
+\`\`\`
+
+### 2. Install dependencies
+
+\`\`\`bash
+npm install
+
 # or
+
+yarn install
+\`\`\`
+
+### 3. Set up environment variables
+
+Create a \`.env.local\` file in the root directory:
+
+\`\`\`env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+\`\`\`
+
+### 4. Run the development server
+
+\`\`\`bash
+npm run dev
+
+# or
+
 yarn dev
-```
+\`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+\`\`\`
+campusconnect/
+├── components/ # Reusable UI components
+├── pages/ # Next.js pages and API routes
+│ ├── api/ # Backend API endpoints
+│ ├── auth/ # Authentication pages
+│ └── ... # Feature pages
+├── styles/ # Global styles and CSS
+├── utils/ # Utility functions
+├── hooks/ # Custom React hooks
+├── types/ # TypeScript type definitions
+└── public/ # Static assets
+\`\`\`
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+## 🎨 Key Components
 
-## Learn More
+- **HeroSection** - Modern landing page hero with animations
+- **NavBar** - Responsive navigation with theme switching
+- **Dashboard** - Personalized user dashboard
+- **EventCard** - Interactive event display components
+- **Layout** - Global layout wrapper with animations
 
-To learn more about Next.js, take a look at the following resources:
+## 🔧 Available Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+\`\`\`bash
+npm run dev # Start development server
+npm run build # Build for production
+npm run start # Start production server
+npm run lint # Run ESLint
+\`\`\`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## 🤝 Contributing
 
-## Deploy on Vercel
+1. Fork the repository
+2. Create a feature branch (\`git checkout -b feature/amazing-feature\`)
+3. Commit your changes (\`git commit -m 'Add amazing feature'\`)
+4. Push to the branch (\`git push origin feature/amazing-feature\`)
+5. Open a Pull Request
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📝 License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with Next.js and modern React patterns
+- UI inspired by modern design systems
+- Icons by Heroicons
+- Animations powered by Framer Motion
+
+---
+
+**CampusConnect** - Empowering campus communities worldwide 🌍
