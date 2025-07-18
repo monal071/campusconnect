@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Main Cube -->
+  <g transform="translate(56, 56) scale(0.8)">
+    <!-- Front face -->
+    <path d="M256 140.8L128 204.8V332.8L256 396.8L384 332.8V204.8L256 140.8Z" fill="url(#grad1)"/>
+    
+    <!-- Top face -->
+    <path d="M256 140.8L384 204.8L256 268.8L128 204.8L256 140.8Z" fill="url(#grad2)"/>
+    
+    <!-- Right face -->
+    <path d="M384 204.8V332.8L256 396.8V268.8L384 204.8Z" fill="#4338CA" fill-opacity="0.6"/>
+    
+    <!-- Chain Link Elements -->
+    <g transform="translate(-20, -20) scale(1.1)">
+      <path d="M220 180 Q240 160, 260 180 T300 180" stroke="white" stroke-width="12" fill="none"/>
+      <path d="M212 200 Q232 180, 252 200 T292 200" stroke="white" stroke-width="12" fill="none"/>
+    </g>
+  </g>
+</svg> 
