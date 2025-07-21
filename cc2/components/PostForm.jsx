@@ -40,35 +40,45 @@ const PostForm = ({ onSubmit, isGuest, guestName, setGuestName }) => {
   return (
     <>
       {showNamePrompt && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <form onSubmit={handleNameSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
-            <label className="mb-2 text-lg font-semibold">Enter your name to post:</label>
-            <input
-              type="text"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              className="mb-4 px-3 py-2 border rounded w-64 dark:bg-gray-700 dark:text-white"
-              placeholder="Your name"
-              autoFocus
-            />
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Continue</button>
+        <div className="modal-backdrop">
+          <form onSubmit={handleNameSubmit} className="modal-content animate-fade-in">
+            <div className="modal-header">
+              <h3 className="text-lg font-semibold">Enter your name to post</h3>
+            </div>
+            <div className="modal-body">
+              <input
+                type="text"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                className="input"
+                placeholder="Your name"
+                autoFocus
+              />
+            </div>
+            <div className="modal-footer">
+              <button type="submit" className="btn btn-primary hover-lift">Continue</button>
+            </div>
           </form>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <form onSubmit={handleSubmit} className="card p-4 animate-fade-in">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's on your mind?"
-          className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="input resize-none focus-ring"
           rows="3"
         />
         <div className="mt-3 flex justify-between items-center">
-          <p className="text-sm text-gray-500">{content.length} / 1000 characters</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{content.length} / 1000 characters</p>
           <button
             type="submit"
             disabled={!content.trim() || isSubmitting}
-            className={`px-4 py-2 rounded-lg text-white transition-colors ${!content.trim() || isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+            className={`btn ${
+              !content.trim() || isSubmitting
+                ? 'btn-disabled'
+                : 'btn-primary hover-lift'
+            }`}
           >
             {isSubmitting ? 'Posting...' : 'Post'}
           </button>

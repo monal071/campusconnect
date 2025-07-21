@@ -213,15 +213,23 @@ export default function Events() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white">
+    <div className="min-h-screen">
       <Head>
         <title>Events | CampusConnect</title>
       </Head>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold drop-shadow-xl tracking-tight">Events</h1>
+      <main className="page-container">
+        <div className="page-header">
+          <h1 className="page-title">Events</h1>
+          <div className="page-actions">
+            <button
+              onClick={() => setShowEventModal(true)}
+              className="btn btn-primary hover-lift"
+            >
+              Add New Event
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="page-content">
           {events.map((event) => (
             <EventCard
               key={event._id}
@@ -232,7 +240,7 @@ export default function Events() {
           ))}
         </div>
         {events.length === 0 && (
-          <div className="text-center text-blue-100 mt-8">
+          <div className="text-center text-slate-500 dark:text-slate-400 mt-8">
             No events available.
           </div>
         )}

@@ -120,153 +120,181 @@ export default function ConnectionsList() {
   };
 
   if (loading) {
-    return <p className="text-white text-center">Loading connections...</p>;
+    return <div className="flex justify-center p-8"><div className="loading-spinner"></div></div>;
   }
 
   return (
     <div className="space-y-6">
       {/* Send Connection Request */}
-      <div className="bg-[#2D2D2D] rounded-lg p-4">
-        <h3 className="text-white font-medium mb-2">Send Connection Request</h3>
+      <div className="card p-4 animate-fade-in">
+        <h3 className="card-title mb-4">Send Connection Request</h3>
         <div className="flex gap-2">
           <input
             type="email"
             value={searchEmail}
             onChange={(e) => setSearchEmail(e.target.value)}
             placeholder="Enter email address"
-            className="bg-[#1D1D1D] text-white px-3 py-2 rounded flex-1"
+            className="input flex-1"
           />
           <button
             onClick={() => handleSendRequest(searchEmail)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            className="btn btn-primary hover-lift"
+            title="Send request"
           >
-            <FaUserPlus />
+            <FaUserPlus className="mr-2" /> Send
           </button>
         </div>
       </div>
 
       {/* Pending Requests */}
       {requests.received.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-white font-medium">Pending Requests</h3>
-          {requests.received.map((request) => (
-            <div
-              key={request._id}
-              className="bg-[#2D2D2D] rounded-lg p-4 flex items-center justify-between"
-            >
-              <div className="flex-1">
-                <p className="text-white">{request.senderId}</p>
-                <p className="text-gray-400 text-sm">Sent {formatDate(request.createdAt)}</p>
+        <div className="card p-4 animate-fade-in">
+          <h3 className="card-title mb-4">Pending Requests</h3>
+          <div className="space-y-3">
+            {requests.received.map((request) => (
+              <div
+                key={request._id}
+                className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-white">{request.senderId}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Sent {formatDate(request.createdAt)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRequestAction(request._id, 'accept')}
+                      className="btn-icon text-green-600 hover:text-green-500 hover-scale"
+                      title="Accept"
+                    >
+                      <FaCheck />
+                    </button>
+                    <button
+                      onClick={() => handleRequestAction(request._id, 'reject')}
+                      className="btn-icon text-red-600 hover:text-red-500 hover-scale"
+                      title="Reject"
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleRequestAction(request._id, 'accept')}
-                  className="text-green-500 hover:text-green-400"
-                >
-                  <FaCheck />
-                </button>
-                <button
-                  onClick={() => handleRequestAction(request._id, 'reject')}
-                  className="text-red-500 hover:text-red-400"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Sent Requests */}
       {requests.sent.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-white font-medium">Sent Requests</h3>
-          {requests.sent.map((request) => (
-            <div
-              key={request._id}
-              className="bg-[#2D2D2D] rounded-lg p-4 flex items-center justify-between"
-            >
-              <div className="flex-1">
-                <p className="text-white">{request.receiverId}</p>
-                <p className="text-gray-400 text-sm">Sent {formatDate(request.createdAt)}</p>
-                <p className="text-gray-400 text-sm">Status: {request.status}</p>
+        <div className="card p-4 animate-fade-in">
+          <h3 className="card-title mb-4">Sent Requests</h3>
+          <div className="space-y-3">
+            {requests.sent.map((request) => (
+              <div
+                key={request._id}
+                className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <p className="font-medium text-slate-900 dark:text-white">{request.receiverId}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Sent {formatDate(request.createdAt)}</p>
+                <p className="text-sm mt-1">
+                  <span className={`badge ${
+                    request.status === 'pending' ? 'badge-warning' : 
+                    request.status === 'accepted' ? 'badge-success' : 'badge-error'
+                  }`}>
+                    {request.status}
+                  </span>
+                </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Existing Connections */}
-      <div className="space-y-4">
-        <h3 className="text-white font-medium">My Connections</h3>
+      <div className="card p-4 animate-fade-in">
+        <h3 className="card-title mb-4">My Connections</h3>
         {connections.length === 0 ? (
-          <p className="text-white text-center">No connections yet</p>
+          <p className="text-slate-500 dark:text-slate-400 text-center py-4">No connections yet</p>
         ) : (
-          connections.map((connection) => (
-            <div
-              key={connection._id}
-              className="bg-[#2D2D2D] rounded-lg p-4 flex items-center justify-between"
-            >
-              {editingId === connection._id ? (
-                <div className="flex-1 flex gap-4">
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="bg-[#1D1D1D] text-white px-3 py-1 rounded flex-1"
-                    placeholder="Connection Name"
-                  />
-                  <input
-                    type="text"
-                    value={editForm.url}
-                    onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
-                    className="bg-[#1D1D1D] text-white px-3 py-1 rounded flex-1"
-                    placeholder="URL"
-                  />
-                  <button
-                    onClick={handleUpdate}
-                    className="text-green-500 hover:text-green-400"
-                  >
-                    <FaCheck />
-                  </button>
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex-1">
-                    <h3 className="text-white font-medium">{connection.name}</h3>
-                    <a
-                      href={connection.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 text-sm"
-                    >
-                      {connection.url}
-                    </a>
+          <div className="space-y-3">
+            {connections.map((connection) => (
+              <div
+                key={connection._id}
+                className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                {editingId === connection._id ? (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex-1 space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="input"
+                        placeholder="Connection Name"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">URL</label>
+                      <input
+                        type="text"
+                        value={editForm.url}
+                        onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                        className="input"
+                        placeholder="URL"
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-3 sm:mt-0">
+                      <button
+                        onClick={handleUpdate}
+                        className="btn-icon text-green-600 hover:text-green-500 hover-scale"
+                        title="Save"
+                      >
+                        <FaCheck />
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="btn-icon text-red-600 hover:text-red-500 hover-scale"
+                        title="Cancel"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(connection)}
-                      className="text-blue-500 hover:text-blue-400"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(connection._id)}
-                      className="text-red-500 hover:text-red-400"
-                    >
-                      <FaTrash />
-                    </button>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-slate-900 dark:text-white">{connection.name}</h3>
+                      <a
+                        href={connection.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm transition-colors"
+                      >
+                        {connection.url}
+                      </a>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(connection)}
+                        className="btn-icon text-blue-600 hover:text-blue-500 hover-scale"
+                        title="Edit"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(connection._id)}
+                        className="btn-icon text-red-600 hover:text-red-500 hover-scale"
+                        title="Delete"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

@@ -63,60 +63,60 @@ export default function ConnectionRequests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="loading-spinner"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+    <div className="card p-4 animate-fade-in">
+      <h2 className="card-title">
         Connection Requests
       </h2>
       
       {message && (
-        <div className="text-green-600 dark:text-green-400 mb-4">
+        <div className="alert alert-success mb-4">
           {message}
         </div>
       )}
       
       {error && (
-        <div className="text-red-600 dark:text-red-400 mb-4">
+        <div className="alert alert-error mb-4">
           {error}
         </div>
       )}
       
       {incomingRequests.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">No pending connection requests</p>
+        <p className="text-slate-500 dark:text-slate-400">No pending connection requests</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-4">
           {incomingRequests.map((user) => (
             <div
               key={user._id}
-              className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4"
+              className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-10 h-10 flex items-center justify-center">
-                  <span className="text-blue-600 dark:text-blue-300 font-bold">
+                <div className="avatar avatar-initial">
+                  <span>
                     {user.name ? user.name.charAt(0).toUpperCase() : '?'}
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">{user.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                  <h3 className="font-medium text-slate-900 dark:text-white">{user.name}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleRequest(user._id.toString(), 'accept')}
-                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  className="btn btn-success btn-sm hover-lift"
                   title="Accept"
                 >
                   Accept
                 </button>
                 <button
                   onClick={() => handleRequest(user._id.toString(), 'reject')}
-                  className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
+                  className="btn btn-secondary btn-sm hover-lift"
                   title="Reject"
                 >
                   Reject

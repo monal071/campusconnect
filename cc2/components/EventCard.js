@@ -76,52 +76,56 @@ export default function EventCard({ event, isAuthenticated, userId }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6 relative group transition-all duration-300 cursor-pointer"
+      className="card p-4 mb-4 animate-fade-in cursor-pointer hover:shadow-md transition-shadow duration-300"
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex flex-col space-y-4">
         {/* Event Type Badge */}
         <div className="flex justify-between items-start">
-          <span className={`text-sm font-medium ${getEventTypeColor(event.type)}`}>
+          <span className={`badge ${
+            event.type.toLowerCase() === 'conference' ? 'badge-purple' :
+            event.type.toLowerCase() === 'workshop' ? 'badge-blue' :
+            event.type.toLowerCase() === 'networking' ? 'badge-green' : 'badge-slate'
+          }`}>
             {event.type}
           </span>
           {isUpcoming(event.date) && (
-            <span className="text-green-600 dark:text-green-400 text-sm font-medium">
+            <span className="badge badge-success">
               Upcoming
             </span>
           )}
         </div>
 
         {/* Event Title */}
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{event.title}</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{event.title}</h3>
 
         {/* Event Description */}
-        <p className={`text-gray-600 dark:text-gray-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
+        <p className={`text-slate-600 dark:text-slate-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
           {event.description}
         </p>
 
 
         {/* Event Details */}
         <div className="space-y-2">
-          <div className="flex items-center text-gray-400">
+          <div className="flex items-center text-slate-500 dark:text-slate-400">
             <CalendarIcon className="h-5 w-5 mr-2" />
             <span>{formatDate(event.date)}</span>
           </div>
-          <div className="flex items-center text-gray-400">
+          <div className="flex items-center text-slate-500 dark:text-slate-400">
             <MapPinIcon className="h-5 w-5 mr-2" />
             <span>{event.location}</span>
           </div>
-          <div className="flex items-center text-gray-400">
+          <div className="flex items-center text-slate-500 dark:text-slate-400">
             <UserGroupIcon className="h-5 w-5 mr-2" />
-            <span>Joined: {joinedCount}</span>
+            <span>Joined: <span className="font-medium text-slate-700 dark:text-slate-300">{joinedCount}</span></span>
           </div>
           {event.maxAttendees && (
-            <div className="flex items-center text-gray-400">
-              <span>Max Attendees: {event.maxAttendees}</span>
+            <div className="flex items-center text-slate-500 dark:text-slate-400">
+              <span>Max Attendees: <span className="font-medium text-slate-700 dark:text-slate-300">{event.maxAttendees}</span></span>
             </div>
           )}
           {event.registrationDeadline && (
-            <div className="flex items-center text-gray-400">
+            <div className="flex items-center text-slate-500 dark:text-slate-400">
               <ClockIcon className="h-5 w-5 mr-2" />
               <span>Registration Deadline: {formatDate(event.registrationDeadline)}</span>
             </div>
@@ -129,14 +133,14 @@ export default function EventCard({ event, isAuthenticated, userId }) {
           <div className="flex justify-end">
             {isAuthenticated && !hasJoined && (
               <button
-                className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow"
+                className="btn btn-success btn-sm hover-lift"
                 onClick={handleJoin}
               >
                 Join Event
               </button>
             )}
             {isAuthenticated && hasJoined && (
-              <span className="mt-2 px-4 py-2 bg-green-900 text-green-300 rounded-lg shadow">Joined</span>
+              <span className="badge badge-success">Joined</span>
             )}
           </div>
         </div>
@@ -146,7 +150,7 @@ export default function EventCard({ event, isAuthenticated, userId }) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-4 space-y-4"
+            className="mt-4 space-y-4 animate-fade-in"
           >
             {/* Tags */}
             {event.tags && event.tags.length > 0 && (
@@ -154,7 +158,7 @@ export default function EventCard({ event, isAuthenticated, userId }) {
                 {event.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-sm"
+                    className="badge badge-blue"
                   >
                     {tag}
                   </span>
@@ -164,9 +168,9 @@ export default function EventCard({ event, isAuthenticated, userId }) {
 
             {/* Organizer Info */}
             {event.organizer && (
-              <div className="border-t border-gray-700 pt-4">
-                <h4 className="text-white font-medium mb-2">Organizer</h4>
-                <div className="text-gray-400">
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                <h4 className="text-slate-800 dark:text-white font-medium mb-2">Organizer</h4>
+                <div className="text-slate-600 dark:text-slate-400">
                   <p>{event.organizer.name}</p>
                   <p>{event.organizer.contact}</p>
                 </div>
@@ -174,8 +178,6 @@ export default function EventCard({ event, isAuthenticated, userId }) {
             )}
           </motion.div>
         )}
-
-        {/* Arrow removed as requested */}
       </div>
     </motion.div>
   );

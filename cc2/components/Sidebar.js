@@ -23,7 +23,7 @@ const Sidebar = () => {
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="hidden md:flex flex-col w-64 bg-gray-900/50 backdrop-blur-sm border-r border-gray-800/50"
+      className="hidden md:flex flex-col w-64 bg-slate-900/50 backdrop-blur-sm border-r border-slate-800/50"
     >
       {/* Profile Section */}
       <div className="relative flex flex-col items-center pt-8 pb-4">
@@ -35,7 +35,7 @@ const Sidebar = () => {
             className="object-cover opacity-50"
             alt="Sidebar background"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900/50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/80" />
         </div>
         
         <motion.div
@@ -45,7 +45,7 @@ const Sidebar = () => {
         >
           <Avatar
             // src={user?.image}
-            className="!h-24 !w-24 !border-4 !border-gray-900 !cursor-pointer"
+            className="!h-24 !w-24 !border-4 !border-slate-900 !cursor-pointer"
           />
         </motion.div>
 
@@ -57,7 +57,7 @@ const Sidebar = () => {
             {/* {user?.name} */}
             User Name
           </motion.h4>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             {/* {user?.email} */}
             user@example.com
           </p>
@@ -72,13 +72,13 @@ const Sidebar = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-800/50 transition-colors"
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-800/50 hover-lift transition-colors"
           >
             <div className="flex items-center space-x-3">
               <stat.Icon className="text-blue-500" />
-              <span className="text-gray-300">{stat.label}</span>
+              <span className="text-slate-300">{stat.label}</span>
             </div>
-            <span className="text-blue-500 font-medium">{stat.value}</span>
+            <span className="badge badge-primary">{stat.value}</span>
           </motion.div>
         ))}
       </div>
@@ -89,9 +89,9 @@ const Sidebar = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full flex items-center justify-center space-x-2 p-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            className="btn btn-primary w-full hover-lift"
           >
-            <AddRoundedIcon />
+            <AddRoundedIcon className="mr-2" />
             <span>Create Post</span>
           </motion.button>
         </Link>

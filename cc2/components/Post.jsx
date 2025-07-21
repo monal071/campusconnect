@@ -77,7 +77,7 @@ const Post = ({ post, onDelete }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6"
+      className="card p-4 mb-4 animate-fade-in"
     >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">
@@ -85,18 +85,18 @@ const Post = ({ post, onDelete }) => {
             <img
               src={post.author.image}
               alt={post.author.name}
-              className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600"
+              className="avatar"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+            <div className="avatar avatar-initial">
               {(post.author?.name || 'A').charAt(0).toUpperCase()}
             </div>
           )}
           <div>
-            <div className="font-semibold text-gray-900 dark:text-white">
+            <div className="font-semibold text-slate-900 dark:text-white">
               {post.author?.name || 'Anonymous'}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               <TimeAgo datetime={post.createdAt} />
             </div>
           </div>
@@ -105,29 +105,29 @@ const Post = ({ post, onDelete }) => {
           <button
             onClick={handleLike}
             disabled={liked}
-            className={`flex items-center gap-1 px-3 py-1 rounded-full transition-all ${
+            className={`btn-icon ${
               liked 
-                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' 
-                : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                ? 'text-blue-600 dark:text-blue-400' 
+                : 'text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover-scale'
             }`}
             title={liked ? 'You liked this' : 'Like'}
           >
-            {liked ? <ThumbUpAlt className="w-4 h-4" /> : <ThumbUpAltOutlined className="w-4 h-4" />}
-            <span className="text-sm font-medium">{likes}</span>
+            {liked ? <ThumbUpAlt className="w-5 h-5" /> : <ThumbUpAltOutlined className="w-5 h-5" />}
+            <span className="text-sm font-medium ml-1">{likes}</span>
           </button>
           {isAuthor && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="btn-icon text-red-500 hover:text-red-600 dark:hover:text-red-400 hover-scale"
               title="Delete post"
             >
-              <DeleteOutline className="w-4 h-4" />
+              <DeleteOutline className="w-5 h-5" />
             </button>
           )}
         </div>
       </div>
-      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+      <p className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
         {post.content}
       </p>
     </motion.div>

@@ -80,19 +80,21 @@ export default function Resources() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white">
+    <div className="min-h-screen">
       <Head>
         <title>Resources | CampusConnect</title>
       </Head>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold drop-shadow-xl tracking-tight">Resources</h1>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl shadow-lg font-semibold text-lg transition-all"
-          >
-            Add Resource
-          </button>
+      <main className="page-container">
+        <div className="page-header">
+          <h1 className="page-title">Resources</h1>
+          <div className="page-actions">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn btn-primary hover-lift"
+            >
+              Add Resource
+            </button>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <input
