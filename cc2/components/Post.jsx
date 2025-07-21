@@ -77,7 +77,7 @@ const Post = ({ post, onDelete }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg mb-4 border border-gray-200 dark:border-gray-700"
+      className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6"
     >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">

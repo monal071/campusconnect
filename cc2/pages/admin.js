@@ -7,19 +7,58 @@ export default function AdminPage() {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddJob, setShowAddJob] = useState(false);
   // Dummy handlers for add event/job (replace with real logic as needed)
-  const handleAddEvent = (eventData) => {
+  const handleAddEvent = async (eventData) => {
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (response.ok) {
+        setMessage('Event added successfully!');
+        fetchEvents();
+      } else {
+        setMessage('Failed to add event.');
+      }
+    } catch (error) {
+      console.error('Error adding event:', error);
+      setMessage('Error adding event. Please try again.');
+    }
     setShowAddEvent(false);
-    setMessage('Event added (dummy handler).');
   };
-  const handleAddJob = (jobData) => {
+  
+  const handleAddJob = async (jobData) => {
+    try {
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobData),
+      });
+
+      if (response.ok) {
+        setMessage('Job added successfully!');
+        fetchJobs();
+      } else {
+        setMessage('Failed to add job.');
+      }
+    } catch (error) {
+      console.error('Error adding job:', error);
+      setMessage('Error adding job. Please try again.');
+    }
     setShowAddJob(false);
-    setMessage('Job added (dummy handler).');
   };
 
   useEffect(() => {
@@ -30,8 +69,30 @@ export default function AdminPage() {
       localStorage.setItem("name", "admin");
       fetchPosts();
       fetchUsers();
+      fetchEvents();
+      fetchJobs();
     }
   }, [isAuthenticated]);
+  
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch("/api/events");
+      const data = await res.json();
+      setEvents(data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+    }
+  };
+  
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch("/api/jobs");
+      const data = await res.json();
+      setJobs(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error);
+    }
+  };
 
   const fetchPosts = async () => {
     const res = await fetch("/api/posts");
@@ -73,6 +134,9 @@ export default function AdminPage() {
       setMessage("Failed to delete user.");
     }
   };
+  
+  // Removed handleDeleteEvent, handleDeleteJob, and confirmDelete functions
+  // as we now have inline delete functionality with confirm dialog
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -86,8 +150,8 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-pink-800 to-purple-900 p-8">
-        <div className="bg-white/80 dark:bg-gray-900/90 rounded-2xl shadow-2xl p-10 flex flex-col items-center backdrop-blur-lg w-full max-w-md">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-8">
+        <div className="border border-gray-200 dark:border-gray-700 p-10 flex flex-col items-center w-full max-w-md">
           <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Admin Login</h1>
           <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
             <input
@@ -106,8 +170,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-pink-800 to-purple-900 p-8">
-      <div className="bg-white/80 dark:bg-gray-900/90 rounded-2xl shadow-2xl p-10 flex flex-col items-center backdrop-blur-lg w-full max-w-3xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-8">
+      <div className="w-full max-w-4xl flex flex-col items-center">
         <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Welcome, Admin</h1>
         <p className="text-gray-600 dark:text-gray-300 mb-6">You are now logged in as <b>admin</b>.</p>
         {message && <div className="mb-4 text-center text-red-600">{message}</div>}
@@ -126,29 +190,110 @@ export default function AdminPage() {
           </button>
         </div>
         <div className="w-full mb-8">
-          <h2 className="text-xl font-bold mb-2">Delete Posts</h2>
+          <h2 className="text-xl font-bold mb-2">Manage Posts</h2>
           <ul className="space-y-2">
             {posts.map((post) => (
-              <li key={post._id} className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded p-3">
-                <span>{post.content}</span>
-                <button onClick={() => handleDeletePost(post._id)} className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+              <li key={post._id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-3">
+                <span className="line-clamp-1 max-w-xs">{post.content}</span>
+                <button onClick={() => handleDeletePost(post._id)} className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Remove Post</button>
               </li>
             ))}
             {posts.length === 0 && <li className="text-gray-400">No posts found.</li>}
           </ul>
         </div>
+        <div className="w-full mb-8">
+          <h2 className="text-xl font-bold mb-2">Manage Events</h2>
+          <ul className="space-y-2">
+            {events.map((event) => (
+              <li key={event._id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-3">
+                <div>
+                  <span className="font-medium">{event.title}</span>
+                  <span className="ml-2 text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</span>
+                </div>
+                <button 
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to delete this event?')) {
+                      try {
+                        const res = await fetch('/api/events', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: event._id }),
+                        });
+                        if (res.ok) {
+                          setMessage('Event deleted successfully');
+                          fetchEvents();
+                        } else {
+                          setMessage('Failed to delete event');
+                        }
+                      } catch (error) {
+                        console.error('Error deleting event:', error);
+                        setMessage('Error deleting event');
+                      }
+                    }
+                  }}
+                  className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remove Event
+                </button>
+              </li>
+            ))}
+            {events.length === 0 && <li className="text-gray-400">No events found.</li>}
+          </ul>
+        </div>
+        
+        <div className="w-full mb-8">
+          <h2 className="text-xl font-bold mb-2">Manage Jobs</h2>
+          <ul className="space-y-2">
+            {jobs.map((job) => (
+              <li key={job._id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-3">
+                <div>
+                  <span className="font-medium">{job.title}</span>
+                  <span className="ml-2 text-sm text-gray-500">at {job.company}</span>
+                </div>
+                <button 
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to delete this job?')) {
+                      try {
+                        const res = await fetch('/api/jobs', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: job._id }),
+                        });
+                        if (res.ok) {
+                          setMessage('Job deleted successfully');
+                          fetchJobs();
+                        } else {
+                          setMessage('Failed to delete job');
+                        }
+                      } catch (error) {
+                        console.error('Error deleting job:', error);
+                        setMessage('Error deleting job');
+                      }
+                    }
+                  }}
+                  className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remove Job
+                </button>
+              </li>
+            ))}
+            {jobs.length === 0 && <li className="text-gray-400">No jobs found.</li>}
+          </ul>
+        </div>
+        
         <div className="w-full">
-          <h2 className="text-xl font-bold mb-2">Delete Users</h2>
+          <h2 className="text-xl font-bold mb-2">Manage Users</h2>
           <ul className="space-y-2">
             {users.map((user) => (
-              <li key={user._id} className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded p-3">
+              <li key={user._id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-3">
                 <span>{user.name} ({user.email})</span>
-                <button onClick={() => handleDeleteUser(user._id)} className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+                <button onClick={() => handleDeleteUser(user._id)} className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Remove User</button>
               </li>
             ))}
             {users.length === 0 && <li className="text-gray-400">No users found.</li>}
           </ul>
         </div>
+        
         <AddEventModal open={showAddEvent} onClose={() => setShowAddEvent(false)} onSave={handleAddEvent} />
         <AddJobModal isOpen={showAddJob} onClose={() => setShowAddJob(false)} onAdd={handleAddJob} />
       </div>

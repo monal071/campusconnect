@@ -76,27 +76,27 @@ export default function EventCard({ event, isAuthenticated, userId }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-gray-800 rounded-lg p-6 relative group hover:shadow-lg transition-all duration-300"
+      className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6 relative group transition-all duration-300 cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className="flex flex-col space-y-4">
         {/* Event Type Badge */}
         <div className="flex justify-between items-start">
-          <span className={`px-3 py-1 rounded-full text-sm ${getEventTypeColor(event.type)}`}>
+          <span className={`text-sm font-medium ${getEventTypeColor(event.type)}`}>
             {event.type}
           </span>
           {isUpcoming(event.date) && (
-            <span className="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-sm">
+            <span className="text-green-600 dark:text-green-400 text-sm font-medium">
               Upcoming
             </span>
           )}
         </div>
 
         {/* Event Title */}
-        <h3 className="text-xl font-semibold text-white">{event.title}</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{event.title}</h3>
 
         {/* Event Description */}
-        <p className={`text-gray-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
+        <p className={`text-gray-600 dark:text-gray-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
           {event.description}
         </p>
 

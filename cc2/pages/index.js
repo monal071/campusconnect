@@ -14,25 +14,35 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-800 to-purple-900">
+    <div className="min-h-screen w-full bg-indigo-900">
       <Head>
         <title>CampusConnect</title>
       </Head>
-      <div className="flex flex-col items-center gap-8 p-8 bg-white/80 rounded-2xl shadow-xl">
-        <h1 className="text-4xl font-extrabold text-indigo-900 mb-2">CampusConnect</h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      
+      <div className="absolute inset-0 bg-[url('/pattern-bg.svg')] bg-repeat opacity-5"></div>
+      
+      <div className="relative w-full h-full flex flex-col items-center justify-center px-4 py-16">
+        <h1 className="text-6xl md:text-7xl font-extrabold text-white mb-6">
+          Campus<span className="text-blue-400">Connect</span>
+        </h1>
+        
+        <p className="text-xl text-white text-center mb-14 max-w-2xl">
+          Connect with your campus community. Discover events, resources, job opportunities, and build valuable connections.
+        </p>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 w-full max-w-5xl">
           {navLinks.map(link => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform text-center"
+              className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-medium text-lg text-center transition-all duration-300 backdrop-blur-sm border-b-2 border-transparent hover:border-blue-400"
             >
               {link.label}
             </Link>
           ))}
           <Link
             href="/admin"
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform text-center"
+            className="px-6 py-4 bg-red-500/20 hover:bg-red-500/30 text-white font-medium text-lg text-center transition-all duration-300 backdrop-blur-sm border-b-2 border-transparent hover:border-red-400"
           >
             Admin Login
           </Link>

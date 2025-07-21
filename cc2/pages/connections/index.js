@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import ConnectionRequests from '../../components/ConnectionRequests';
+import Layout from '../../components/Layout';
 
 export default function ConnectionsPage() {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [incoming, setIncoming] = useState([]);
   const [friends, setFriends] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [userId, setUserId] = useState(null);
@@ -14,19 +15,10 @@ export default function ConnectionsPage() {
     // Get userId from localStorage, but fetch user info from DB if needed
     const id = localStorage.getItem('userId');
     setUserId(id);
-    fetchIncoming(id);
     fetchFriends(id);
     fetchRecommendations(id);
   }, []);
 
-  const fetchIncoming = async (id) => {
-    if (!id) return;
-    try {
-      const res = await fetch(`/api/connections/incoming?id=${id}`);
-      const data = await res.json();
-      setIncoming(data.incoming || []);
-    } catch {}
-  };
   const fetchFriends = async (id) => {
     if (!id) return;
     try {
@@ -35,6 +27,7 @@ export default function ConnectionsPage() {
       setFriends(data.friends || []);
     } catch {}
   };
+
   const fetchRecommendations = async (id) => {
     if (!id) return;
     try {
@@ -79,90 +72,138 @@ export default function ConnectionsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-4 text-indigo-800 dark:text-indigo-200">
-          Connections
-        </h1>
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300">
-            Incoming Requests
-          </h2>
-          <ul className="mb-4">
-            {incoming.length === 0 && (
-              <li className="text-gray-400">No incoming requests.</li>
-            )}
-            {incoming.map(user => (
-              <li key={user._id} className="py-1 text-gray-800 dark:text-gray-100">
-                {user.name} ({user.email})
-              </li>
-            ))}
-          </ul>
-          <h2 className="text-lg font-semibold mb-2 text-green-700 dark:text-green-300">
-            Current Friends
-          </h2>
-          <ul className="mb-4">
-            {friends.length === 0 && <li className="text-gray-400">No friends yet.</li>}
-            {friends.map(user => (
-              <li key={user._id} className="py-1 text-gray-800 dark:text-gray-100">
-                {user.name} ({user.email})
-              </li>
-            ))}
-          </ul>
-          <h2 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-300">
-            Recommendations
-          </h2>
-          <ul className="mb-4">
-            {recommendations.length === 0 && <li className="text-gray-400">No recommendations.</li>}
-            {recommendations.map(user => (
-              <li key={user._id} className="py-1 flex items-center justify-between text-gray-800 dark:text-gray-100">
-                <span>
-                  {user.name} ({user.email})
-                </span>
+    <Layout>
+      <div className="min-h-screen p-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Connection Requests Section */}
+          <div className="md:col-span-1">
+            <ConnectionRequests />
+          </div>
+          
+          {/* Main Content */}
+          <div className="md:col-span-2 space-y-8">
+            {/* Current Friends */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                My Connections
+              </h2>
+              {friends.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">No connections yet</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {friends.map(user => (
+                    <div key={user._id} className="flex items-center space-x-3 border-b border-gray-200 dark:border-gray-700 pb-3">
+                      <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-10 h-10 flex items-center justify-center">
+                        <span className="text-blue-600 dark:text-blue-300 font-bold">
+                          {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{user.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Recommendations */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                People You May Know
+              </h2>
+              {recommendations.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">No recommendations available</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {recommendations.map(user => (
+                    <div key={user._id} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-10 h-10 flex items-center justify-center">
+                          <span className="text-blue-600 dark:text-blue-300 font-bold">
+                            {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{user.name}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleConnect(user._id)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Connect
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Search Users */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                Find People
+              </h2>
+              <form onSubmit={handleSearch} className="flex mb-4">
+                <input
+                  type="text"
+                  className="flex-1 rounded-l px-3 py-2 border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Search by name or email"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  required
+                />
                 <button
-                  className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                  onClick={() => handleConnect(user._id)}
+                  type="submit"
+                  className="rounded-r bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition-colors"
+                  disabled={loading}
                 >
-                  Connect
+                  {loading ? 'Searching...' : 'Search'}
                 </button>
-              </li>
-            ))}
-          </ul>
+              </form>
+              
+              {message && (
+                <div className="text-blue-600 dark:text-blue-400 mb-4">
+                  {message}
+                </div>
+              )}
+              
+              {users.length > 0 ? (
+                <div className="space-y-4 max-h-80 overflow-y-auto">
+                  {users.map(user => (
+                    <div key={user._id} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 dark:bg-blue-900 rounded-full w-10 h-10 flex items-center justify-center">
+                          <span className="text-blue-600 dark:text-blue-300 font-bold">
+                            {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{user.name}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleConnect(user._id)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      >
+                        Connect
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center">
+                  {loading ? 'Searching...' : search && !loading ? 'No users found' : 'Search for users to connect with'}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
-        <form onSubmit={handleSearch} className="flex mb-4">
-          <input
-            type="text"
-            className="flex-1 rounded-l px-3 py-2 border border-gray-300 dark:border-gray-700 focus:outline-none dark:bg-gray-700 dark:text-gray-100"
-            placeholder="Search users by name or email"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <button
-            type="submit"
-            className="rounded-r bg-indigo-600 text-white px-4 py-2 hover:bg-indigo-700"
-          >
-            Search
-          </button>
-        </form>
-        {loading && <div className="text-center text-gray-500">Loading...</div>}
-        {message && <div className="text-center text-sm text-indigo-600 mb-2">{message}</div>}
-        <ul className="max-h-60 overflow-y-auto">
-          {users.map(user => (
-            <li key={user._id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-gray-800 dark:text-gray-100">
-                {user.name} ({user.email})
-              </span>
-              <button
-                className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                onClick={() => handleConnect(user._id)}
-              >
-                Connect
-              </button>
-            </li>
-          ))}
-        </ul>
-        {users.length === 0 && !loading && <div className="text-center text-gray-400">No users found.</div>}
       </div>
-    </div>
+    </Layout>
   );
 }

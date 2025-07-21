@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ConnectModal from "./ConnectModal";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -11,6 +12,8 @@ export default function NavBar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userName, setUserName] = useState("");
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -39,6 +42,17 @@ export default function NavBar() {
     return () => window.removeEventListener("storage", syncAuth);
   }, [session]);
 
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
     if (isGuest) {
       localStorage.removeItem("guest");
@@ -51,73 +65,213 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur shadow-lg flex items-center justify-between px-6 py-3">
-      <div className="flex items-center gap-3">
-        <Image src="/campusconnect-logo.svg" alt="CampusConnect Logo" width={36} height={36} />
-        <span className="text-xl font-extrabold text-indigo-900 dark:text-white tracking-tight">CampusConnect</span>
-      </div>
-      <div className="flex items-center gap-6">
-        <Link href="/home" className="font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 transition">Home</Link>
-        <Link href="/events" className="font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 transition">Events</Link>
-        <Link href="/resources" className="font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600 transition">Resources</Link>
-        <Link href="/jobs" className="font-medium text-gray-700 dark:text-gray-200 hover:text-purple-600 transition">Jobs</Link>
-        <Link href="/posts" className="font-medium text-gray-700 dark:text-gray-200 hover:text-pink-600 transition">Post</Link>
-        <Link href="/connections" className="font-medium text-gray-700 dark:text-gray-200 hover:text-green-600 transition bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow hover:scale-105 transition-transform">Connect</Link>
-        {/* + Connect button removed as requested */}
-      </div>
-      <div className="flex items-center gap-4 h-12">
-        {(session || isGuest) ? (
-          <>
-            <button
-              onClick={() => setShowProfileMenu(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow hover:scale-105 transition-transform h-12"
-              style={{ minWidth: 100 }}
-            >
-              Profile
-            </button>
-            {showProfileMenu && (
-              <>
-                {/* Modal Backdrop */}
-                <div className="fixed inset-0 bg-black bg-opacity-40 z-40" onClick={() => setShowProfileMenu(false)} />
-                {/* Popup below navigation bar */}
-                <div className="fixed left-0 right-0 top-[72px] flex justify-center z-50 pointer-events-none">
-                  <div className="relative w-80 bg-white dark:bg-gray-800 rounded-b-xl shadow-2xl py-4 border border-gray-200 dark:border-gray-700 pointer-events-auto animate-slidefromtop">
-                    {/* Close Button */}
-                    <button
-                      className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl font-bold focus:outline-none"
-                      onClick={() => setShowProfileMenu(false)}
-                      aria-label="Close profile menu"
-                    >
-                      ×
-                    </button>
-                    <Link href="/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-xl">Dashboard</Link>
-                    <div className="px-4 py-2 text-gray-700 dark:text-gray-200 border-t border-b border-gray-100 dark:border-gray-700">{userName}</div>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-xl"
-                    >
-                      Logout
-                    </button>
+    <nav className="sticky top-0 z-50 w-full bg-white dark:bg-gray-900 shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo and brand */}
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Link href="/home" className="flex items-center">
+                <Image 
+                  src="/campusconnect-logo.svg" 
+                  alt="CampusConnect Logo" 
+                  width={36} 
+                  height={36} 
+                  className="transition-transform duration-300 hover:rotate-12"
+                />
+                <span className="ml-2 text-xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">
+                  CampusConnect
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Desktop navigation links */}
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-center space-x-6">
+              <Link 
+                href="/home" 
+                className="px-3 py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Home
+              </Link>
+              <Link 
+                href="/events" 
+                className="px-3 py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Events
+              </Link>
+              <Link 
+                href="/resources" 
+                className="px-3 py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Resources
+              </Link>
+              <Link 
+                href="/jobs" 
+                className="px-3 py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Jobs
+              </Link>
+              <Link 
+                href="/posts" 
+                className="px-3 py-2 text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Posts
+              </Link>
+              <Link 
+                href="/connections" 
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-medium rounded-lg shadow hover:shadow-md transition-all duration-200"
+              >
+                Connect
+              </Link>
+            </div>
+          </div>
+
+          {/* Right side buttons */}
+          <div className="flex items-center gap-3">
+            <ThemeSwitcher />
+            
+            {(session || isGuest) ? (
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+                    {userName.charAt(0).toUpperCase()}
                   </div>
-                </div>
-                <style jsx>{`
-                  @keyframes slidefromtop {
-                    from { transform: translateY(-32px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                  }
-                  .animate-slidefromtop { animation: slidefromtop 0.3s cubic-bezier(.4,0,.2,1); }
-                `}</style>
-              </>
+                  <span className="hidden sm:inline font-medium">{userName}</span>
+                </button>
+                
+                <AnimatePresence>
+                  {showProfileMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 border border-gray-200 dark:border-gray-700 z-50"
+                    >
+                      <Link 
+                        href="/dashboard" 
+                        className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <div className="px-4 py-2 text-gray-500 dark:text-gray-400 border-t border-b border-gray-100 dark:border-gray-700 text-sm">
+                        {userName}
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Link 
+                href="/login" 
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow hover:shadow-md transition-all duration-200"
+              >
+                Sign In
+              </Link>
             )}
-          </>
-        ) : (
-          <>
-            <Link href="/login" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">Sign In</Link>
-            {/* Sign Up link removed as requested */}
-          </>
-        )}
+            
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+              aria-expanded="false"
+            >
+              <span className="sr-only">Open main menu</span>
+              <svg
+                className={`${mobileMenuOpen ? 'hidden' : 'block'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <svg
+                className={`${mobileMenuOpen ? 'block' : 'hidden'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
-      <ThemeSwitcher />
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden"
+          >
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-800 shadow-inner">
+              <Link 
+                href="/home" 
+                className="block px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link 
+                href="/events" 
+                className="block px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Events
+              </Link>
+              <Link 
+                href="/resources" 
+                className="block px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Resources
+              </Link>
+              <Link 
+                href="/jobs" 
+                className="block px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Jobs
+              </Link>
+              <Link 
+                href="/posts" 
+                className="block px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Posts
+              </Link>
+              <Link 
+                href="/connections" 
+                className="block px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Connect
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <ConnectModal isOpen={showConnectModal} onClose={() => setShowConnectModal(false)} />
     </nav>
   );

@@ -75,7 +75,7 @@ const Modal = ({ handleClose, type }) => {
         {type === "dropIn" && (
           <motion.div
             onClick={(e) => e.stopPropagation()}
-            className="rounded-xl flex flex-col justify-center bg-white dark:bg-[#1D2226] w-full max-w-lg md:-mt-96 mx-6"
+            className="flex flex-col justify-center bg-white dark:bg-gray-900 w-full max-w-lg md:-mt-96 mx-6 border border-gray-200 dark:border-gray-700"
             variants={dropIn}
             initial="hidden"
             animate="visible"
