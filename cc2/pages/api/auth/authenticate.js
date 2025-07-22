@@ -19,13 +19,19 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      await createUser({ email, password, name });
+      // Check if admin password is correct
+      const role = req.body.role || 'user';
+      if (role === 'admin' && req.body.adminPassword !== '12345678') {
+        return res.status(401).json({ message: 'Invalid admin password' });
+      }
+
+      await createUser({ email, password, name, role });
       const token = jwt.sign(
-        { email: email.toLowerCase(), name },
+        { email: email.toLowerCase(), name, role },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
-      return res.status(200).json({ token, user: { email: email.toLowerCase(), name } });
+      return res.status(200).json({ token, user: { email: email.toLowerCase(), name, role } });
     }
 
     if (action === 'login') {
@@ -44,11 +50,11 @@ export default async function handler(req, res) {
       }
 
       const token = jwt.sign(
-        { email: user.email, name: user.name },
+        { email: user.email, name: user.name, role: user.role || 'user' },
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
-      return res.status(200).json({ token, user: { email: user.email, name: user.name } });
+      return res.status(200).json({ token, user: { email: user.email, name: user.name, role: user.role || 'user' } });
     }
 
     return res.status(400).json({ message: 'Invalid action' });

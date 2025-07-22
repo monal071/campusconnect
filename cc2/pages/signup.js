@@ -8,6 +8,9 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,6 +18,14 @@ export default function Signup() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    // Validate admin password if admin role is selected
+    if (role === 'admin' && adminPassword !== '12345678') {
+      setError('Invalid admin password');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const res = await fetch('/api/auth/authenticate', {
         method: 'POST',
@@ -25,6 +36,8 @@ export default function Signup() {
           name,
           email,
           password,
+          role,
+          adminPassword,
           action: 'register',
         }),
       });
@@ -41,7 +54,13 @@ export default function Signup() {
       }
       localStorage.setItem('token', data.token);
       localStorage.setItem('name', name);
-      router.push('/home');
+      localStorage.setItem('role', role);
+      
+      if (role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/home');
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -139,6 +158,62 @@ export default function Signup() {
                   Password
                 </label>
               </div>
+              
+              {/* Role Selection */}
+              <div className="space-y-3">
+                <label className="block text-gray-300 text-sm font-medium">Account Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setRole('user');
+                      setShowAdminPassword(false);
+                    }}
+                    className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                      role === 'user' 
+                        ? 'bg-blue-600 border-blue-500 text-white' 
+                        : 'bg-white/10 border-white/30 text-gray-300 hover:bg-white/20'
+                    }`}
+                  >
+                    Student
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setRole('admin');
+                      setShowAdminPassword(true);
+                    }}
+                    className={`px-4 py-3 rounded-lg border text-center transition-all ${
+                      role === 'admin' 
+                        ? 'bg-purple-600 border-purple-500 text-white' 
+                        : 'bg-white/10 border-white/30 text-gray-300 hover:bg-white/20'
+                    }`}
+                  >
+                    Admin
+                  </button>
+                </div>
+              </div>
+              
+              {/* Admin Password (conditionally displayed) */}
+              {showAdminPassword && (
+                <div className="relative">
+                  <input
+                    id="adminPassword"
+                    name="adminPassword"
+                    type="password"
+                    required={role === 'admin'}
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="peer w-full px-4 pt-6 pb-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Admin Password"
+                    autoComplete="new-password"
+                    aria-label="Admin Password"
+                  />
+                  <label htmlFor="adminPassword" className="absolute left-4 top-2 text-gray-300 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-sm pointer-events-none">
+                    Admin Password
+                  </label>
+                </div>
+              )}
             </div>
 
             {error && (

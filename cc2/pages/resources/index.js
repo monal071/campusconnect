@@ -102,12 +102,12 @@ export default function Resources() {
             placeholder="Search resources..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input flex-1"
           />
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
           >
             <option value="all">All Types</option>
             <option value="document">Documents</option>
@@ -116,7 +116,7 @@ export default function Resources() {
             <option value="link">Links</option>
           </select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="page-content">
           {filteredResources.map((resource) => (
             <ResourceCard
               key={resource._id}
@@ -126,7 +126,7 @@ export default function Resources() {
           ))}
         </div>
         {filteredResources.length === 0 && (
-          <div className="text-center text-blue-100 mt-8">
+          <div className="text-center text-slate-500 dark:text-slate-400 mt-8">
             {searchTerm || selectedType !== 'all' 
               ? 'No resources found matching your criteria.'
               : 'No resources available. Add some resources to get started!'}

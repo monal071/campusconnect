@@ -22,9 +22,11 @@ export default NextAuth({
         if (user && user._id) {
           session.user.id = user._id.toString();
           session.user.name = user.name;
+          session.user.role = user.role || 'user';
         } else {
           // fallback to token.sub if not found
           session.user.id = token.sub;
+          session.user.role = 'user';
         }
       }
       return session;

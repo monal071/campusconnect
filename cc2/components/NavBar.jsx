@@ -11,6 +11,7 @@ export default function NavBar() {
   const [isGuest, setIsGuest] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("user");
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef(null);
