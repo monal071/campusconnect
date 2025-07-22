@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import AddEventModal from '../components/AddEventModal';
 import AddJobModal from '../components/AddJobModal';
 
 export default function AdminPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession({
+    required: true,
+    onUnauthenticated() {
+      // Redirect to login if not authenticated
+      router.push('/login');
+    },
+  });
+  
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [events, setEvents] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddJob, setShowAddJob] = useState(false);
   // Dummy handlers for add event/job (replace with real logic as needed)
@@ -65,38 +73,42 @@ export default function AdminPage() {
   useEffect(() => {
     // Check if the user is an admin
     const checkAdmin = async () => {
-      // First check session data
-      const userRole = session?.user?.role;
-      
-      // If session has role data, use it
-      if (userRole) {
-        if (userRole !== 'admin') {
-          // Redirect non-admin users to home
-          router.push('/home');
-          return;
-        }
-        setIsAuthenticated(true);
-        return;
-      }
-      
-      // If no session role, check localStorage as fallback
-      const localRole = localStorage.getItem('role');
-      if (localRole !== 'admin') {
-        router.push('/home');
-        return;
-      }
-      
-      // Double-check with API to ensure user is actually admin
       try {
-        const res = await fetch('/api/auth/check-registration');
-        const data = await res.json();
-        
-        if (!data.isRegistered || data.role !== 'admin') {
-          router.push('/home');
+        // Wait for session status to be determined
+        if (sessionStatus === "loading") {
+          console.log("Session loading, waiting...");
           return;
         }
         
-        setIsAuthenticated(true);
+        // Redirect if not authenticated
+        if (sessionStatus !== "authenticated" || !session) {
+          console.log("Not authenticated, redirecting to login");
+          router.push('/login');
+          return;
+        }
+        
+        // Debug: Call the session debug endpoint to check the session data
+        try {
+          const debugRes = await fetch('/api/debug/session');
+          const debugData = await debugRes.json();
+          console.log("Session debug data:", debugData);
+        } catch (e) {
+          console.error("Failed to fetch debug data:", e);
+        }
+        
+        const userRole = session?.user?.role;
+        console.log("User role from session:", userRole);
+        
+        // Allow any authenticated user to access the admin page
+        // but set isAdmin flag to handle UI differently
+        setIsAdmin(userRole === 'admin');
+        setLoading(false);
+        
+        // Fetch data for the admin panel
+        fetchPosts();
+        fetchUsers();
+        fetchEvents();
+        fetchJobs();
       } catch (error) {
         console.error("Failed to verify admin status:", error);
         router.push('/home');
@@ -104,17 +116,10 @@ export default function AdminPage() {
     };
     
     checkAdmin();
-  }, [session, router]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchPosts();
-      fetchUsers();
-      fetchEvents();
-      fetchJobs();
-    }
-  }, [isAuthenticated]);
+    // Disable the exhaustive-deps rule because we handle these dependencies manually
+  }, [session, sessionStatus, router]);
   
+  // Define data fetching functions outside of useEffect to avoid dependency issues
   const fetchEvents = async () => {
     try {
       const res = await fetch("/api/events");
@@ -176,23 +181,43 @@ export default function AdminPage() {
     }
   };
   
-  // If not authenticated yet, show loading state
-  if (!isAuthenticated) {
+  // If session is loading or not yet determined, show loading state
+  if (loading || sessionStatus === 'loading') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-8">
         <div className="border border-gray-200 dark:border-gray-700 p-10 flex flex-col items-center w-full max-w-md">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">Checking admin privileges...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            {sessionStatus === 'loading' ? 'Loading session...' : 'Checking admin privileges...'}
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-8">
-      <div className="w-full max-w-4xl flex flex-col items-center">
-        <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Welcome, Admin</h1>
-        <p className="text-gray-600 dark:text-gray-300 mb-6">You are now logged in as <b>admin</b>.</p>
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 dark:bg-gray-900 p-8">
+      <div className="w-full max-w-4xl">
+        {!isAdmin && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded shadow-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="font-medium">Warning: Limited Access</p>
+                <p className="text-sm">You are viewing the admin panel with a non-admin account. Some actions may not work correctly.</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Admin Panel</h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          You are logged in as a <b>{isAdmin ? 'admin' : 'regular user'}</b>.
+        </p>
         {message && <div className="mb-4 text-center text-red-600">{message}</div>}
         <div className="flex gap-4 mb-8">
           <button

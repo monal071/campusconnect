@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from './[...nextauth]';
 import clientPromise from '../../../utils/mongodb';
 
@@ -31,12 +31,13 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db();
     
-    // Update user with role
+    // Update user with role and set isRegistered to true
     await db.collection('users').updateOne(
       { email: session.user.email.toLowerCase() },
       { 
         $set: { 
           role,
+          isRegistered: true, // Mark as fully registered
           updatedAt: new Date()
         } 
       }

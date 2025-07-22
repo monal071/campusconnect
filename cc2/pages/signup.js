@@ -156,7 +156,7 @@ export default function Signup() {
   // Show loading state while checking session
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-black">
+      <div className="min-h-screen flex items-center justify-center bg-indigo-900">
         <div className="animate-spin h-12 w-12 border-t-2 border-blue-500 border-r-2 border-b-2 rounded-full"></div>
       </div>
     );
@@ -166,7 +166,7 @@ export default function Signup() {
   // waiting for the API check to complete
   if (status === 'authenticated' && !showRoleSelection) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-black">
+      <div className="min-h-screen flex items-center justify-center bg-indigo-900">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin h-12 w-12 border-t-2 border-blue-500 border-r-2 border-b-2 rounded-full"></div>
           <p className="text-white text-lg">Checking your registration...</p>
@@ -178,17 +178,17 @@ export default function Signup() {
   // Show already registered message
   if (alreadyRegistered) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-black p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-indigo-900 p-4">
+        <div className="bg-indigo-800 rounded-lg shadow-xl p-8 max-w-md w-full border border-indigo-700">
           <div className="flex flex-col items-center space-y-6 text-center">
-            <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
+            <div className="bg-indigo-700 text-white p-3 rounded-full">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Already Registered</h2>
-            <p className="text-gray-600 dark:text-gray-300">You've already completed registration with this account.</p>
-            <p className="text-gray-600 dark:text-gray-300">Redirecting you to the login page...</p>
+            <h2 className="text-2xl font-bold text-white">Already Registered</h2>
+            <p className="text-indigo-200">You've already completed registration with this account.</p>
+            <p className="text-indigo-200">Redirecting you to the login page...</p>
             <Link href="/login" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
               Go to Login
             </Link>
@@ -199,9 +199,9 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-900 via-purple-900 to-black">
-      {/* Left side with gradient background */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-blue-600/80 to-purple-700/80 p-12 flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen flex bg-indigo-900">
+      {/* Left side with brand message */}
+      <div className="hidden md:flex md:w-1/2 bg-indigo-900 p-12 flex-col justify-between relative overflow-hidden">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.6 }}
@@ -254,13 +254,13 @@ export default function Signup() {
         </motion.div>
       </div>
 
-      {/* Right side with glassmorphic signup form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-black/60 backdrop-blur-xl">
+      {/* Right side with signup form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-indigo-800">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md mx-auto rounded-2xl shadow-2xl bg-white/10 border border-white/20 backdrop-blur-2xl p-8 md:p-10 space-y-8 relative"
+          className="w-full max-w-md mx-auto rounded-2xl shadow-2xl bg-indigo-700/40 border border-indigo-600 p-8 md:p-10 space-y-8 relative"
         >
           <div className="text-center">
             <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight drop-shadow-lg">

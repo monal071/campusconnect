@@ -26,17 +26,8 @@ export default function NavBar() {
         const role = session.user.role || localStorage.getItem("role") || "user";
         setUserRole(role);
         
-        // Enforce role-based navigation - redirect admin users to admin dashboard
-        if (role === "admin" && 
-            (window.location.pathname === "/" || 
-             window.location.pathname === "/home" ||
-             window.location.pathname.startsWith("/events") ||
-             window.location.pathname.startsWith("/resources") ||
-             window.location.pathname.startsWith("/jobs") ||
-             window.location.pathname.startsWith("/posts") ||
-             window.location.pathname.startsWith("/connections"))) {
-          window.location.href = "/admin";
-        }
+        // No longer forcing admins to stay on admin pages
+        // They can freely navigate the site
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
         setUserRole(localStorage.getItem("role") || "user");
@@ -141,6 +132,16 @@ export default function NavBar() {
             >
               Connect
             </Link>
+            
+            {/* Admin Panel link - only visible to admins */}
+            {userRole === 'admin' && (
+              <Link 
+                href="/admin" 
+                className="btn btn-secondary"
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
 
@@ -328,6 +329,17 @@ export default function NavBar() {
               >
                 Connect
               </Link>
+              
+              {/* Admin Panel link in mobile menu - only visible to admins */}
+              {userRole === 'admin' && (
+                <Link 
+                  href="/admin" 
+                  className="block px-3 py-2 mt-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Admin Panel
+                </Link>
+              )}
               
               {!session && !isGuest && (
                 <>

@@ -28,7 +28,7 @@ export default function Login() {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-indigo-600 text-white p-8 md:p-12 flex-1 flex flex-col justify-center items-center md:items-start"
+          className="bg-indigo-900 text-white p-8 md:p-12 flex-1 flex flex-col justify-center items-center md:items-start"
         >
           <div className="max-w-md">
             <div className="flex items-center mb-8">
@@ -82,21 +82,24 @@ export default function Login() {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white dark:bg-gray-900 p-8 md:p-12 flex-1 flex flex-col justify-center items-center"
+          className="bg-indigo-800 p-8 md:p-12 flex-1 flex flex-col justify-center items-center"
         >
           <div className="w-full max-w-md space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+              <h2 className="text-3xl font-bold text-center text-white">
                 Welcome Back
               </h2>
-              <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
+              <p className="mt-2 text-center text-indigo-200">
                 Sign in to your account to continue
+              </p>
+              <p className="mt-1 text-center text-indigo-300 text-sm">
+                New users will be redirected to complete registration
               </p>
               
               {/* Display message if present */}
               {message && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <p className="text-blue-700 dark:text-blue-300 text-sm text-center">
+                <div className="mt-4 p-3 bg-indigo-700/30 border border-indigo-500 rounded-md">
+                  <p className="text-indigo-200 text-sm text-center">
                     {message}
                   </p>
                 </div>
@@ -105,7 +108,7 @@ export default function Login() {
             
             <div className="mt-8 space-y-6">
               <button
-                onClick={() => signIn("google", { callbackUrl: "/home" })}
+                onClick={() => signIn("google")}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -117,9 +120,9 @@ export default function Login() {
               </button>
               
               <div className="flex items-center">
-                <div className="h-px bg-gray-300 dark:bg-gray-700 flex-grow"></div>
-                <div className="px-4 text-sm text-gray-500 dark:text-gray-400">or</div>
-                <div className="h-px bg-gray-300 dark:bg-gray-700 flex-grow"></div>
+                <div className="h-px bg-indigo-500 flex-grow"></div>
+                <div className="px-4 text-sm text-indigo-300">or</div>
+                <div className="h-px bg-indigo-500 flex-grow"></div>
               </div>
               
               <div className="flex">
@@ -133,9 +136,9 @@ export default function Login() {
               
               <div className="flex items-center justify-center">
                 <div className="text-sm">
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-indigo-200">
                     By signing in, you agree to our 
-                    <a href="#" className="ml-1 font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    <a href="#" className="ml-1 font-medium text-white hover:text-indigo-200">
                       Terms of Service
                     </a>
                   </p>
@@ -143,9 +146,9 @@ export default function Login() {
               </div>
               
               <div className="text-center mt-4 text-sm">
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-indigo-200">
                   Don't have an account yet?{" "}
-                  <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                  <Link href="/signup" className="font-medium text-white hover:text-indigo-200">
                     Create an account
                   </Link>
                 </p>

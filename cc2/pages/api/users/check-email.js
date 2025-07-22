@@ -1,49 +1,46 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from './[...nextauth]';
+import { authOptions } from '../auth/[...nextauth]';
 import clientPromise from '../../../utils/mongodb';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
+  
+  const { email } = req.query;
+  
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
 
   try {
-    // Get the session from the server side
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session || !session.user || !session.user.email) {
-      return res.status(401).json({ 
-        message: 'Not authenticated',
-        isRegistered: false 
-      });
-    }
-    
     // Connect to MongoDB
     const client = await clientPromise;
     const db = client.db();
     
     // Look up the user by email
     const user = await db.collection('users').findOne({ 
-      email: session.user.email.toLowerCase() 
+      email: email.toLowerCase() 
     });
     
-    // Check if the user exists and is registered
+    // Return registration status
     if (user) {
       return res.status(200).json({
+        exists: true,
         isRegistered: user.isRegistered === true,
-        role: user.role || 'user'
+        needsRegistration: user.isRegistered !== true
       });
     } else {
       return res.status(200).json({
+        exists: false,
         isRegistered: false,
-        role: null
+        needsRegistration: false
       });
     }
   } catch (error) {
-    console.error('Check registration error:', error);
+    console.error('User check error:', error);
     return res.status(500).json({ 
-      message: 'Internal server error',
-      isRegistered: false 
+      message: 'Internal server error'
     });
   }
 }

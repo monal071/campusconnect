@@ -26,13 +26,13 @@ const Layout = ({ children }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 container"
+        className="flex-1 w-full"
       >
         {children}
       </motion.main>
       {showNavBar && (
-        <footer className="border-t border-slate-200 dark:border-slate-800 py-6 mt-8">
-          <div className="container-main py-0">
+        <footer className="border-t border-slate-200 dark:border-slate-800 py-6 mt-8 w-full">
+          <div className="w-full px-4 md:px-8 lg:px-16 py-0">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="flex items-center space-x-2 mb-4 md:mb-0">
                 <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">CampusConnect</div>
