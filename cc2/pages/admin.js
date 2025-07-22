@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 import AddEventModal from '../components/AddEventModal';
 import AddJobModal from '../components/AddJobModal';
 
 export default function AdminPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [posts, setPosts] = useState([]);
   const [users, setUsers] = useState([]);
   const [events, setEvents] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [message, setMessage] = useState("");
-  const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddJob, setShowAddJob] = useState(false);
@@ -62,11 +63,51 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    // Check if the user is an admin
+    const checkAdmin = async () => {
+      // First check session data
+      const userRole = session?.user?.role;
+      
+      // If session has role data, use it
+      if (userRole) {
+        if (userRole !== 'admin') {
+          // Redirect non-admin users to home
+          router.push('/home');
+          return;
+        }
+        setIsAuthenticated(true);
+        return;
+      }
+      
+      // If no session role, check localStorage as fallback
+      const localRole = localStorage.getItem('role');
+      if (localRole !== 'admin') {
+        router.push('/home');
+        return;
+      }
+      
+      // Double-check with API to ensure user is actually admin
+      try {
+        const res = await fetch('/api/auth/check-registration');
+        const data = await res.json();
+        
+        if (!data.isRegistered || data.role !== 'admin') {
+          router.push('/home');
+          return;
+        }
+        
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Failed to verify admin status:", error);
+        router.push('/home');
+      }
+    };
+    
+    checkAdmin();
+  }, [session, router]);
+
+  useEffect(() => {
     if (isAuthenticated) {
-      // Set admin session in localStorage
-      localStorage.setItem("admin", "true");
-      localStorage.setItem("userId", "admin");
-      localStorage.setItem("name", "admin");
       fetchPosts();
       fetchUsers();
       fetchEvents();
@@ -135,35 +176,13 @@ export default function AdminPage() {
     }
   };
   
-  // Removed handleDeleteEvent, handleDeleteJob, and confirmDelete functions
-  // as we now have inline delete functionality with confirm dialog
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === "12345678") {
-      setIsAuthenticated(true);
-      setMessage("");
-    } else {
-      setMessage("Incorrect password");
-    }
-  };
-
+  // If not authenticated yet, show loading state
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-8">
         <div className="border border-gray-200 dark:border-gray-700 p-10 flex flex-col items-center w-full max-w-md">
-          <h1 className="text-3xl font-black text-red-900 dark:text-white mb-2">Admin Login</h1>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Enter admin password"
-              className="p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <button type="submit" className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow hover:scale-105 transition-transform">Login</button>
-            {message && <div className="text-red-500 text-center">{message}</div>}
-          </form>
+          <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Checking admin privileges...</p>
         </div>
       </div>
     );

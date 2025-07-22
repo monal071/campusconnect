@@ -6,23 +6,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { email, password, name, action } = req.body;
+  const { email, password, name, role, action, adminPassword } = req.body;
 
   try {
     if (action === 'register') {
-      if (!email || !password || !name) {
+      if (!email || !password || !name || !role) {
         return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Validate admin password if user is trying to register as admin
+      if (role === 'admin' && adminPassword !== '12345678') {
+        return res.status(403).json({ message: 'Invalid admin password' });
       }
 
       const existingUser = await getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: 'User already exists' });
-      }
-
-      // Check if admin password is correct
-      const role = req.body.role || 'user';
-      if (role === 'admin' && req.body.adminPassword !== '12345678') {
-        return res.status(401).json({ message: 'Invalid admin password' });
       }
 
       await createUser({ email, password, name, role });

@@ -40,12 +40,6 @@ export default function Home() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/admin"
-            className="px-6 py-4 bg-red-500/20 hover:bg-red-500/30 text-white font-medium text-lg text-center transition-all duration-300 backdrop-blur-sm border-b-2 border-transparent hover:border-red-400"
-          >
-            Admin Login
-          </Link>
         </div>
       </div>
     </div>

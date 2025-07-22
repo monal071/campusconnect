@@ -2,6 +2,7 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import Head from "next/head";
+import Link from "next/link";
 
 export default function Login() {
   return (
@@ -94,6 +95,21 @@ export default function Login() {
                 Sign in with Google
               </button>
               
+              <div className="flex items-center">
+                <div className="h-px bg-gray-300 dark:bg-gray-700 flex-grow"></div>
+                <div className="px-4 text-sm text-gray-500 dark:text-gray-400">or</div>
+                <div className="h-px bg-gray-300 dark:bg-gray-700 flex-grow"></div>
+              </div>
+              
+              <div className="flex">
+                <Link 
+                  href="/signup"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Create New Account
+                </Link>
+              </div>
+              
               <div className="flex items-center justify-center">
                 <div className="text-sm">
                   <p className="text-gray-500 dark:text-gray-400">
@@ -103,6 +119,15 @@ export default function Login() {
                     </a>
                   </p>
                 </div>
+              </div>
+              
+              <div className="text-center mt-4 text-sm">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Don't have an account yet?{" "}
+                  <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    Create an account
+                  </Link>
+                </p>
               </div>
             </div>
           </div>

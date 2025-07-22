@@ -11,9 +11,9 @@ export default function NavBar() {
   const [isGuest, setIsGuest] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userName, setUserName] = useState("");
-  const [userRole, setUserRole] = useState("user");
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState("user");
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -22,8 +22,17 @@ export default function NavBar() {
       setIsGuest(!!guest);
       if (session?.user) {
         setUserName(session.user.name || "User");
+        // Get role from session first, then localStorage as fallback
+        const role = session.user.role || localStorage.getItem("role") || "user";
+        setUserRole(role);
+        
+        // Enforce role-based navigation
+        if (role === "admin" && window.location.pathname.startsWith("/home")) {
+          window.location.href = "/admin";
+        }
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
+        setUserRole(localStorage.getItem("role") || "user");
       }
     }
   }, [session]);
@@ -160,8 +169,17 @@ export default function NavBar() {
                     >
                       Dashboard
                     </Link>
+                    {userRole === 'admin' && (
+                      <Link 
+                        href="/admin" 
+                        className="block px-4 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <div className="px-4 py-2 text-slate-500 dark:text-slate-400 border-t border-b border-slate-100 dark:border-slate-700 text-sm">
-                      {userName}
+                      {userName} {userRole === 'admin' && <span className="badge badge-sm badge-primary">Admin</span>}
                     </div>
                     <button
                       onClick={handleLogout}
@@ -174,12 +192,20 @@ export default function NavBar() {
               </AnimatePresence>
             </div>
           ) : (
-            <Link 
-              href="/login" 
-              className="btn btn-primary"
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link 
+                href="/signup" 
+                className="btn btn-outline hover:btn-primary"
+              >
+                Sign Up
+              </Link>
+              <Link 
+                href="/login" 
+                className="btn btn-primary"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
           
           {/* Mobile menu button */}
@@ -266,6 +292,25 @@ export default function NavBar() {
               >
                 Connect
               </Link>
+              
+              {!session && !isGuest && (
+                <>
+                  <Link 
+                    href="/signup" 
+                    className="block px-3 py-2 mt-4 text-center border border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                  <Link 
+                    href="/login" 
+                    className="block px-3 py-2 text-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 import Notification from "./Notification";
 
 // Import icons from Material-UI
@@ -25,6 +26,8 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = session?.user?.role || localStorage.getItem('role') || 'user';
 
   useEffect(() => setMounted(true), []);
 
@@ -38,6 +41,11 @@ const Header = () => {
     { href: "/resources", Icon: MenuBookIcon, text: "Resources" },
     { href: "/news", Icon: NewspaperIcon, text: "News" },
   ];
+  
+  // Add admin link only for admin users
+  if (userRole === 'admin') {
+    navigationItems.push({ href: "/admin", Icon: DashboardIcon, text: "Admin" });
+  }
 
   const NavLink = ({ href, Icon, text }) => {
     const isActive = router.pathname === href;
