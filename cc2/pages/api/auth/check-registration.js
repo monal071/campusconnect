@@ -27,16 +27,15 @@ export default async function handler(req, res) {
       email: session.user.email.toLowerCase() 
     });
     
-    // Check if the user exists and is registered
-    if (user) {
+    // Check if the user exists and has a role
+    if (user && user.role) {
       return res.status(200).json({
-        isRegistered: user.isRegistered === true,
-        role: user.role || 'user'
+        isRegistered: true,
+        role: user.role
       });
     } else {
       return res.status(200).json({
-        isRegistered: false,
-        role: null
+        isRegistered: false
       });
     }
   } catch (error) {

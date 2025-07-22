@@ -8,7 +8,12 @@ export async function middleware(req) {
   console.log(`Middleware processing: ${pathname}`);
   
   // List of paths that don't require authentication
-  const publicPaths = ['/login', '/signup', '/api/auth/authenticate'];
+  const publicPaths = [
+    '/login', 
+    '/signup', 
+    '/api/auth/authenticate',
+    '/api/debug/session'  // Allow debug endpoints without auth
+  ];
   
   // Routes that are available without login (landing page and auth related)
   if (
@@ -18,7 +23,10 @@ export async function middleware(req) {
     pathname.startsWith('/_next') ||
     pathname.includes('favicon') ||
     pathname.includes('.svg') ||
-    pathname.startsWith('/signup') // Allow access to signup page
+    pathname.includes('.png') ||
+    pathname.includes('.jpg') ||
+    pathname.includes('.jpeg') ||
+    pathname.includes('.gif')
   ) {
     console.log(`Public path access: ${pathname}`);
     return NextResponse.next();
@@ -42,18 +50,6 @@ export async function middleware(req) {
     // Get user role from token
     const userRole = token.role || "user";
     console.log(`User with role '${userRole}' accessing: ${pathname}`);
-    
-    // Check if user has completed registration
-    const isRegistered = token.isRegistered !== false; // If undefined or true, consider registered
-    
-    // If user hasn't completed registration, redirect to signup
-    if (!isRegistered && !pathname.startsWith('/signup')) {
-      console.log(`User ${token.email} not fully registered. Redirecting to signup.`);
-      const url = req.nextUrl.clone();
-      url.pathname = "/signup";
-      url.search = token.email ? `?email=${encodeURIComponent(token.email)}` : '';
-      return NextResponse.redirect(url);
-    }
     
     // No role-based restrictions - any authenticated user can access any page
     // We're relying on UI navigation controls to prevent normal users from accessing admin pages

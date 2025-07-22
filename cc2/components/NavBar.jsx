@@ -6,6 +6,12 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import ConnectModal from "./ConnectModal";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Icons
+import HomeIcon from "@mui/icons-material/Home";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import LogoutIcon from "@mui/icons-material/Logout";
+
 export default function NavBar() {
   const { data: session, status } = useSession();
   const [isGuest, setIsGuest] = useState(false);
@@ -162,51 +168,92 @@ export default function NavBar() {
                 
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center space-x-2 focus:outline-none"
+                  className="flex items-center space-x-2 focus:outline-none rounded-full p-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  aria-expanded={showProfileMenu}
+                  aria-haspopup="true"
                 >
-                  <span className="hidden sm:inline-block text-slate-700 dark:text-slate-200">
+                  <span className="hidden sm:inline-block text-slate-700 dark:text-slate-200 font-medium">
                     {userName}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
-                    <span className="text-indigo-700 dark:text-indigo-300 text-sm font-medium">
-                      {userName.charAt(0)?.toUpperCase() || "U"}
-                    </span>
+                  <div className="relative">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 dark:from-indigo-600 dark:to-purple-700 flex items-center justify-center shadow-md">
+                      <span className="text-white text-sm font-medium">
+                        {userName.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    </div>
+                    {showProfileMenu ? (
+                      <span className="absolute -right-1 -top-1 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400" />
+                    ) : null}
                   </div>
                 </button>
               
               <AnimatePresence>
                 {showProfileMenu && (
                   <motion.div 
+                    ref={menuRef}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 border border-slate-200 dark:border-slate-700 z-50"
+                    className="absolute right-0 top-12 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 border border-slate-200 dark:border-slate-700 z-50"
                   >
+                    <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{userName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {session?.user?.email}
+                      </p>
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          userRole === 'admin' 
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                        }`}>
+                          {userRole === 'admin' ? 'Admin' : 'User'}
+                        </span>
+                      </div>
+                    </div>
+                    
                     <Link 
-                      href="/dashboard" 
-                      className="block px-4 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                      href="/home" 
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
                       onClick={() => setShowProfileMenu(false)}
                     >
-                      Dashboard
+                      <div className="flex items-center">
+                        <HomeIcon className="h-4 w-4 mr-2" /> Home
+                      </div>
                     </Link>
+                    
+                    <Link 
+                      href="/dashboard" 
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                      onClick={() => setShowProfileMenu(false)}
+                    >
+                      <div className="flex items-center">
+                        <DashboardIcon className="h-4 w-4 mr-2" /> Dashboard
+                      </div>
+                    </Link>
+                    
                     {userRole === 'admin' && (
                       <Link 
                         href="/admin" 
-                        className="block px-4 py-2 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                        className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
                         onClick={() => setShowProfileMenu(false)}
                       >
-                        Admin Panel
+                        <div className="flex items-center">
+                          <AdminPanelSettingsIcon className="h-4 w-4 mr-2" /> Admin Panel
+                        </div>
                       </Link>
                     )}
-                    <div className="px-4 py-2 text-slate-500 dark:text-slate-400 border-t border-b border-slate-100 dark:border-slate-700 text-sm">
-                      {userName} {userRole === 'admin' && <span className="badge badge-sm badge-primary">Admin</span>}
-                    </div>
+                    
+                    <div className="border-t border-slate-200 dark:border-slate-700"></div>
+                    
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700"
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700"
                     >
-                      Logout
+                      <div className="flex items-center">
+                        <LogoutIcon className="h-4 w-4 mr-2" /> Logout
+                      </div>
                     </button>
                   </motion.div>
                 )}

@@ -32,15 +32,10 @@ export const authOptions = {
         const db = client.db();
         const dbUser = await db.collection('users').findOne({ email: user.email.toLowerCase() });
         
-        if (dbUser) {
-          // Add user properties to token
-          token.role = dbUser.role || 'user';
-          token.isRegistered = dbUser.isRegistered !== false; // true unless explicitly set to false
-          token.userId = dbUser._id.toString();
+        if (dbUser && dbUser.role) {
+          token.role = dbUser.role;
         } else {
-          // Default values if user is not found
-          token.role = 'user';
-          token.isRegistered = false;
+          token.role = 'user'; // Default role
         }
       }
       return token;
@@ -51,68 +46,43 @@ export const authOptions = {
         const client = await clientPromise;
         const db = client.db();
         const user = await db.collection('users').findOne({ email: session.user.email.toLowerCase() });
-        
         if (user && user._id) {
-          // Set user properties from database
           session.user.id = user._id.toString();
           session.user.name = user.name;
-          session.user.role = user.role || 'user';
-          session.user.isRegistered = user.isRegistered !== false; // true unless explicitly set to false
+          session.user.role = user.role || 'user'; // Add role to session
         } else {
-          // Fallback to token values
-          session.user.id = token.userId || token.sub;
-          session.user.role = token.role || 'user';
-          session.user.isRegistered = token.isRegistered || false;
+          // fallback to token.sub if not found
+          session.user.id = token.sub;
+          session.user.role = token.role || 'user'; // Use role from token
         }
-        
-        // Log session for debugging
-        console.log(`Session for ${session.user.email}:`, {
-          role: session.user.role,
-          isRegistered: session.user.isRegistered,
-          id: session.user.id
-        });
       }
       return session;
     },
     async signIn({ user, account, profile }) {
       try {
+        console.log('SignIn callback triggered for:', user.email);
         const client = await clientPromise;
         const db = client.db();
         
-        // Check if user exists in our database
+        // Check if user exists
         const existingUser = await db.collection('users').findOne({ email: user.email.toLowerCase() });
         
         if (!existingUser) {
-          // If this is a Google sign-in, add the user to the database as a new signup
-          if (account.provider === 'google') {
-            // Create new user with isRegistered = false to indicate they need to complete signup
-            await db.collection('users').insertOne({
-              email: user.email.toLowerCase(),
-              name: user.name,
-              image: user.image,
-              isRegistered: false, // Flag to indicate signup is not complete
-              role: 'user',
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-            
-            // Return true to allow sign-in - we'll handle redirection in the callback
-            return true;
-          }
-          
-          // For other providers or if implementation changes, deny access
-          console.log(`User ${user.email} tried to sign in but is not registered`);
-          return false; // This will trigger the error page
+          console.log('Creating new user:', user.email);
+          // Create new user (role will be set later in the complete-registration flow)
+          await db.collection('users').insertOne({
+            email: user.email.toLowerCase(),
+            name: user.name,
+            image: user.image,
+            role: 'user', // Set default role directly
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          console.log('New user created successfully');
+        } else {
+          console.log('Existing user found:', existingUser.email, 'Role:', existingUser.role || 'No role');
         }
         
-        // If the user exists but hasn't completed registration
-        if (existingUser && existingUser.isRegistered === false) {
-          console.log(`User ${user.email} exists but needs to complete registration`);
-          return true; // Allow sign-in but we'll check registration status on client side
-        }
-        
-        // User exists and is fully registered, allow sign-in
-        console.log(`User ${user.email} is registered, allowing sign-in`);
         return true;
       } catch (error) {
         console.error('SignIn error:', error);
