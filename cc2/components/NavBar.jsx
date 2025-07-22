@@ -26,8 +26,15 @@ export default function NavBar() {
         const role = session.user.role || localStorage.getItem("role") || "user";
         setUserRole(role);
         
-        // Enforce role-based navigation
-        if (role === "admin" && window.location.pathname.startsWith("/home")) {
+        // Enforce role-based navigation - redirect admin users to admin dashboard
+        if (role === "admin" && 
+            (window.location.pathname === "/" || 
+             window.location.pathname === "/home" ||
+             window.location.pathname.startsWith("/events") ||
+             window.location.pathname.startsWith("/resources") ||
+             window.location.pathname.startsWith("/jobs") ||
+             window.location.pathname.startsWith("/posts") ||
+             window.location.pathname.startsWith("/connections"))) {
           window.location.href = "/admin";
         }
       } else {
@@ -142,16 +149,29 @@ export default function NavBar() {
           <ThemeSwitcher />
           
           {(session || isGuest) ? (
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-              >
-                <div className="avatar avatar-sm">
-                  {userName.charAt(0).toUpperCase()}
+                          <div className="relative flex items-center gap-2">
+                {/* Role indicator button */}
+                <div className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  userRole === 'admin' 
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`}>
+                  {userRole === 'admin' ? 'Admin' : 'User'}
                 </div>
-                <span className="hidden sm:inline font-medium">{userName}</span>
-              </button>
+                
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center space-x-2 focus:outline-none"
+                >
+                  <span className="hidden sm:inline-block text-slate-700 dark:text-slate-200">
+                    {userName}
+                  </span>
+                  <div className="w-8 h-8 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center">
+                    <span className="text-indigo-700 dark:text-indigo-300 text-sm font-medium">
+                      {userName.charAt(0)?.toUpperCase() || "U"}
+                    </span>
+                  </div>
+                </button>
               
               <AnimatePresence>
                 {showProfileMenu && (
@@ -250,6 +270,22 @@ export default function NavBar() {
             className="md:hidden"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-slate-900 shadow-inner border-t border-slate-200 dark:border-slate-800">
+              {/* Role indicator for mobile */}
+              {(session || isGuest) && (
+                <div className="flex items-center justify-between px-3 py-2 mb-2 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-700 dark:text-slate-200 font-medium">
+                    {userName}
+                  </span>
+                  <div className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    userRole === 'admin' 
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                  }`}>
+                    {userRole === 'admin' ? 'Admin' : 'User'}
+                  </div>
+                </div>
+              )}
+              
               <Link 
                 href="/home" 
                 className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"

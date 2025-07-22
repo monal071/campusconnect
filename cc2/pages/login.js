@@ -3,8 +3,20 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState, useEffect } from "react";
 
 export default function Login() {
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  
+  // Check for message in URL query parameter
+  useEffect(() => {
+    if (router.query.message) {
+      setMessage(router.query.message);
+    }
+  }, [router.query]);
+
   return (
     <>
       <Head>
@@ -80,6 +92,15 @@ export default function Login() {
               <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
                 Sign in to your account to continue
               </p>
+              
+              {/* Display message if present */}
+              {message && (
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-blue-700 dark:text-blue-300 text-sm text-center">
+                    {message}
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="mt-8 space-y-6">

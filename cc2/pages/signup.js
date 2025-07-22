@@ -13,9 +13,46 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  // Initial check when component loads - check if email already registered
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      try {
+        // First check if we have a session
+        if (status === 'authenticated' && session?.user?.email) {
+          const res = await fetch('/api/auth/check-registration', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            if (data.isRegistered) {
+              // User is already registered with a role
+              setAlreadyRegistered(true);
+              // Redirect after a short delay with a message
+              setTimeout(() => {
+                router.push('/login?message=You are already registered. Please sign in.');
+              }, 1500);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking existing user:', error);
+      }
+    };
+    
+    checkExistingUser();
+  }, [status, session, router]);
 
   // Check authentication status and handle accordingly
   useEffect(() => {
+    // Skip if we already know the user is registered
+    if (alreadyRegistered) return;
+    
     console.log("Auth status:", status, "Session:", !!session);
     
     // Only run the check if user is authenticated with Google
@@ -47,6 +84,7 @@ export default function Signup() {
           if (res.ok && data.isRegistered) {
             // User is already registered with a role, redirect based on role
             console.log("User is registered with role:", data.role);
+            setAlreadyRegistered(true);
             if (data.role === 'admin') {
               router.push('/admin');
             } else {
@@ -132,6 +170,29 @@ export default function Signup() {
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin h-12 w-12 border-t-2 border-blue-500 border-r-2 border-b-2 rounded-full"></div>
           <p className="text-white text-lg">Checking your registration...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show already registered message
+  if (alreadyRegistered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-black p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-md w-full">
+          <div className="flex flex-col items-center space-y-6 text-center">
+            <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Already Registered</h2>
+            <p className="text-gray-600 dark:text-gray-300">You've already completed registration with this account.</p>
+            <p className="text-gray-600 dark:text-gray-300">Redirecting you to the login page...</p>
+            <Link href="/login" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+              Go to Login
+            </Link>
+          </div>
         </div>
       </div>
     );
