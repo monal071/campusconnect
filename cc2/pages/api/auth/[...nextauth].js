@@ -35,7 +35,8 @@ export const authOptions = {
         if (dbUser && dbUser.role) {
           token.role = dbUser.role;
         } else {
-          token.role = 'user'; // Default role
+          // Don't set a default role - let the user select it in signup
+          token.role = undefined;
         }
       }
       return token;
@@ -49,11 +50,11 @@ export const authOptions = {
         if (user && user._id) {
           session.user.id = user._id.toString();
           session.user.name = user.name;
-          session.user.role = user.role || 'user'; // Add role to session
+          session.user.role = user.role; // Only add role if it exists in the database
         } else {
           // fallback to token.sub if not found
           session.user.id = token.sub;
-          session.user.role = token.role || 'user'; // Use role from token
+          session.user.role = token.role; // Use role from token (might be undefined)
         }
       }
       return session;
@@ -69,16 +70,16 @@ export const authOptions = {
         
         if (!existingUser) {
           console.log('Creating new user:', user.email);
-          // Create new user (role will be set later in the complete-registration flow)
+          // Create new user without a role (role will be set later in the signup flow)
           await db.collection('users').insertOne({
             email: user.email.toLowerCase(),
             name: user.name,
             image: user.image,
-            role: 'user', // Set default role directly
+            // Don't set a role yet - let the signup page handle that
             createdAt: new Date(),
             updatedAt: new Date(),
           });
-          console.log('New user created successfully');
+          console.log('New user created successfully without a role');
         } else {
           console.log('Existing user found:', existingUser.email, 'Role:', existingUser.role || 'No role');
         }

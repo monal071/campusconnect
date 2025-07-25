@@ -14,7 +14,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-indigo-900 overflow-hidden">
+    <div className="min-h-screen w-full bg-indigo-900">
       <Head>
         <title>CampusConnect</title>
       </Head>
@@ -26,16 +26,16 @@ export default function Home() {
           Campus<span className="text-blue-400">Connect</span>
         </h1>
         
-        <p className="text-xl text-white text-center mb-14 px-4 max-w-3xl">
+        <p className="text-xl text-white text-center mb-14 max-w-2xl">
           Connect with your campus community. Discover events, resources, job opportunities, and build valuable connections.
         </p>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full px-4 md:px-8 lg:px-16 xl:px-0 max-w-7xl">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 w-full max-w-7xl">
           {navLinks.map(link => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-6 py-6 bg-white/10 hover:bg-white/20 text-white font-medium text-lg text-center transition-all duration-300 backdrop-blur-sm border-b-2 border-transparent hover:border-blue-400 rounded-lg shadow-lg hover:shadow-xl"
+              className="px-6 py-4 bg-white/10 hover:bg-white/20 text-white font-medium text-lg text-center transition-all duration-300 backdrop-blur-sm border-b-2 border-transparent hover:border-blue-400"
             >
               {link.label}
             </Link>

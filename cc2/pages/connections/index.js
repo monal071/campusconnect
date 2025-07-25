@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import ConnectionRequests from '../../components/ConnectionRequests';
-import Layout from '../../components/Layout';
 
 export default function ConnectionsPage() {
   const [search, setSearch] = useState('');
@@ -72,7 +71,6 @@ export default function ConnectionsPage() {
   };
 
   return (
-    <Layout>
       <div className="min-h-screen p-4">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Connection Requests Section */}
@@ -204,6 +202,5 @@ export default function ConnectionsPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

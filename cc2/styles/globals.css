@@ -34,8 +34,9 @@
   /* Page Layout */
   .page-container {
     width: 100%;
-    margin: 0;
-    padding: 2rem 0;
+    max-width: 1280px; 
+    margin: 0 auto;
+    padding: 2rem 1rem;
   }
 
   .page-header {
@@ -258,26 +259,28 @@
   }
   
   .navbar-container {
-    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 4rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
   }
   
   @media (min-width: 640px) {
     .navbar-container {
-      padding-left: 2rem;
-      padding-right: 2rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
     }
   }
   
   @media (min-width: 1024px) {
     .navbar-container {
-      padding-left: 3rem;
-      padding-right: 3rem;
+      padding-left: 2rem;
+      padding-right: 2rem;
     }
   }
   
@@ -312,11 +315,27 @@
   
   /* Layout */
   .container {
-    width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-    padding-top: 5rem;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 5rem; /* Ensure there's enough space for the fixed navbar */
     padding-bottom: 3rem;
+  }
+  
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
   
   .section {
@@ -337,11 +356,27 @@
   
   /* Layout */
   .container-main {
-    width: 100%;
-    margin-left: 0;
-    margin-right: 0;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
     padding-top: 5rem;
     padding-bottom: 3rem;
+  }
+  
+  @media (min-width: 640px) {
+    .container-main {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-main {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
   
   .section {

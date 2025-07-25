@@ -11,6 +11,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PeopleIcon from "@mui/icons-material/People";
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -20,6 +21,7 @@ export default function NavBar() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState("user");
+  const [pendingRequests, setPendingRequests] = useState(0);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -32,12 +34,33 @@ export default function NavBar() {
         const role = session.user.role || localStorage.getItem("role") || "user";
         setUserRole(role);
         
-        // No longer forcing admins to stay on admin pages
-        // They can freely navigate the site
+        // Fetch connection requests when logged in
+        fetchConnectionRequests();
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
         setUserRole(localStorage.getItem("role") || "user");
       }
+    }
+  }, [session]);
+
+  // Fetch connection requests
+  const fetchConnectionRequests = async () => {
+    try {
+      const response = await fetch('/api/connection-requests');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingRequests(data.receivedRequests.length);
+      }
+    } catch (error) {
+      console.error('Error fetching connection requests:', error);
+    }
+  };
+
+  // Periodically check for new connection requests (every 2 minutes)
+  useEffect(() => {
+    if (session?.user) {
+      const interval = setInterval(fetchConnectionRequests, 120000);
+      return () => clearInterval(interval);
     }
   }, [session]);
 
@@ -127,16 +150,21 @@ export default function NavBar() {
               Jobs
             </Link>
             <Link 
+              href="/connect" 
+              className="nav-link relative"
+            >
+              Connect
+              {pendingRequests > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {pendingRequests}
+                </span>
+              )}
+            </Link>
+            <Link 
               href="/posts" 
               className="nav-link"
             >
               Posts
-            </Link>
-            <Link 
-              href="/connections" 
-              className="btn btn-primary"
-            >
-              Connect
             </Link>
             
             {/* Admin Panel link - only visible to admins */}
@@ -370,11 +398,16 @@ export default function NavBar() {
                 Posts
               </Link>
               <Link 
-                href="/connections" 
-                className="block px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+                href="/connect" 
+                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Connect
+                {pendingRequests > 0 && (
+                  <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                    {pendingRequests}
+                  </span>
+                )}
               </Link>
               
               {/* Admin Panel link in mobile menu - only visible to admins */}

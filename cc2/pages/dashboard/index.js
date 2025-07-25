@@ -3,7 +3,6 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
-import Layout from '../../components/Layout';
 import { motion } from 'framer-motion';
 
 // Material UI Icons
@@ -306,17 +305,14 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex flex-col items-center justify-center min-h-screen py-12">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
         </div>
-      </Layout>
     );
   }
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 gap-8">
           {/* Welcome Section */}
@@ -617,6 +613,5 @@ export default function Dashboard() {
           </motion.section>
         </div>
       </div>
-    </Layout>
   );
 }
