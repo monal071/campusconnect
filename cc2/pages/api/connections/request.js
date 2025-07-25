@@ -19,13 +19,21 @@ export default async function handler(req, res) {
       
       // Check if request already exists
       const requests = toUser.data.requests || [];
-      if (requests.includes(fromUserId)) {
+      const requestExists = requests.some(req => 
+        req === fromUserId || req.toString() === fromUserId
+      );
+      
+      if (requestExists) {
         return res.status(400).json({ message: 'Request already sent' });
       }
       
       // Check if they're already friends
       const friendsTo = toUser.data.friends || [];
-      if (friendsTo.includes(fromUserId)) {
+      const alreadyFriends = friendsTo.some(friend => 
+        friend === fromUserId || friend.toString() === fromUserId
+      );
+      
+      if (alreadyFriends) {
         return res.status(400).json({ message: 'Users are already connected' });
       }
       

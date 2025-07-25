@@ -44,7 +44,19 @@ async function updateItem(collectionName, id, update) {
   try {
     const client = await clientPromise;
     const db = client.db();
-    const result = await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: update });
+    
+    // Check if the update already has MongoDB operators ($set, $push, etc.)
+    const hasOperators = Object.keys(update).some(key => key.startsWith('$'));
+    
+    // If the update already has operators, use it directly
+    // Otherwise, wrap it in a $set operation
+    const updateOperation = hasOperators ? update : { $set: update };
+    
+    const result = await db.collection(collectionName).updateOne(
+      { _id: new ObjectId(id) }, 
+      updateOperation
+    );
+    
     return { success: result.modifiedCount > 0 };
   } catch (error) {
     console.error(`Error updating item in ${collectionName}:`, error);

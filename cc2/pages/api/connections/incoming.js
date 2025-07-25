@@ -25,7 +25,13 @@ export default async function handler(req, res) {
     // Find users who have sent connection requests to this user
     const incoming = users.filter(u => 
       Array.isArray(u.requests) && 
-      u.requests.some(reqId => reqId === userId || reqId.toString() === userId)
+      u.requests.some(reqId => {
+        // Handle different formats of IDs
+        return reqId === userId || 
+               reqId.toString() === userId || 
+               (reqId instanceof ObjectId && reqId.toString() === userId) ||
+               (typeof reqId === 'string' && reqId === userId)
+      })
     );
     
     res.status(200).json({ incoming });

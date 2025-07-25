@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import ConnectionRequests from '../../components/ConnectionRequests';
 
 export default function ConnectionsPage() {
+  const { data: session } = useSession();
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -11,12 +13,14 @@ export default function ConnectionsPage() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    // Get userId from localStorage, but fetch user info from DB if needed
-    const id = localStorage.getItem('userId');
-    setUserId(id);
-    fetchFriends(id);
-    fetchRecommendations(id);
-  }, []);
+    if (session?.user?.id) {
+      // Get userId from the session instead of localStorage
+      const id = session.user.id;
+      setUserId(id);
+      fetchFriends(id);
+      fetchRecommendations(id);
+    }
+  }, [session]);
 
   const fetchFriends = async (id) => {
     if (!id) return;
@@ -55,18 +59,29 @@ export default function ConnectionsPage() {
   const handleConnect = async (toUserId) => {
     setMessage("");
     try {
-      if (!userId) {
+      if (!session?.user?.id) {
         setMessage("You must be logged in to send requests.");
         return;
       }
-      await fetch('/api/connections/request', {
+      
+      const fromUserId = session.user.id;
+      
+      const response = await fetch('/api/connections/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromUserId: userId, toUserId }),
+        body: JSON.stringify({ fromUserId, toUserId }),
       });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send request');
+      }
+      
       setMessage('Connection request sent!');
-    } catch {
-      setMessage('Failed to send request.');
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      setMessage(error.message || 'Failed to send request.');
     }
   };
 
