@@ -72,7 +72,7 @@ export default function ConnectionsPage() {
 
   return (
       <div className="min-h-screen p-4">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Connection Requests Section */}
           <div className="md:col-span-1">
             <ConnectionRequests />

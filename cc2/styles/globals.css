@@ -34,7 +34,7 @@
   /* Page Layout */
   .page-container {
     width: 100%;
-    max-width: 1280px; 
+    max-width: 100%;
     margin: 0 auto;
     padding: 2rem 1rem;
   }
@@ -259,7 +259,8 @@
   }
   
   .navbar-container {
-    max-width: 80rem;
+    max-width: 100%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
@@ -315,7 +316,8 @@
   
   /* Layout */
   .container {
-    max-width: 80rem;
+    max-width: 100%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
@@ -356,7 +358,8 @@
   
   /* Layout */
   .container-main {
-    max-width: 80rem;
+    max-width: 100%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;

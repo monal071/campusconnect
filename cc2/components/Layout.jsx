@@ -26,7 +26,7 @@ const Layout = ({ children }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 container pt-16"
+        className="flex-1 container pt-16 w-full"
       >
         {children}
       </motion.main>
