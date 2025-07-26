@@ -4,19 +4,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Mock news data - replace with actual news API
-    const articles = [
-      {
-        url: 'https://example.com/article1',
-        title: 'Welcome to CampusConnect News',
-        publishedAt: new Date().toISOString(),
-      },
-      {
-        url: 'https://example.com/article2',
-        title: 'Latest Updates in Campus Technology',
-        publishedAt: new Date(Date.now() - 3600000).toISOString(),
-      },
-    ];
+    // Return empty array - replace with actual news API when implemented
+    const articles = [];
 
     res.status(200).json(articles);
   } catch (error) {

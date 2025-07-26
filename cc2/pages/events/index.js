@@ -220,14 +220,6 @@ export default function Events() {
       <main className="page-container">
         <div className="page-header">
           <h1 className="page-title">Events</h1>
-          <div className="page-actions">
-            <button
-              onClick={() => setShowEventModal(true)}
-              className="btn btn-primary hover-lift"
-            >
-              Add New Event
-            </button>
-          </div>
         </div>
         <div className="page-content">
           {events.map((event) => (

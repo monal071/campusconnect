@@ -28,38 +28,50 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Invalid user ID format" });
     }
 
-    // Get connections count
-    const connectionsCount = await db.collection("connections").countDocuments({
-      $or: [{ user1: userId }, { user2: userId }],
-      status: "accepted"
+    // Get current user to count their friends
+    const currentUser = await db.collection("users").findOne({ 
+      _id: objectId 
     });
+
+    // Get connections count from user's friends array with validation
+    let connectionsCount = 0;
+    if (currentUser?.friends && Array.isArray(currentUser.friends)) {
+      // Filter out any invalid entries and remove duplicates
+      const validFriendIds = [...new Set(currentUser.friends.filter(friendId => 
+        friendId && friendId.toString().length === 24 // Valid ObjectId length
+      ))];
+      
+      // Verify these friends actually exist in the database
+      const existingFriends = await db.collection("users").countDocuments({
+        _id: { $in: validFriendIds.map(id => {
+          try {
+            return new ObjectId(id);
+          } catch {
+            return null;
+          }
+        }).filter(Boolean) }
+      });
+      
+      connectionsCount = existingFriends;
+    }
 
     // Get posts count
-    const postsCount = await db.collection("posts").countDocuments({
-      userId
+    const postsCount = await db.collection("Posts").countDocuments({
+      "author.id": userId
     });
 
-    // Get events count (that the user is attending)
-    const eventsCount = await db.collection("eventAttendees").countDocuments({
-      userId
-    });
+    // Get events count (total events in the system, not user-specific)
+    const eventsCount = await db.collection("Events").countDocuments({});
 
     // Get resources count (that the user has shared)
     const resourcesCount = await db.collection("resources").countDocuments({
-      userId
+      userId: userId
     });
 
     // Get jobs count (that the user has posted)
-    const jobsCount = await db.collection("jobs").countDocuments({
+    const jobsCount = await db.collection("Jobs").countDocuments({
       postedBy: userId
     });
-
-    // Get profile views (from analytics collection)
-    const analyticsData = await db.collection("userAnalytics").findOne({
-      userId
-    });
-
-    const profileViews = analyticsData?.profileViews || Math.floor(Math.random() * 100) + 20;
 
     // Return the stats
     return res.status(200).json({
@@ -69,8 +81,7 @@ export default async function handler(req, res) {
         posts: postsCount,
         events: eventsCount,
         resources: resourcesCount,
-        jobs: jobsCount,
-        profileViews
+        jobs: jobsCount
       }
     });
   } catch (error) {

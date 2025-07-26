@@ -5,7 +5,8 @@ export async function getResources() {
     if (!response.ok) {
       throw new Error('Failed to fetch resources');
     }
-    return await response.json();
+    const result = await response.json();
+    return result.data || []; // Return the data array from our new API structure
   } catch (error) {
     console.error('Error fetching resources:', error);
     throw error;
@@ -35,8 +36,12 @@ export async function addResource(resourceData) {
 
 export async function updateResourceLikes(resourceId) {
   try {
-    const response = await fetch(`/api/resources/${resourceId}/like`, {
+    const response = await fetch('/api/resources/like', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ resourceId }),
     });
     
     if (!response.ok) {

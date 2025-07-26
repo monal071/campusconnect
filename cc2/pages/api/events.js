@@ -5,8 +5,8 @@ const TABLE_NAME = 'Events';
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const events = await getAllItems(TABLE_NAME);
-      res.status(200).json(events);
+      const result = await getAllItems(TABLE_NAME);
+      res.status(200).json(result.data || []);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

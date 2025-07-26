@@ -95,14 +95,6 @@ export default function Jobs() {
       <main className="page-container">
         <div className="page-header">
           <h1 className="page-title">Jobs</h1>
-          <div className="page-actions">
-            <button
-              onClick={handleAddClick}
-              className="btn btn-primary hover-lift"
-            >
-              Post a Job
-            </button>
-          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <input

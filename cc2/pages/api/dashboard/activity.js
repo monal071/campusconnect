@@ -30,50 +30,9 @@ export default async function handler(req, res) {
       .limit(limit)
       .toArray();
 
-    // If there's no activity data available, return dummy data
+    // Return empty array if no activity data is available
     if (!activity || activity.length === 0) {
-      activity = [
-        {
-          _id: "1",
-          userId,
-          type: "connection",
-          content: "Sarah Johnson accepted your connection request",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          icon: "PeopleIcon"
-        },
-        {
-          _id: "2",
-          userId,
-          type: "post",
-          content: "Your post about CS internships received 12 likes",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          icon: "ArticleIcon"
-        },
-        {
-          _id: "3",
-          userId,
-          type: "event",
-          content: "You were tagged in the Tech Career Fair event",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-          icon: "EventIcon"
-        },
-        {
-          _id: "4",
-          userId,
-          type: "resource",
-          content: "Your shared resource on Web Development was saved by 5 users",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
-          icon: "MenuBookIcon"
-        },
-        {
-          _id: "5",
-          userId,
-          type: "job",
-          content: "A new job matching your interests was posted: Software Developer Intern",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
-          icon: "WorkIcon"
-        }
-      ];
+      activity = []; // Return an empty array instead of dummy data
     }
 
     // Format the activity data
