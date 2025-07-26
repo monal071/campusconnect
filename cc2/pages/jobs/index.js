@@ -5,8 +5,6 @@ import Head from 'next/head';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/LoadingSpinner';
-// import AddJobModal from '../../components/AddJobModal';
-import PasswordModal from '../../components/PasswordModal';
 
 export default function Jobs() {
   const { data: session, status } = useSession();
@@ -15,8 +13,6 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
-  // const [showAddModal, setShowAddModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -36,38 +32,6 @@ export default function Jobs() {
 
     fetchJobs();
   }, []);
-
-  const handleAddJob = async (jobData) => {
-    try {
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jobData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const newJob = await response.json();
-      setJobs(prev => [newJob, ...prev]);
-      setShowAddModal(false);
-      toast.success('Job added successfully!');
-    } catch (error) {
-      toast.error('Failed to add job');
-    }
-  };
-
-  const handleAddClick = () => {
-    setShowPasswordModal(true);
-  };
-
-  const handlePasswordSuccess = () => {
-    setShowPasswordModal(false);
-    setShowAddModal(true);
-  };
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = 
@@ -144,13 +108,6 @@ export default function Jobs() {
           </div>
         )}
       </main>
-      {showPasswordModal && (
-        <PasswordModal
-          onSuccess={handlePasswordSuccess}
-          onClose={() => setShowPasswordModal(false)}
-        />
-      )}
-      {/* AddJobModal removed, now in admin page */}
     </div>
   );
 }
