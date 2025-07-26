@@ -1,4 +1,6 @@
 import { addItem, getAllItems, updateItem, getItem, deleteItem } from '../../utils/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth/[...nextauth]";
 
 const TABLE_NAME = 'Events';
 
@@ -12,8 +14,18 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'POST') {
     try {
+      const session = await getServerSession(req, res, authOptions);
+      if (!session) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
       const event = req.body;
-      await addItem(TABLE_NAME, { ...event, joined: [] });
+      await addItem(TABLE_NAME, { 
+        ...event, 
+        joined: [],
+        createdBy: session.user.id,
+        createdAt: new Date().toISOString()
+      });
       res.status(201).json({ message: 'Event added' });
     } catch (error) {
       res.status(500).json({ error: error.message });

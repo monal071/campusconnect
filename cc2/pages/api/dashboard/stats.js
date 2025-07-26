@@ -60,8 +60,10 @@ export default async function handler(req, res) {
       "author.id": userId
     });
 
-    // Get events count (total events in the system, not user-specific)
-    const eventsCount = await db.collection("Events").countDocuments({});
+    // Get events count that the user has created
+    const eventsCount = await db.collection("Events").countDocuments({
+      createdBy: userId
+    });
 
     // Get resources count (that the user has shared)
     const resourcesCount = await db.collection("resources").countDocuments({

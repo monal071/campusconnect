@@ -27,9 +27,6 @@ export default function Dashboard() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [recentJobs, setRecentJobs] = useState([]);
-  const [trendingResources, setTrendingResources] = useState([]);
-  const [latestNews, setLatestNews] = useState([]);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -68,40 +65,19 @@ export default function Dashboard() {
         setRecentActivity([]);
       }
 
-      // Fetch upcoming events
-      const eventsRes = await fetch('/api/events?limit=3');
+      // Fetch upcoming events that user has joined
+      const eventsRes = await fetch('/api/events');
       const eventsData = await eventsRes.json();
-      if (eventsRes.ok) {
-        setUpcomingEvents(eventsData.data || []);
+      if (eventsRes.ok && session?.user?.id) {
+        // Filter events where user has joined and are upcoming
+        const userEvents = (eventsData || []).filter(event => {
+          const isJoined = event.joined && event.joined.includes(session.user.id);
+          const isUpcoming = new Date(event.date) > new Date();
+          return isJoined && isUpcoming;
+        });
+        setUpcomingEvents(userEvents.slice(0, 3));
       } else {
         setUpcomingEvents([]);
-      }
-
-      // Fetch recent jobs
-      const jobsRes = await fetch('/api/jobs?limit=3');
-      const jobsData = await jobsRes.json();
-      if (jobsRes.ok) {
-        setRecentJobs(jobsData || []);
-      } else {
-        setRecentJobs([]);
-      }
-
-      // Fetch trending resources
-      const resourcesRes = await fetch('/api/resources?limit=3&sort=popular');
-      const resourcesData = await resourcesRes.json();
-      if (resourcesRes.ok) {
-        setTrendingResources(resourcesData.data || []);
-      } else {
-        setTrendingResources([]);
-      }
-
-      // Fetch latest news
-      const newsRes = await fetch('/api/news?limit=3');
-      const newsData = await newsRes.json();
-      if (newsRes.ok) {
-        setLatestNews(newsData || []);
-      } else {
-        setLatestNews([]);
       }
 
     } catch (error) {
@@ -116,9 +92,6 @@ export default function Dashboard() {
       });
       setRecentActivity([]);
       setUpcomingEvents([]);
-      setRecentJobs([]);
-      setTrendingResources([]);
-      setLatestNews([]);
     } finally {
       setLoading(false);
     }
@@ -272,7 +245,7 @@ export default function Dashboard() {
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Activity Feed */}
+            {/* Left Column - My Connections */}
             <motion.section 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -280,42 +253,53 @@ export default function Dashboard() {
               className="lg:col-span-1 space-y-6"
             >
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">My Connections</h2>
                 <div className="space-y-4">
-                  {recentActivity.length > 0 ? (
-                    recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex gap-4">
-                        <div className={`flex-shrink-0 mt-1 rounded-full p-2 ${
-                          activity.type === 'connection' ? 'bg-blue-100 text-blue-600' :
-                          activity.type === 'post' ? 'bg-purple-100 text-purple-600' :
-                          activity.type === 'event' ? 'bg-green-100 text-green-600' :
-                          activity.type === 'resource' ? 'bg-red-100 text-red-600' :
-                          'bg-amber-100 text-amber-600'
-                        } dark:bg-opacity-20`}>
-                          {getActivityIcon(activity.icon)}
-                        </div>
-                        <div>
-                          <p className="text-gray-700 dark:text-gray-300">{activity.content}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{timeAgo(activity.timestamp)}</p>
+                  {stats.connections > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
+                            <PeopleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Total Connections</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{stats.connections} people</p>
+                          </div>
                         </div>
                       </div>
-                    ))
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                            <span className="text-green-600 dark:text-green-400 font-bold">+</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Find New Connections</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Discover people to connect</p>
+                          </div>
+                        </div>
+                        <Link href="/connections" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+                          <span className="text-xl">→</span>
+                        </Link>
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500 dark:text-gray-400">No recent activity to display</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Your activity will appear here as you interact with the platform</p>
+                      <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <PeopleIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">No connections yet</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Start building your network!</p>
+                      <Link href="/connections" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Find Connections
+                      </Link>
                     </div>
                   )}
-                </div>
-                <div className="mt-6">
-                  <Link href="/notifications" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
-                    View all activity →
-                  </Link>
                 </div>
               </div>
             </motion.section>
 
-            {/* Middle Column - Events and Jobs */}
+            {/* Middle Column - My Events and Posts */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -324,7 +308,7 @@ export default function Dashboard() {
             >
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Events</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Joined Events</h2>
                   <EventIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
@@ -337,12 +321,23 @@ export default function Dashboard() {
                           <span className="font-medium text-indigo-600 dark:text-indigo-400 mr-2">{formatDate(event.date)}</span>
                           <span>• {event.location}</span>
                         </div>
+                        <div className="mt-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                            ✓ Joined
+                          </span>
+                        </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500 dark:text-gray-400">No upcoming events</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Check back later or create an event</p>
+                      <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <EventIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">No joined events</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Join events to see them here</p>
+                      <Link href="/events" className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                        Browse Events
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -355,40 +350,60 @@ export default function Dashboard() {
 
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Latest Job Postings</h2>
-                  <WorkIcon className="h-5 w-5 text-indigo-500" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Posts</h2>
+                  <ArticleIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
-                  {recentJobs.length > 0 ? (
-                    recentJobs.map(job => (
-                      <div key={job._id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                        <h3 className="font-medium text-gray-900 dark:text-white">{job.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{job.company}</p>
-                        <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <span>{job.location}</span>
-                          <span className="mx-1">•</span>
-                          <span className="font-medium">{job.type}</span>
-                          <span className="mx-1">•</span>
-                          <span>Posted {timeAgo(job.posted)}</span>
+                  {stats.posts > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
+                            <ArticleIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Total Posts</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{stats.posts} posts shared</p>
+                          </div>
                         </div>
                       </div>
-                    ))
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                            <span className="text-green-600 dark:text-green-400 font-bold">+</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Create New Post</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Share your thoughts</p>
+                          </div>
+                        </div>
+                        <Link href="/posts/create" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+                          <span className="text-xl">→</span>
+                        </Link>
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500 dark:text-gray-400">No job postings available</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Check back later for new opportunities</p>
+                      <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ArticleIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Share your first post!</p>
+                      <Link href="/posts/create" className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        Create Post
+                      </Link>
                     </div>
                   )}
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <Link href="/jobs" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
-                    View all job postings →
+                  <Link href="/posts" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
+                    View all posts →
                   </Link>
                 </div>
               </div>
             </motion.section>
 
-            {/* Right Column - Resources and News */}
+            {/* Right Column - My Resources and Quick Actions */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -397,29 +412,48 @@ export default function Dashboard() {
             >
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Trending Resources</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Resources</h2>
                   <MenuBookIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
-                  {trendingResources.length > 0 ? (
-                    trendingResources.map(resource => (
-                      <div key={resource._id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                        <h3 className="font-medium text-gray-900 dark:text-white">{resource.title}</h3>
-                        <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <span className="px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium">
-                            {resource.type}
-                          </span>
-                          <span className="mx-2">•</span>
-                          <span>{resource.likes} likes</span>
-                          <span className="mx-2">•</span>
-                          <span>By {resource.author}</span>
+                  {stats.resources > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
+                            <MenuBookIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Shared Resources</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{stats.resources} resources</p>
+                          </div>
                         </div>
                       </div>
-                    ))
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                            <span className="text-green-600 dark:text-green-400 font-bold">+</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">Share New Resource</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Help others learn</p>
+                          </div>
+                        </div>
+                        <Link href="/resources/share" className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+                          <span className="text-xl">→</span>
+                        </Link>
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500 dark:text-gray-400">No resources available</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Be the first to share educational resources</p>
+                      <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MenuBookIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">No resources shared</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Share educational resources!</p>
+                      <Link href="/resources/share" className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        Share Resource
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -432,79 +466,33 @@ export default function Dashboard() {
 
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Campus News</h2>
-                  <NewspaperIcon className="h-5 w-5 text-indigo-500" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
+                  <span className="text-indigo-500">⚡</span>
                 </div>
-                <div className="space-y-4">
-                  {latestNews.length > 0 ? (
-                    latestNews.map(item => (
-                      <div key={item._id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                        <h3 className="font-medium text-gray-900 dark:text-white">{item.title}</h3>
-                        <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                          <span className="font-medium">{item.source}</span>
-                          <span className="mx-2">•</span>
-                          <span>{formatDate(item.date)}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-6">
-                      <p className="text-gray-500 dark:text-gray-400">No news articles available</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Check back later for campus news updates</p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <Link href="/news" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300">
-                    View all news →
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/posts/create" className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all">
+                    <ArticleIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">New Post</span>
+                  </Link>
+                  
+                  <Link href="/events" className="flex flex-col items-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all">
+                    <EventIcon className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Events</span>
+                  </Link>
+                  
+                  <Link href="/connections" className="flex flex-col items-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all">
+                    <PeopleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Connect</span>
+                  </Link>
+                  
+                  <Link href="/jobs" className="flex flex-col items-center p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all">
+                    <WorkIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Jobs</span>
                   </Link>
                 </div>
               </div>
             </motion.section>
           </div>
-
-          {/* Quick Actions */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-6"
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <Link href="/posts/create" className="flex flex-col items-center p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
-                  <ArticleIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Create Post</span>
-                </Link>
-                
-                <Link href="/events/create" className="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900/30 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors">
-                  <EventIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Add Event</span>
-                </Link>
-                
-                <Link href="/connect/find" className="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
-                  <PeopleIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Find Connections</span>
-                </Link>
-                
-                <Link href="/jobs/create" className="flex flex-col items-center p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors">
-                  <WorkIcon className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Post Job</span>
-                </Link>
-                
-                <Link href="/resources/share" className="flex flex-col items-center p-4 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-                  <MenuBookIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Share Resource</span>
-                </Link>
-                
-                <Link href="/news/submit" className="flex flex-col items-center p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors">
-                  <NewspaperIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                  <span className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Submit News</span>
-                </Link>
-              </div>
-            </div>
-          </motion.section>
         </div>
       </div>
   );
