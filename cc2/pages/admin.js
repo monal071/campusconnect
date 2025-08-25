@@ -124,7 +124,8 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/events");
       const data = await res.json();
-      setEvents(data.data || []);
+      console.log("Events API response:", data);
+      setEvents(data || []);
     } catch (error) {
       console.error("Failed to fetch events:", error);
     }
@@ -134,6 +135,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/jobs");
       const data = await res.json();
+      console.log("Jobs API response:", data);
       setJobs(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch jobs:", error);

@@ -8,8 +8,10 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const result = await getAllItems(TABLE_NAME);
+      console.log("Events API - getAllItems result:", result);
       res.status(200).json(result.data || []);
     } catch (error) {
+      console.error("Events API error:", error);
       res.status(500).json({ error: error.message });
     }
   } else if (req.method === 'POST') {
