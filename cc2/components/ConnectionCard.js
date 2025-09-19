@@ -8,6 +8,7 @@ export default function ConnectionCard({
   onAcceptRequest,
   onRejectRequest,
   onRemoveConnection,
+  onStartChat,
   disabled = false
 }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -46,6 +47,7 @@ export default function ConnectionCard({
         return (
           <div className="flex justify-between mt-4 w-full">
             <button
+              onClick={() => onStartChat && onStartChat(user)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition duration-200 text-sm"
             >
               Message

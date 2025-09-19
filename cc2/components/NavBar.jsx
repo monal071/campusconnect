@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ConnectModal from "./ConnectModal";
+import ChatList from "./ChatList";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Icons
@@ -12,6 +13,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PeopleIcon from "@mui/icons-material/People";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -19,9 +21,11 @@ export default function NavBar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userName, setUserName] = useState("");
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showChatList, setShowChatList] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState("user");
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -37,6 +41,7 @@ export default function NavBar() {
         
         // Fetch connection requests when logged in
         fetchConnectionRequests();
+        fetchUnreadMessages();
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
         setUserRole(localStorage.getItem("role") || "user");
@@ -57,15 +62,30 @@ export default function NavBar() {
     }
   };
 
-  // Periodically check for new connection requests (every 2 minutes)
+  // Fetch unread messages count
+  const fetchUnreadMessages = async () => {
+    try {
+      const response = await fetch('/api/chat/unread-count');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadMessages(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+    }
+  };
+
+  // Periodically check for new connection requests and messages (every 2 minutes)
   useEffect(() => {
     if (session?.user) {
-      const interval = setInterval(fetchConnectionRequests, 120000);
+      const interval = setInterval(() => {
+        fetchConnectionRequests();
+        fetchUnreadMessages();
+      }, 120000); // 2 minutes
+
       return () => clearInterval(interval);
     }
-  }, [session]);
-
-  // Listen for login/logout events from other tabs/windows
+  }, [session]);  // Listen for login/logout events from other tabs/windows
   useEffect(() => {
     const syncAuth = () => {
       const guest = localStorage.getItem("guest");
@@ -167,6 +187,24 @@ export default function NavBar() {
                 </span>
               )}
             </Link>
+            
+            {/* Chat button - only for authenticated users */}
+            {session && (
+              <button
+                onClick={() => setShowChatList(true)}
+                className="nav-link relative flex items-center"
+                title="Messages"
+              >
+                <ChatBubbleOutlineIcon className="w-5 h-5 mr-1" />
+                Chat
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
+              </button>
+            )}
+            
             <Link 
               href="/posts" 
               className="nav-link"
@@ -438,6 +476,27 @@ export default function NavBar() {
                 )}
               </Link>
               
+              {/* Chat button for mobile - only for authenticated users */}
+              {session && (
+                <button
+                  onClick={() => {
+                    setShowChatList(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
+                >
+                  <div className="flex items-center">
+                    <ChatBubbleOutlineIcon className="w-4 h-4 mr-2" />
+                    Chat
+                    {unreadMessages > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              )}
+              
               {/* Admin Panel link in mobile menu - only visible to admins */}
               {userRole === 'admin' && (
                 <Link 
@@ -473,6 +532,11 @@ export default function NavBar() {
       </AnimatePresence>
       
       <ConnectModal isOpen={showConnectModal} onClose={() => setShowConnectModal(false)} />
+      <ChatList 
+        isOpen={showChatList} 
+        onClose={() => setShowChatList(false)} 
+        onUnreadCountChange={(count) => setUnreadMessages(count)}
+      />
     </nav>
   );
 }
