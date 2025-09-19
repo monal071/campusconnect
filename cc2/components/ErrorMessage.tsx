@@ -18,28 +18,28 @@ const ErrorMessage = ({
   const containerProps: HTMLMotionProps<"div"> = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
-    className: `bg-white/10 backdrop-blur-xl rounded-2xl p-8 flex flex-col items-center shadow-2xl border border-white/20 ${className}`
+    className: `bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 flex flex-col items-center shadow-sm ${className}`
   };
 
   const buttonProps: HTMLMotionProps<"button"> = {
-    whileHover: { scale: 1.05 },
-    whileTap: { scale: 0.95 },
+    whileHover: { scale: 1.02 },
+    whileTap: { scale: 0.98 },
     onClick: onRetry,
-    className: "px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+    className: "px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-2 text-sm"
   };
 
   return (
     <motion.div {...containerProps}>
       {showIcon && (
-        <div className="bg-red-500/10 p-3 rounded-full mb-4">
-          <ErrorOutline className="w-8 h-8 text-red-500" />
+        <div className="bg-red-100 dark:bg-red-800/30 p-3 rounded-full mb-4">
+          <ErrorOutline className="w-6 h-6 text-red-600 dark:text-red-400" />
         </div>
       )}
-      <h3 className="text-xl font-semibold text-white mb-2">Error</h3>
-      <p className="text-blue-100 text-center mb-6">{message}</p>
+      <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">Something went wrong</h3>
+      <p className="text-red-700 dark:text-red-300 text-center mb-4 text-sm">{message}</p>
       {onRetry && (
         <motion.button {...buttonProps}>
-          <RefreshIcon /> Try Again
+          <RefreshIcon className="w-4 h-4" /> Try Again
         </motion.button>
       )}
     </motion.div>

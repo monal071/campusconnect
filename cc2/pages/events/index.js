@@ -13,9 +13,9 @@ import EventFormModal from '../../components/EventFormModal';
 import { formatDateLong } from '../../util/dateFormat';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import EventCard from '../../components/EventCard';
-// import AddEventModal from '../../components/AddEventModal';
+import AddEventModal from '../../components/AddEventModal';
 
 export default function Events() {
   const { data: session, status } = useSession();
@@ -43,7 +43,7 @@ export default function Events() {
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -190,13 +190,38 @@ export default function Events() {
   };
 
   const handleAddEvent = async (eventData) => {
+    setIsSubmitting(true);
     try {
-      const newEvent = addEvent(eventData);
-      setEvents(prev => [newEvent, ...prev]);
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(eventData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit event');
+      }
+
+      const data = await response.json();
+      
+      // Check if event was submitted for approval or published directly
+      if (data.message && data.message.includes('submitted for approval')) {
+        // Show success message for pending approval
+        console.log('Event submitted for approval');
+      } else {
+        // Admin user - event published directly
+        setEvents(prev => [data, ...prev]);
+      }
+      
       setShowAddModal(false);
-      toast.success('Event added successfully!');
     } catch (error) {
-      toast.error('Failed to add event');
+      console.error('Error submitting event:', error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -219,7 +244,20 @@ export default function Events() {
       </Head>
       <main className="page-container">
         <div className="page-header">
-          <h1 className="page-title">Events</h1>
+          <div className="flex items-center justify-between w-full">
+            <h1 className="page-title">Events</h1>
+            {session && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAddModal(true)}
+                className="btn btn-primary flex items-center space-x-2"
+              >
+                <PlusIcon className="h-5 w-5" />
+                <span>Add Event</span>
+              </motion.button>
+            )}
+          </div>
         </div>
         <div className="page-content">
           {events.map((event) => (
@@ -246,7 +284,12 @@ export default function Events() {
         onSubmit={selectedEvent ? handleEditEvent : handleCreateEvent}
         event={selectedEvent}
       />
-      {/* AddEventModal removed, now in admin page */}
+      <AddEventModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddEvent}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

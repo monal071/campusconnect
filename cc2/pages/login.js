@@ -1,4 +1,4 @@
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import Head from "next/head";
@@ -8,7 +8,9 @@ import { useState, useEffect } from "react";
 
 export default function Login() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [message, setMessage] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
   
   // Check for message in URL query parameter
   useEffect(() => {
@@ -16,6 +18,55 @@ export default function Login() {
       setMessage(router.query.message);
     }
   }, [router.query]);
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      // User is authenticated, check if they need to complete registration
+      const checkRegistrationAndRedirect = async () => {
+        try {
+          const res = await fetch('/api/auth/check-registration');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.isRegistered && data.role) {
+              // User has a role, redirect based on role
+              if (data.role === 'admin') {
+                router.push('/admin');
+              } else if (data.role === 'student' || data.role === 'faculty') {
+                router.push('/home');
+              } else {
+                // Handle legacy 'user' role if it exists
+                router.push('/home');
+              }
+            } else {
+              // User needs to complete registration
+              router.push('/signup');
+            }
+          } else {
+            // Default redirect if check fails
+            router.push('/home');
+          }
+        } catch (error) {
+          console.error('Error checking registration:', error);
+          router.push('/home');
+        }
+      };
+
+      checkRegistrationAndRedirect();
+    }
+  }, [status, session, router]);
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true);
+    try {
+      await signIn('google', { 
+        callbackUrl: '/login' // Will be handled by the useEffect above
+      });
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setIsSigningIn(false);
+    }
+  };
 
   return (
     <>
@@ -105,21 +156,20 @@ export default function Login() {
             
             <div className="mt-8 space-y-6">
               <button
-                onClick={() => {
-                  console.log("Signing in with Google...");
-                  signIn("google", { 
-                    callbackUrl: "/home",
-                    redirect: true
-                  });
-                }}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-md hover:shadow-lg"
+                onClick={handleSignIn}
+                disabled={isSigningIn || status === 'loading'}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-300 group-hover:text-indigo-400" viewBox="0 0 24 24">
-                    <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
-                  </svg>
+                  {isSigningIn ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-300 group-hover:text-indigo-400" viewBox="0 0 24 24">
+                      <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+                    </svg>
+                  )}
                 </span>
-                Sign in with Google
+                {isSigningIn ? 'Signing in...' : 'Sign in with Google'}
               </button>
               
               <div className="flex items-center">

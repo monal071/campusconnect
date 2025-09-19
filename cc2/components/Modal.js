@@ -9,44 +9,51 @@ import Post from "./Post";
 
 const dropIn = {
   hidden: {
-    y: "-100vh",
+    y: "-10vh",
     opacity: 0,
+    scale: 0.95,
   },
   visible: {
     y: "0",
     opacity: 1,
+    scale: 1,
     transition: {
-      duration: 0.1,
+      duration: 0.2,
       type: "spring",
-      damping: 25,
-      stiffness: 500,
+      damping: 30,
+      stiffness: 300,
     },
   },
   exit: {
-    y: "100vh",
+    y: "10vh",
     opacity: 0,
+    scale: 0.95,
+    transition: {
+      duration: 0.15,
+    },
   },
 };
 
 const gifYouUp = {
   hidden: {
     opacity: 0,
-    scale: 0,
+    scale: 0.8,
   },
   visible: {
     opacity: 1,
     scale: 1,
     transition: {
-      duration: 0.2,
-      ease: "easeIn",
+      duration: 0.3,
+      type: "spring",
+      damping: 25,
+      stiffness: 400,
     },
   },
   exit: {
     opacity: 0,
-    scale: 0,
+    scale: 0.8,
     transition: {
-      duration: 0.15,
-      ease: "easeOut",
+      duration: 0.2,
     },
   },
 };

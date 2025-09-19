@@ -34,7 +34,6 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    // Log error to an error reporting service
     console.error('Error caught by boundary:', error, errorInfo);
     this.setState({ errorInfo });
     this.props.onError?.(error, errorInfo);
@@ -48,57 +47,58 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return this.props.fallback || (
         <motion.div
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={fadeIn}
-          className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-800 to-purple-900 p-4"
+          {...fadeIn}
+          className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4"
         >
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 text-center max-w-lg mx-auto border border-white/20">
-            <div className="bg-red-500/10 p-4 rounded-full inline-block mb-6">
-              <ErrorOutlineIcon className="text-red-500 w-12 h-12" />
-            </div>
-            
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Oops! Something went wrong
-            </h2>
-            
-            <p className="text-blue-100 mb-6">
-              {this.state.error?.message || 'An unexpected error occurred while rendering this page.'}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={this.handleRefresh}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                <RefreshIcon /> Try Again
-              </motion.button>
-
-              <Link href="/" passHref>
-                <motion.a
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-white/10 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          <div className="max-w-md w-full text-center">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 border border-slate-200 dark:border-slate-800">
+              <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+                <ErrorOutlineIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
+              </div>
+              
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                Oops! Something went wrong
+              </h1>
+              
+              <p className="text-slate-600 dark:text-slate-400 mb-8">
+                We encountered an unexpected error. Don't worry, this has been reported and we're working on fixing it.
+              </p>
+              
+              <div className="space-y-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={this.handleRefresh}
+                  className="w-full btn btn-primary"
                 >
-                  <HomeIcon /> Go Home
-                </motion.a>
-              </Link>
+                  <RefreshIcon className="w-4 h-4" />
+                  Try Again
+                </motion.button>
+                
+                <Link href="/home" className="block">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full btn btn-secondary"
+                  >
+                    <HomeIcon className="w-4 h-4" />
+                    Go Home
+                  </motion.button>
+                </Link>
+              </div>
+              
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-6 text-left">
+                  <summary className="cursor-pointer text-sm text-slate-500 dark:text-slate-400 mb-2">
+                    Error Details (Development)
+                  </summary>
+                  <pre className="text-xs bg-slate-100 dark:bg-slate-800 p-3 rounded-lg overflow-x-auto text-slate-700 dark:text-slate-300">
+                    {this.state.error.message}
+                    {this.state.error.stack && `\n\n${this.state.error.stack}`}
+                  </pre>
+                </details>
+              )}
             </div>
-
-            {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-8 p-4 bg-black/30 rounded-xl text-left"
-              >
-                <p className="text-red-400 font-mono text-sm overflow-auto">
-                  {this.state.errorInfo.componentStack}
-                </p>
-              </motion.div>
-            )}
           </div>
         </motion.div>
       );

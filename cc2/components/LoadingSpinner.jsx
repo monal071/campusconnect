@@ -2,15 +2,13 @@ import { motion } from 'framer-motion';
 import { useRecoilValue } from 'recoil';
 import { globalLoadingState } from '../atoms/globalState';
 
-export default function LoadingSpinner({ size = 'default', fullScreen = false }) {
+export default function LoadingSpinner({ size = 'default', fullScreen = false, message = null }) {
   const loadingState = useRecoilValue(globalLoadingState);
-  
-  if (!loadingState.isLoading) return null;
 
   const spinTransition = {
     repeat: Infinity,
     ease: "linear",
-    duration: 1
+    duration: 0.8
   };
 
   const sizes = {
@@ -24,22 +22,25 @@ export default function LoadingSpinner({ size = 'default', fullScreen = false })
   const Spinner = () => (
     <div className="relative flex items-center justify-center">
       <motion.div
-        className={`${spinnerSize} rounded-full border-t-2 border-b-2 border-blue-500`}
+        className={`${spinnerSize} rounded-full border-3 border-transparent border-t-indigo-500 border-r-purple-500`}
         animate={{ rotate: 360 }}
         transition={spinTransition}
       />
       <motion.div
-        className={`${spinnerSize} rounded-full border-r-2 border-l-2 border-purple-500 absolute`}
+        className={`${spinnerSize} rounded-full border-2 border-transparent border-b-blue-400 border-l-pink-400 absolute`}
         animate={{ rotate: -360 }}
-        transition={spinTransition}
+        transition={{ ...spinTransition, duration: 1.2 }}
       />
-      {loadingState.message && (
+      {/* Center dot */}
+      <div className="absolute w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+      
+      {(loadingState.message || message) && (
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute mt-20 text-blue-100 text-center max-w-xs"
+          className="absolute mt-20 text-slate-600 dark:text-slate-300 text-center max-w-xs text-sm font-medium"
         >
-          {loadingState.message}
+          {message || loadingState.message}
         </motion.p>
       )}
     </div>

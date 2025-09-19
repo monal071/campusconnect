@@ -88,52 +88,44 @@ export default function News() {
         </div>
 
         <ErrorBoundary>
-          {error ? (
-            <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg p-4">
-              <p className="text-red-600 dark:text-red-300">{error}</p>
-              <button
-                onClick={fetchNews}
-                className="mt-2 text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {articles.length > 0 ? (
-                articles.map((article) => (
-                  <div
-                    key={article.url}
-                    onClick={() => handleArticleClick(article.url)}
-                    onMouseEnter={() => setHoveredArticle(article.url)}
-                    onMouseLeave={() => setHoveredArticle(null)}
-                    className={`bg-white dark:bg-[#1D2226] rounded-lg p-4 cursor-pointer transition-colors ${
-                      hoveredArticle === article.url
-                        ? 'bg-black/5 dark:bg-black/20'
-                        : 'hover:bg-black/5 dark:hover:bg-black/10'
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <FiberManualRecordRoundedIcon className="!h-2 !w-2 mt-2" />
-                      <div className="flex-1">
-                        <h2 className="font-medium text-gray-900 dark:text-white">
-                          {article.title}
-                        </h2>
-                        <TimeAgo
-                          datetime={article.publishedAt}
-                          className="text-sm text-gray-500 dark:text-gray-400 mt-1"
-                        />
-                      </div>
+          <div className="space-y-4">
+            {articles.length > 0 ? (
+              articles.map((article) => (
+                <div
+                  key={article.url}
+                  onClick={() => handleArticleClick(article.url)}
+                  onMouseEnter={() => setHoveredArticle(article.url)}
+                  onMouseLeave={() => setHoveredArticle(null)}
+                  className={`bg-white dark:bg-[#1D2226] rounded-lg p-4 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md ${
+                    hoveredArticle === article.url
+                      ? 'bg-black/5 dark:bg-black/20 transform scale-[1.02]'
+                      : 'hover:bg-black/5 dark:hover:bg-black/10'
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <FiberManualRecordRoundedIcon className="!h-2 !w-2 mt-2 text-blue-500" />
+                    <div className="flex-1">
+                      <h2 className="font-medium text-gray-900 dark:text-white line-clamp-2">
+                        {article.title}
+                      </h2>
+                      <TimeAgo
+                        datetime={article.publishedAt}
+                        className="text-sm text-gray-500 dark:text-gray-400 mt-1"
+                      />
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  No news available at the moment
                 </div>
-              )}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  📰
+                </div>
+                <p className="text-lg font-medium mb-2">No news available</p>
+                <p className="text-sm">Check back later for the latest updates</p>
+              </div>
+            )}
+          </div>
         </ErrorBoundary>
       </div>
     </>

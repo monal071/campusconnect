@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem } from '@mui/material';
 
 export default function AddEventModal({ open, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -92,168 +91,141 @@ export default function AddEventModal({ open, onClose, onSave }) {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        className: 'bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl text-white'
-      }}
-    >
-      <DialogTitle className="border-b border-white/20 text-2xl font-extrabold tracking-tight">
-        Add New Event
-      </DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent className="space-y-6">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500 text-red-400 p-3 rounded-lg">
-              {error}
-            </div>
-          )}
-          <TextField
-            fullWidth
-            label="Event Title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-            variant="outlined"
-            className="bg-white/10 rounded-lg"
-            InputProps={{
-              className: 'text-white'
-            }}
-            InputLabelProps={{
-              className: 'text-gray-300'
-            }}
-          />
-          <TextField
-            fullWidth
-            label="Description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            required
-            multiline
-            rows={3}
-            variant="outlined"
-            className="bg-white/10 rounded-lg"
-            InputProps={{
-              className: 'text-white'
-            }}
-            InputLabelProps={{
-              className: 'text-gray-300'
-            }}
-          />
-          <div className="flex gap-4">
-            <TextField
-              type="date"
-              label="Date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              required
-              variant="outlined"
-              className="bg-white/10 rounded-lg flex-1"
-              InputProps={{
-                className: 'text-white'
-              }}
-              InputLabelProps={{
-                className: 'text-gray-300',
-                shrink: true
-              }}
-            />
-            <TextField
-              type="time"
-              label="Time"
-              name="time"
-              value={formData.time}
-              onChange={handleInputChange}
-              required
-              variant="outlined"
-              className="bg-white/10 rounded-lg flex-1"
-              InputProps={{
-                className: 'text-white'
-              }}
-              InputLabelProps={{
-                className: 'text-gray-300',
-                shrink: true
-              }}
-            />
-          </div>
-          <TextField
-            fullWidth
-            label="Location"
-            name="location"
-            value={formData.location}
-            onChange={handleInputChange}
-            required
-            variant="outlined"
-            className="bg-white/10 rounded-lg"
-            InputProps={{
-              className: 'text-white'
-            }}
-            InputLabelProps={{
-              className: 'text-gray-300'
-            }}
-          />
-          <TextField
-            select
-            fullWidth
-            label="Type"
-            name="type"
-            value={formData.type}
-            onChange={handleInputChange}
-            required
-            variant="outlined"
-            className="bg-white/10 rounded-lg"
-            InputProps={{
-              className: 'text-white'
-            }}
-            InputLabelProps={{
-              className: 'text-gray-300'
-            }}
-          >
-            {eventTypes.map((option) => (
-              <MenuItem key={option.value} value={option.value} className="text-white bg-white/10">
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            fullWidth
-            label="Notes (optional)"
-            name="notes"
-            value={formData.notes}
-            onChange={handleInputChange}
-            variant="outlined"
-            className="bg-white/10 rounded-lg"
-            InputProps={{
-              className: 'text-white'
-            }}
-            InputLabelProps={{
-              className: 'text-gray-300'
-            }}
-          />
-        </DialogContent>
-        <DialogActions className="border-t border-white/20 p-4">
-          <button
-            type="button"
+    <>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
             onClick={onClose}
-            className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-xl shadow-lg font-semibold text-lg transition-all flex items-center gap-2"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Saving...' : 'Add Event'}
-          </button>
-        </DialogActions>
-      </form>
-    </Dialog>
+          ></div>
+          
+          {/* Modal */}
+          <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                Add New Event
+              </h2>
+              
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                  {error}
+                </div>
+              )}
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Event Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter event title"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter event description"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Time
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={formData.time}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter event location"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Event Type
+                  </label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    {eventTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {isLoading ? 'Adding...' : 'Add Event'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

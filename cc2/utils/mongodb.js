@@ -17,7 +17,10 @@ const mongoOptions = {
   maxPoolSize: 10, // Maintain up to 10 socket connections
   minPoolSize: 1, // Maintain at least 1 socket connection
   maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-  bufferMaxEntries: 0 // Disable buffering
+  // bufferMaxEntries is deprecated in newer MongoDB drivers
+  // Using newer connection options instead
+  retryWrites: true,
+  retryReads: true
 };
 
 if (process.env.NODE_ENV === "development") {

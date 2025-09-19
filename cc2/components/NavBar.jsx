@@ -32,6 +32,7 @@ export default function NavBar() {
         setUserName(session.user.name || "User");
         // Get role from session first, then localStorage as fallback
         const role = session.user.role || localStorage.getItem("role") || "user";
+        console.log("NavBar userRole debug:", role, "session role:", session.user.role);
         setUserRole(role);
         
         // Fetch connection requests when logged in
@@ -132,6 +133,12 @@ export default function NavBar() {
               Home
             </Link>
             <Link 
+              href="/dashboard" 
+              className="nav-link"
+            >
+              Dashboard
+            </Link>
+            <Link 
               href="/events" 
               className="nav-link"
             >
@@ -171,13 +178,28 @@ export default function NavBar() {
             {userRole === 'admin' && (
               <Link 
                 href="/admin" 
-                className="btn btn-secondary"
+                className="btn btn-secondary text-sm"
               >
                 Admin Panel
               </Link>
             )}
           </div>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          aria-label="Toggle mobile menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {mobileMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3">
@@ -234,9 +256,11 @@ export default function NavBar() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           userRole === 'admin' 
                             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                            : userRole === 'faculty'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                         }`}>
-                          {userRole === 'admin' ? 'Admin' : 'User'}
+                          {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
                         </span>
                       </div>
                     </div>
@@ -355,9 +379,11 @@ export default function NavBar() {
                   <div className={`px-2 py-1 text-xs font-semibold rounded-full ${
                     userRole === 'admin' 
                       ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' 
+                      : userRole === 'faculty'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                   }`}>
-                    {userRole === 'admin' ? 'Admin' : 'User'}
+                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
                   </div>
                 </div>
               )}

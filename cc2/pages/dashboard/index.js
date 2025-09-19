@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import UserNotifications from '../../components/UserNotifications';
 
 // Material UI Icons
 import EventIcon from '@mui/icons-material/Event';
@@ -181,6 +182,16 @@ export default function Dashboard() {
                       ADMIN
                     </span>
                   )}
+                  {session?.user?.role === 'student' && (
+                    <span className="absolute -bottom-1 -right-1 bg-blue-400 text-xs text-white font-bold px-2 py-0.5 rounded-full">
+                      STUDENT
+                    </span>
+                  )}
+                  {session?.user?.role === 'faculty' && (
+                    <span className="absolute -bottom-1 -right-1 bg-green-400 text-xs text-white font-bold px-2 py-0.5 rounded-full">
+                      FACULTY
+                    </span>
+                  )}
                 </div>
                 <Link href="/profile" className="bg-white bg-opacity-25 hover:bg-opacity-40 transition-colors duration-200 py-2 px-4 rounded-lg text-sm font-medium">
                   <div className="flex items-center">
@@ -297,6 +308,9 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+              
+              {/* User Notifications */}
+              <UserNotifications />
             </motion.section>
 
             {/* Middle Column - My Events and Posts */}

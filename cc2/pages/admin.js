@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
 import AddEventModal from '../components/AddEventModal';
 import AddJobModal from '../components/AddJobModal';
+import PendingApprovals from '../components/PendingApprovals';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -235,6 +236,13 @@ export default function AdminPage() {
             Add Job
           </button>
         </div>
+
+        {/* Pending Approvals Section - Only for Admins */}
+        {isAdmin && (
+          <div className="w-full mb-8">
+            <PendingApprovals />
+          </div>
+        )}
         <div className="w-full mb-8">
           <h2 className="text-xl font-bold mb-2">Manage Posts</h2>
           <ul className="space-y-2">

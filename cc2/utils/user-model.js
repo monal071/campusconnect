@@ -15,7 +15,7 @@ async function createUser(userData) {
     email: userData.email.toLowerCase(),
     password: hashedPassword,
     name: userData.name,
-    role: userData.role || 'user', // Default to 'user' if role not provided
+    role: userData.role || 'student', // Default to 'student' if role not provided
     createdAt: new Date(),
     updatedAt: new Date(),
   };

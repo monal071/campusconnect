@@ -5,10 +5,22 @@ import { format } from 'date-fns';
 
 import { useEffect } from 'react';
 export default function EventCard({ event, isAuthenticated, userId }) {
+  // Safety check for event prop
+  if (!event || typeof event !== 'object') {
+    return (
+      <div className="card p-4 mb-4 bg-gray-100 dark:bg-gray-800">
+        <p className="text-gray-500 dark:text-gray-400">Invalid event data</p>
+      </div>
+    );
+  }
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [joinedCount, setJoinedCount] = useState(Array.isArray(event.joined) ? event.joined.length : 0);
   const [hasJoined, setHasJoined] = useState(Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false);
   useEffect(() => {
+    // Skip polling if event ID is not available
+    if (!event._id) return;
+    
     // Poll for joined count every 5s
     let interval;
     const fetchJoined = async () => {
@@ -28,7 +40,7 @@ export default function EventCard({ event, isAuthenticated, userId }) {
 
   const handleJoin = async (e) => {
     e.stopPropagation();
-    if (!userId) return;
+    if (!userId || !event._id) return;
     try {
       const res = await fetch('/api/events', {
         method: 'PUT',
@@ -38,26 +50,39 @@ export default function EventCard({ event, isAuthenticated, userId }) {
       const data = await res.json();
       if (data.success) {
         setHasJoined(true);
-        setJoinedCount(data.joinedCount);
+        setJoinedCount(data.joinedCount || joinedCount + 1);
       }
-    } catch {}
+    } catch (error) {
+      console.error('Error joining event:', error);
+    }
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Date TBD';
     try {
       const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
       return format(date, 'PPP p'); // Example: April 29, 2024, 9:00 AM
     } catch (error) {
-      return dateString;
+      return dateString || 'Date TBD';
     }
   };
 
   const isUpcoming = (dateString) => {
-    const eventDate = new Date(dateString);
-    return eventDate > new Date();
+    if (!dateString) return false;
+    try {
+      const eventDate = new Date(dateString);
+      return eventDate > new Date() && !isNaN(eventDate.getTime());
+    } catch {
+      return false;
+    }
   };
 
   const getEventTypeColor = (type) => {
+    if (!type) return 'bg-gray-500/10 text-gray-400';
     switch (type.toLowerCase()) {
       case 'conference':
         return 'bg-purple-500/10 text-purple-400';
@@ -67,6 +92,20 @@ export default function EventCard({ event, isAuthenticated, userId }) {
         return 'bg-green-500/10 text-green-400';
       default:
         return 'bg-gray-500/10 text-gray-400';
+    }
+  };
+
+  const getBadgeClass = (type) => {
+    if (!type) return 'badge-slate';
+    switch (type.toLowerCase()) {
+      case 'conference':
+        return 'badge-purple';
+      case 'workshop':
+        return 'badge-blue';
+      case 'networking':
+        return 'badge-green';
+      default:
+        return 'badge-slate';
     }
   };
 
@@ -82,14 +121,10 @@ export default function EventCard({ event, isAuthenticated, userId }) {
       <div className="flex flex-col space-y-4">
         {/* Event Type Badge */}
         <div className="flex justify-between items-start">
-          <span className={`badge ${
-            event.type.toLowerCase() === 'conference' ? 'badge-purple' :
-            event.type.toLowerCase() === 'workshop' ? 'badge-blue' :
-            event.type.toLowerCase() === 'networking' ? 'badge-green' : 'badge-slate'
-          }`}>
-            {event.type}
+          <span className={`badge ${getBadgeClass(event.type)}`}>
+            {event.type || 'Event'}
           </span>
-          {isUpcoming(event.date) && (
+          {event.date && isUpcoming(event.date) && (
             <span className="badge badge-success">
               Upcoming
             </span>
@@ -97,24 +132,28 @@ export default function EventCard({ event, isAuthenticated, userId }) {
         </div>
 
         {/* Event Title */}
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{event.title}</h3>
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{event.title || 'Untitled Event'}</h3>
 
         {/* Event Description */}
         <p className={`text-slate-600 dark:text-slate-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
-          {event.description}
+          {event.description || 'No description available.'}
         </p>
 
 
         {/* Event Details */}
         <div className="space-y-2">
-          <div className="flex items-center text-slate-500 dark:text-slate-400">
-            <CalendarIcon className="h-5 w-5 mr-2" />
-            <span>{formatDate(event.date)}</span>
-          </div>
-          <div className="flex items-center text-slate-500 dark:text-slate-400">
-            <MapPinIcon className="h-5 w-5 mr-2" />
-            <span>{event.location}</span>
-          </div>
+          {event.date && (
+            <div className="flex items-center text-slate-500 dark:text-slate-400">
+              <CalendarIcon className="h-5 w-5 mr-2" />
+              <span>{formatDate(event.date)}</span>
+            </div>
+          )}
+          {event.location && (
+            <div className="flex items-center text-slate-500 dark:text-slate-400">
+              <MapPinIcon className="h-5 w-5 mr-2" />
+              <span>{event.location}</span>
+            </div>
+          )}
           <div className="flex items-center text-slate-500 dark:text-slate-400">
             <UserGroupIcon className="h-5 w-5 mr-2" />
             <span>Joined: <span className="font-medium text-slate-700 dark:text-slate-300">{joinedCount}</span></span>

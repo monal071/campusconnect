@@ -28,17 +28,28 @@ export default function ThemeSwitcher() {
   return (
     <motion.button
       onClick={toggleTheme}
-      className="ml-2 p-2 bg-gray-200 dark:bg-gray-800 rounded-full shadow hover:scale-110 transition-transform"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      aria-label="Toggle theme"
+      className="relative ml-2 p-2 bg-gray-200 dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg transition-all duration-200 group"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       type="button"
     >
-      {isDark ? (
-        <LightMode className="h-5 w-5 text-yellow-500" />
-      ) : (
-        <DarkMode className="h-5 w-5 text-purple-600" />
-      )}
+      <motion.div
+        initial={false}
+        animate={{ rotate: isDark ? 0 : 360 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
+        {isDark ? (
+          <LightMode className="h-5 w-5 text-yellow-500 group-hover:text-yellow-400 transition-colors" />
+        ) : (
+          <DarkMode className="h-5 w-5 text-purple-600 group-hover:text-purple-500 transition-colors" />
+        )}
+      </motion.div>
+      
+      {/* Tooltip */}
+      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+        {isDark ? 'Light mode' : 'Dark mode'}
+      </div>
     </motion.button>
   );
 }

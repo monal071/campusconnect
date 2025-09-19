@@ -12,7 +12,8 @@ export async function middleware(req) {
     '/login', 
     '/signup', 
     '/api/auth/authenticate',
-    '/api/debug/session'  // Allow debug endpoints without auth
+    '/api/debug/session',  // Allow debug endpoints without auth
+    '/api/migrate-user-roles'  // Allow migration during development
   ];
   
   // Routes that are available without login (landing page and auth related)

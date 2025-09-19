@@ -1,6 +1,7 @@
 import { addItem, getAllItems, updateItem, getItem, deleteItem } from '../../utils/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
+import clientPromise from '../../utils/mongodb';
 
 const TABLE_NAME = 'Events';
 
@@ -9,7 +10,16 @@ export default async function handler(req, res) {
     try {
       const result = await getAllItems(TABLE_NAME);
       console.log("Events API - getAllItems result:", result);
-      res.status(200).json(result.data || []);
+      
+      // Filter out malformed events that don't have required fields
+      const validEvents = (result.data || []).filter(event => 
+        event && 
+        typeof event === 'object' && 
+        event.title && 
+        event.description !== undefined
+      );
+      
+      res.status(200).json(validEvents);
     } catch (error) {
       console.error("Events API error:", error);
       res.status(500).json({ error: error.message });
@@ -22,14 +32,56 @@ export default async function handler(req, res) {
       }
       
       const event = req.body;
-      await addItem(TABLE_NAME, { 
-        ...event, 
-        joined: [],
-        createdBy: session.user.id,
-        createdAt: new Date().toISOString()
-      });
-      res.status(201).json({ message: 'Event added' });
+      const client = await clientPromise;
+      const db = client.db();
+
+      if (session.user.role === 'admin') {
+        // Admins can directly add events
+        await addItem(TABLE_NAME, { 
+          ...event, 
+          joined: [],
+          createdBy: session.user.id,
+          createdAt: new Date().toISOString(),
+          status: 'approved'
+        });
+        res.status(201).json({ message: 'Event added successfully' });
+      } else {
+        // Regular users submit for approval
+        await db.collection('pending_events').insertOne({
+          ...event,
+          joined: [],
+          createdBy: session.user.id,
+          createdAt: new Date(),
+          status: 'pending',
+          submittedBy: {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email
+          }
+        });
+
+        // Notify all admins about new pending event
+        const admins = await db.collection('users').find({ role: 'admin' }).toArray();
+        const notifications = admins.map(admin => ({
+          userId: admin._id.toString(),
+          type: 'event',
+          message: `New event "${event.title}" submitted by ${session.user.name} awaiting approval`,
+          link: '/admin',
+          read: false,
+          createdAt: new Date()
+        }));
+        
+        if (notifications.length > 0) {
+          await db.collection('notifications').insertMany(notifications);
+        }
+
+        res.status(201).json({ 
+          message: 'Event submitted for approval. You will be notified once reviewed.',
+          isPending: true 
+        });
+      }
     } catch (error) {
+      console.error('Event submission error:', error);
       res.status(500).json({ error: error.message });
     }
   } else if (req.method === 'DELETE') {

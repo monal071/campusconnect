@@ -8,8 +8,9 @@ import { motion } from 'framer-motion';
 export default function Signup() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('student');
   const [adminPassword, setAdminPassword] = useState('');
+  const [facultyPassword, setFacultyPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
@@ -114,6 +115,13 @@ export default function Signup() {
     // Validate admin password if role is admin
     if (role === 'admin' && adminPassword !== '12345678') {
       setError('Invalid admin password');
+      setLoading(false);
+      return;
+    }
+    
+    // Validate faculty password if role is faculty
+    if (role === 'faculty' && facultyPassword !== '12345678') {
+      setError('Invalid faculty password');
       setLoading(false);
       return;
     }
@@ -299,16 +307,30 @@ export default function Signup() {
                   <div className="flex space-x-4">
                     <div className="flex items-center">
                       <input
-                        id="user-role"
+                        id="student-role"
                         name="role"
                         type="radio"
-                        value="user"
-                        checked={role === 'user'}
-                        onChange={() => setRole('user')}
+                        value="student"
+                        checked={role === 'student'}
+                        onChange={() => setRole('student')}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       />
-                      <label htmlFor="user-role" className="ml-2 block text-sm text-gray-300">
-                        User
+                      <label htmlFor="student-role" className="ml-2 block text-sm text-gray-300">
+                        Student
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        id="faculty-role"
+                        name="role"
+                        type="radio"
+                        value="faculty"
+                        checked={role === 'faculty'}
+                        onChange={() => setRole('faculty')}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <label htmlFor="faculty-role" className="ml-2 block text-sm text-gray-300">
+                        Faculty
                       </label>
                     </div>
                     <div className="flex items-center">
@@ -347,6 +369,28 @@ export default function Signup() {
                       Admin Password
                     </label>
                     <p className="mt-1 text-xs text-gray-400">Enter the admin password (12345678)</p>
+                  </div>
+                )}
+                
+                {/* Faculty password field (only shown if faculty role is selected) */}
+                {role === 'faculty' && (
+                  <div className="relative">
+                    <input
+                      id="facultyPassword"
+                      name="facultyPassword"
+                      type="password"
+                      required
+                      value={facultyPassword}
+                      onChange={(e) => setFacultyPassword(e.target.value)}
+                      className="peer w-full px-4 pt-6 pb-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Faculty Password"
+                      autoComplete="new-password"
+                      aria-label="Faculty Password"
+                    />
+                    <label htmlFor="facultyPassword" className="absolute left-4 top-2 text-gray-300 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-sm pointer-events-none">
+                      Faculty Password
+                    </label>
+                    <p className="mt-1 text-xs text-gray-400">Enter the faculty password (12345678)</p>
                   </div>
                 )}
               </div>
