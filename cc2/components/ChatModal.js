@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { 
   XMarkIcon, 
   PaperAirplaneIcon,
-  UserCircleIcon 
+  UserCircleIcon,
+  TrashIcon 
 } from '@heroicons/react/24/outline';
 
 export default function ChatModal({ 
@@ -19,8 +21,13 @@ export default function ChatModal({
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [sending, setSending] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -152,6 +159,30 @@ export default function ChatModal({
     }
   };
 
+  const clearChat = async () => {
+    if (!conversationId) return;
+    
+    const confirmClear = window.confirm('Are you sure you want to clear this chat? This action cannot be undone.');
+    if (!confirmClear) return;
+
+    try {
+      const response = await fetch(`/api/chat/clear?conversationId=${conversationId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setMessages([]);
+      } else {
+        const data = await response.json();
+        console.error('Error clearing chat:', data.message);
+        alert('Failed to clear chat. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      alert('Failed to clear chat. Please try again.');
+    }
+  };
+
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], { 
       hour: '2-digit', 
@@ -191,18 +222,19 @@ export default function ChatModal({
     return groups;
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const messageGroups = groupMessagesByDate(messages);
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-70 z-[9999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-70 z-[10000] flex items-center justify-center p-4"
+          style={{ margin: 0, padding: '1rem' }}
           onClick={onClose}
         >
           <motion.div
@@ -210,7 +242,8 @@ export default function ChatModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg h-[650px] flex flex-col relative"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg h-[650px] flex flex-col relative mx-auto"
+            style={{ maxWidth: '32rem' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -238,12 +271,26 @@ export default function ChatModal({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Clear Chat Button */}
+                {conversationId && messages.length > 0 && (
+                  <button
+                    onClick={clearChat}
+                    className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                    title="Clear chat"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                )}
+                
+                {/* Close Button */}
+                <button
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -338,4 +385,6 @@ export default function ChatModal({
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 }
