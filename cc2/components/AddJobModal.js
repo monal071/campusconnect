@@ -46,6 +46,27 @@ export default function AddJobModal({ isOpen, onClose, onAdd }) {
     }));
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      company: '',
+      location: '',
+      type: 'Full-time',
+      experience: '',
+      salary: '',
+      description: '',
+      requirements: [''],
+      skills: [''],
+      benefits: [''],
+      deadline: ''
+    });
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -64,6 +85,7 @@ export default function AddJobModal({ isOpen, onClose, onAdd }) {
     };
 
     onAdd(cleanedData);
+    resetForm(); // Reset form after successful submission
   };
 
   if (!isOpen) return null;
@@ -251,7 +273,7 @@ export default function AddJobModal({ isOpen, onClose, onAdd }) {
           <div className="flex justify-end gap-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
             >
               Cancel

@@ -53,6 +53,18 @@ export default async function handler(req, res) {
         { $addToSet: { requests: fromUserId } }
       );
       
+      // Create notification for the recipient
+      await db.collection('notifications').insertOne({
+        userId: toUserId,
+        type: 'friend_request',
+        message: `${fromUser.name} sent you a friend request`,
+        senderId: fromUserId,
+        senderName: fromUser.name,
+        senderEmail: fromUser.email,
+        read: false,
+        createdAt: new Date()
+      });
+      
       return res.status(200).json({ success: true, message: 'Connection request sent' });
     } catch (error) {
       console.error('Error sending connection request:', error);
@@ -71,6 +83,12 @@ export default async function handler(req, res) {
       const db = client.db();
       
       if (action === 'accept') {
+        // Get user details for notifications
+        const [fromUser, toUser] = await Promise.all([
+          db.collection('users').findOne({ _id: new ObjectId(fromUserId) }),
+          db.collection('users').findOne({ _id: new ObjectId(toUserId) })
+        ]);
+        
         // Add each user to the other's friends list and remove the request
         await Promise.all([
           db.collection('users').updateOne(
@@ -86,14 +104,53 @@ export default async function handler(req, res) {
           )
         ]);
         
+        // Create permanent friendship record
+        await db.collection('friendships').insertOne({
+          user1Id: fromUserId,
+          user2Id: toUserId,
+          user1Name: fromUser.name,
+          user2Name: toUser.name,
+          user1Email: fromUser.email,
+          user2Email: toUser.email,
+          status: 'active',
+          createdAt: new Date(),
+          acceptedAt: new Date()
+        });
+        
+        // Create notification for the requester
+        await db.collection('notifications').insertOne({
+          userId: fromUserId,
+          type: 'approval',
+          message: `${toUser.name} accepted your friend request`,
+          link: '/connections',
+          read: false,
+          createdAt: new Date()
+        });
+        
         return res.status(200).json({ success: true, message: 'Connection request accepted' });
       } 
       else if (action === 'reject') {
+        // Get user details for notification
+        const [fromUser, toUser] = await Promise.all([
+          db.collection('users').findOne({ _id: new ObjectId(fromUserId) }),
+          db.collection('users').findOne({ _id: new ObjectId(toUserId) })
+        ]);
+        
         // Remove the request
         await db.collection('users').updateOne(
           { _id: new ObjectId(toUserId) },
           { $pull: { requests: fromUserId } }
         );
+        
+        // Optionally create a notification for the requester (you can remove this if you don't want to notify on rejection)
+        await db.collection('notifications').insertOne({
+          userId: fromUserId,
+          type: 'rejection',
+          message: `Your friend request was declined`,
+          link: '/connections',
+          read: false,
+          createdAt: new Date()
+        });
         
         return res.status(200).json({ success: true, message: 'Connection request rejected' });
       }

@@ -9,8 +9,8 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const jobs = await getAllItems(TABLE_NAME);
-      // Filter out any invalid jobs
-      const validJobs = (jobs.items || []).filter(job => 
+      // Fix: Return the items array directly, not wrapped in an object
+      const validJobs = (Array.isArray(jobs) ? jobs : (jobs.items || [])).filter(job => 
         job && 
         typeof job === 'object' && 
         job.title && 

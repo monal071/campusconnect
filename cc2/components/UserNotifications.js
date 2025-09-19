@@ -5,14 +5,19 @@ import {
   CheckCircleIcon, 
   XCircleIcon, 
   ClockIcon,
-  BellIcon 
+  BellIcon,
+  UserPlusIcon,
+  CheckIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 export default function UserNotifications() {
   const { data: session } = useSession();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [processingRequests, setProcessingRequests] = useState(new Set());
 
   useEffect(() => {
     if (session?.user) {
@@ -58,6 +63,45 @@ export default function UserNotifications() {
     }
   };
 
+  const handleFriendRequest = async (notificationId, senderId, action) => {
+    try {
+      setProcessingRequests(prev => new Set([...prev, notificationId]));
+      
+      const response = await fetch('/api/connections/request', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          fromUserId: senderId, 
+          toUserId: session.user.id,
+          action 
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to process request');
+      }
+      
+      toast.success(action === 'accept' ? 'Friend request accepted!' : 'Friend request declined');
+      
+      // Remove the notification from the list
+      setNotifications(prev => prev.filter(notification => notification._id !== notificationId));
+      
+    } catch (error) {
+      console.error('Error handling friend request:', error);
+      toast.error('Failed to process friend request');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(notificationId);
+        return newSet;
+      });
+    }
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'approval':
@@ -66,6 +110,8 @@ export default function UserNotifications() {
         return <XCircleIcon className="h-5 w-5 text-red-500" />;
       case 'pending':
         return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+      case 'friend_request':
+        return <UserPlusIcon className="h-5 w-5 text-blue-500" />;
       default:
         return <BellIcon className="h-5 w-5 text-blue-500" />;
     }
@@ -79,6 +125,8 @@ export default function UserNotifications() {
         return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
       case 'pending':
         return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800';
+      case 'friend_request':
+        return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
       default:
         return 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
     }
@@ -149,11 +197,13 @@ export default function UserNotifications() {
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {notification.title}
+                      {notification.title || notification.message}
                     </p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                      {notification.message}
-                    </p>
+                    {notification.title && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        {notification.message}
+                      </p>
+                    )}
                     {notification.reason && (
                       <p className="text-xs text-slate-500 dark:text-slate-500 mt-2 italic">
                         Reason: {notification.reason}
@@ -162,6 +212,42 @@ export default function UserNotifications() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                       {new Date(notification.createdAt).toLocaleDateString()}
                     </p>
+                    
+                    {/* Friend Request Action Buttons */}
+                    {notification.type === 'friend_request' && notification.senderId && (
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFriendRequest(notification._id, notification.senderId, 'accept');
+                          }}
+                          disabled={processingRequests.has(notification._id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {processingRequests.has(notification._id) ? (
+                            <div className="w-3 h-3 border-t-2 border-white rounded-full animate-spin"></div>
+                          ) : (
+                            <CheckIcon className="w-3 h-3" />
+                          )}
+                          Accept
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFriendRequest(notification._id, notification.senderId, 'reject');
+                          }}
+                          disabled={processingRequests.has(notification._id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {processingRequests.has(notification._id) ? (
+                            <div className="w-3 h-3 border-t-2 border-white rounded-full animate-spin"></div>
+                          ) : (
+                            <XMarkIcon className="w-3 h-3" />
+                          )}
+                          Ignore
+                        </button>
+                      </div>
+                    )}
                   </div>
                   {!notification.read && (
                     <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
