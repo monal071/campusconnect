@@ -39,16 +39,15 @@ export default async function handler(req, res) {
         return res.status(403).json({ message: 'Only students can submit quizzes' });
       }
 
-      const { password, answers, studentId, timeTaken } = req.body;
+      const { quizId, answers, studentId, studentName } = req.body;
 
-      if (!password || !answers || !studentId) {
-        return res.status(400).json({ message: 'Password, answers, and student ID are required' });
+      if (!quizId || !answers || !studentId || !studentName) {
+        return res.status(400).json({ message: 'Quiz ID, answers, student ID, and student name are required' });
       }
 
-      // Find quiz by password
+      // Find quiz by ID
       const quiz = await db.collection('quizzes').findOne({ 
-        password: password.toUpperCase(),
-        isActive: true 
+        _id: new ObjectId(quizId)
       });
 
       if (!quiz) {
@@ -77,7 +76,7 @@ export default async function handler(req, res) {
       const totalQuestions = quiz.questions.length;
 
       for (let i = 0; i < quiz.questions.length; i++) {
-        if (answers[i] === quiz.questions[i].correctAnswer) {
+        if (answers[i] === quiz.questions[i].correct) {
           correctAnswers++;
         }
       }
@@ -87,13 +86,11 @@ export default async function handler(req, res) {
       // Create submission
       const submission = {
         studentId,
-        studentName: session.user.name,
+        studentName: studentName,
         submittedBy: new ObjectId(session.user.id),
         answers,
-        score,
-        correctAnswers,
+        score: correctAnswers,
         totalQuestions,
-        timeTaken: timeTaken || 0,
         submittedAt: new Date()
       };
 
@@ -105,8 +102,7 @@ export default async function handler(req, res) {
 
       res.status(200).json({
         message: 'Quiz submitted successfully',
-        score,
-        correctAnswers,
+        marks: correctAnswers,
         totalQuestions
       });
 

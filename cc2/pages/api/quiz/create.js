@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   const password = crypto.randomBytes(4).toString('hex');
   const client = await clientPromise;
-  const db = client.db();
+  const db = client.db('campusconnect');
   const quiz = {
     quizName,
     questions,

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (!session || session.user.role !== 'faculty') return res.status(403).json({ message: 'Forbidden' });
 
   const client = await clientPromise;
-  const db = client.db();
+  const db = client.db('campusconnect');
   const quizzes = await db.collection('quizzes').find({ createdBy: session.user.id }).toArray();
   res.status(200).json({ quizzes });
 }
