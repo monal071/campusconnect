@@ -1,156 +1,182 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { MongoClient, ObjectId } from 'mongodb';
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client;
-let clientPromise;
-
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local');
-}
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
+import clientPromise from '../../../utils/mongodb';
+import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
   try {
     const session = await getServerSession(req, res, authOptions);
     if (!session) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (session.user.role !== 'student') {
+      return res.status(403).json({ message: 'Only students can submit quizzes' });
+    }
+
+    const { quizId, answers, studentId, studentName, timeSpent, password } = req.body;
+
+    // Validation
+    if (!quizId || !ObjectId.isValid(quizId)) {
+      return res.status(400).json({ message: 'Valid quiz ID is required' });
+    }
+
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({ message: 'Answers are required' });
+    }
+
+    if (!studentId?.trim() || !studentName?.trim()) {
+      return res.status(400).json({ message: 'Student ID and name are required' });
     }
 
     const client = await clientPromise;
     const db = client.db('campusconnect');
 
-    if (req.method === 'POST') {
-      // Submit quiz answers (Students only)
-      if (session.user.role !== 'student') {
-        return res.status(403).json({ message: 'Only students can submit quizzes' });
+    // Get the quiz
+    const quiz = await db.collection('quizzes').findOne({ _id: new ObjectId(quizId) });
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    // Check if quiz has expired
+    const deadline = new Date(quiz.deadline);
+    if (!isNaN(deadline.getTime()) && new Date() > deadline) {
+      return res.status(400).json({ message: 'Quiz deadline has passed' });
+    }
+
+    // Check password for protected quizzes
+    if (!quiz.isPublic && quiz.password) {
+      if (!password || password !== quiz.password) {
+        return res.status(403).json({ message: 'Invalid quiz password' });
       }
+    }
 
-      const { quizId, answers, studentId, studentName } = req.body;
-
-      if (!quizId || !answers || !studentId || !studentName) {
-        return res.status(400).json({ message: 'Quiz ID, answers, student ID, and student name are required' });
-      }
-
-      // Find quiz by ID
-      const quiz = await db.collection('quizzes').findOne({ 
-        _id: new ObjectId(quizId)
-      });
-
-      if (!quiz) {
-        return res.status(404).json({ message: 'Invalid quiz password' });
-      }
-
-      // Check if quiz deadline has passed
-      const now = new Date();
-      const deadline = new Date(quiz.deadline);
-      if (now > deadline) {
-        return res.status(403).json({ 
-          message: 'Quiz deadline has passed. Submissions are no longer accepted.',
-          deadline: quiz.deadline,
-          expired: true 
-        });
-      }
-
-      // Check if student already submitted
-      const existingSubmission = quiz.submissions?.find(sub => sub.studentId === studentId);
+    // Check if student has already submitted (if retakes not allowed)
+    if (!quiz.allowRetakes) {
+      const existingSubmission = quiz.submissions?.find(
+        submission => submission.studentId === studentId.trim()
+      );
       if (existingSubmission) {
         return res.status(400).json({ message: 'You have already submitted this quiz' });
       }
-
-      // Calculate score
-      let correctAnswers = 0;
-      const totalQuestions = quiz.questions.length;
-
-      for (let i = 0; i < quiz.questions.length; i++) {
-        if (answers[i] === quiz.questions[i].correct) {
-          correctAnswers++;
-        }
-      }
-
-      const score = Math.round((correctAnswers / totalQuestions) * 100);
-
-      // Create submission
-      const submission = {
-        studentId,
-        studentName: studentName,
-        submittedBy: new ObjectId(session.user.id),
-        answers,
-        score: correctAnswers,
-        totalQuestions,
-        submittedAt: new Date()
-      };
-
-      // Add submission to quiz
-      await db.collection('quizzes').updateOne(
-        { _id: quiz._id },
-        { $push: { submissions: submission } }
-      );
-
-      res.status(200).json({
-        message: 'Quiz submitted successfully',
-        marks: correctAnswers,
-        totalQuestions
-      });
-
-    } else if (req.method === 'GET') {
-      // Get quiz by password (for taking quiz)
-      const { password } = req.query;
-
-      if (!password) {
-        return res.status(400).json({ message: 'Password is required' });
-      }
-
-      const quiz = await db.collection('quizzes').findOne(
-        { 
-          password: password.toUpperCase(),
-          isActive: true 
-        },
-        {
-          projection: {
-            quizName: 1,
-            questions: {
-              $map: {
-                input: '$questions',
-                as: 'question',
-                in: {
-                  question: '$$question.question',
-                  options: '$$question.options'
-                  // Don't include correctAnswer for students
-                }
-              }
-            },
-            timeLimit: 1,
-            createdByName: 1
-          }
-        }
-      );
-
-      if (!quiz) {
-        return res.status(404).json({ message: 'Invalid quiz password' });
-      }
-
-      res.status(200).json({ quiz });
-
-    } else {
-      res.status(405).json({ message: 'Method not allowed' });
     }
 
+    // Calculate score
+    let correctAnswers = 0;
+    let totalScore = 0;
+    const gradedAnswers = [];
+
+    quiz.questions.forEach((question, index) => {
+      const studentAnswer = answers[index] || '';
+      const isCorrect = studentAnswer === question.correctAnswer;
+      
+      if (isCorrect) {
+        correctAnswers++;
+        totalScore += question.points;
+      }
+
+      gradedAnswers.push({
+        questionId: question.id,
+        question: question.question,
+        studentAnswer,
+        correctAnswer: question.correctAnswer,
+        isCorrect,
+        points: isCorrect ? question.points : 0,
+        maxPoints: question.points
+      });
+    });
+
+    const percentageScore = (totalScore / quiz.totalPoints) * 100;
+
+    // Create submission object
+    const submission = {
+      submissionId: new ObjectId().toString(),
+      studentId: studentId.trim(),
+      studentName: studentName.trim(),
+      userId: session.user.id,
+      submittedAt: new Date(),
+      answers: gradedAnswers,
+      totalScore,
+      maxScore: quiz.totalPoints,
+      percentageScore,
+      correctAnswers,
+      totalQuestions: quiz.questions.length,
+      timeSpent: timeSpent || 0,
+      grade: getLetterGrade(percentageScore)
+    };
+
+    // Remove previous submission if retakes allowed
+    let updatedSubmissions = quiz.submissions || [];
+    if (quiz.allowRetakes) {
+      updatedSubmissions = updatedSubmissions.filter(
+        sub => sub.studentId !== studentId.trim()
+      );
+    }
+    updatedSubmissions.push(submission);
+
+    // Update quiz with new submission and recalculate stats
+    const totalSubmissions = updatedSubmissions.length;
+    const averageScore = totalSubmissions > 0 
+      ? updatedSubmissions.reduce((sum, sub) => sum + sub.percentageScore, 0) / totalSubmissions 
+      : 0;
+
+    const updateResult = await db.collection('quizzes').updateOne(
+      { _id: new ObjectId(quizId) },
+      {
+        $set: {
+          submissions: updatedSubmissions,
+          'stats.totalSubmissions': totalSubmissions,
+          'stats.averageScore': Math.round(averageScore * 100) / 100,
+          'stats.completionRate': Math.round((totalSubmissions / 100) * 100) / 100,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    if (updateResult.matchedCount === 0) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    // Return the submission result
+    res.status(200).json({
+      message: 'Quiz submitted successfully',
+      submission: {
+        submissionId: submission.submissionId,
+        totalScore: submission.totalScore,
+        maxScore: submission.maxScore,
+        percentageScore: submission.percentageScore,
+        correctAnswers: submission.correctAnswers,
+        totalQuestions: submission.totalQuestions,
+        grade: submission.grade,
+        timeSpent: submission.timeSpent,
+        submittedAt: submission.submittedAt,
+        showResults: quiz.showResults,
+        answers: quiz.showResults ? submission.answers : null
+      }
+    });
+
   } catch (error) {
-    console.error('Quiz submission API error:', error);
+    console.error('Quiz submission error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
+}
+
+function getLetterGrade(percentage) {
+  if (percentage >= 97) return 'A+';
+  if (percentage >= 93) return 'A';
+  if (percentage >= 90) return 'A-';
+  if (percentage >= 87) return 'B+';
+  if (percentage >= 83) return 'B';
+  if (percentage >= 80) return 'B-';
+  if (percentage >= 77) return 'C+';
+  if (percentage >= 73) return 'C';
+  if (percentage >= 70) return 'C-';
+  if (percentage >= 67) return 'D+';
+  if (percentage >= 63) return 'D';
+  if (percentage >= 60) return 'D-';
+  return 'F';
 }

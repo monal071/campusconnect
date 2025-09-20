@@ -1,0 +1,232 @@
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import clientPromise from '../../../utils/mongodb';
+import { ObjectId } from 'mongodb';
+
+export default async function handler(req, res) {
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    if (!session) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { quizId } = req.query;
+    if (!quizId || !ObjectId.isValid(quizId)) {
+      return res.status(400).json({ message: 'Valid quiz ID is required' });
+    }
+
+    const client = await clientPromise;
+    const db = client.db('campusconnect');
+
+    if (req.method === 'GET') {
+      // Handle GET request for both faculty and students
+      let quiz;
+      
+      if (session.user.role === 'faculty') {
+        // Faculty can only access their own quizzes for editing
+        quiz = await db.collection('quizzes').findOne({
+          _id: new ObjectId(quizId),
+          $or: [
+            { createdBy: session.user.id }, // string format
+            { createdBy: new ObjectId(session.user.id) } // ObjectId format
+          ]
+        });
+      } else if (session.user.role === 'student') {
+        // Students can access any quiz for taking
+        quiz = await db.collection('quizzes').findOne({ _id: new ObjectId(quizId) });
+        
+        // Check if quiz is accessible to students
+        if (quiz && !quiz.isPublic && session.user.role === 'student') {
+          // For password-protected quizzes, return basic info only
+          return res.status(200).json({
+            _id: quiz._id,
+            quizName: quiz.quizName,
+            description: quiz.description,
+            totalQuestions: quiz.totalQuestions,
+            totalPoints: quiz.totalPoints,
+            timeLimit: quiz.timeLimit,
+            deadline: quiz.deadline,
+            isPublic: quiz.isPublic,
+            allowRetakes: quiz.allowRetakes,
+            showResults: quiz.showResults,
+            password: quiz.password, // Include password for verification
+            requiresPassword: true
+          });
+        }
+      }
+
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found or access denied' });
+      }
+
+      // Check if quiz has expired
+      const deadline = new Date(quiz.deadline);
+      if (!isNaN(deadline.getTime()) && new Date() > deadline) {
+        return res.status(400).json({ message: 'Quiz deadline has passed' });
+      }
+
+      // Return appropriate data based on role
+      const responseData = {
+        _id: quiz._id,
+        quizName: quiz.quizName,
+        description: quiz.description,
+        questions: quiz.questions,
+        totalQuestions: quiz.totalQuestions,
+        totalPoints: quiz.totalPoints,
+        timeLimit: quiz.timeLimit,
+        deadline: quiz.deadline,
+        isPublic: quiz.isPublic,
+        allowRetakes: quiz.allowRetakes,
+        showResults: quiz.showResults,
+        category: quiz.category,
+        difficulty: quiz.difficulty
+      };
+
+      // Include additional fields for faculty
+      if (session.user.role === 'faculty') {
+        responseData.password = quiz.password;
+        responseData.createdAt = quiz.createdAt;
+        responseData.updatedAt = quiz.updatedAt;
+        responseData.submissions = quiz.submissions;
+        responseData.stats = quiz.stats;
+      } else {
+        // For students, include password for verification but not other sensitive data
+        responseData.password = quiz.password;
+      }
+
+      return res.status(200).json(responseData);
+    }
+
+    // For non-GET requests, require faculty access
+    if (session.user.role !== 'faculty') {
+      return res.status(403).json({ message: 'Forbidden: Faculty access required' });
+    }
+
+    // Verify quiz ownership for faculty operations
+    console.log('Session user:', session.user);
+    console.log('Looking for quiz with ID:', quizId, 'and createdBy:', session.user.id);
+    
+    // Try to find quiz with both string and ObjectId createdBy formats
+    const quiz = await db.collection('quizzes').findOne({
+      _id: new ObjectId(quizId),
+      $or: [
+        { createdBy: session.user.id }, // string format
+        { createdBy: new ObjectId(session.user.id) } // ObjectId format
+      ]
+    });
+
+    console.log('Found quiz:', quiz ? 'Yes' : 'No');
+    if (quiz) {
+      console.log('Quiz createdBy:', quiz.createdBy);
+      console.log('Session user ID:', session.user.id);
+      console.log('Types - Quiz createdBy:', typeof quiz.createdBy, 'Session ID:', typeof session.user.id);
+    }
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found or access denied' });
+    }
+
+    if (req.method === 'PUT') {
+      const { 
+        quizName, 
+        description, 
+        questions, 
+        deadline, 
+        timeLimit, 
+        category,
+        difficulty,
+        isPublic,
+        allowRetakes,
+        showResults 
+      } = req.body;
+
+      // Validation
+      if (!quizName?.trim()) {
+        return res.status(400).json({ message: 'Quiz name is required' });
+      }
+
+      if (!questions || !Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ message: 'At least one question is required' });
+      }
+
+      if (!deadline) {
+        return res.status(400).json({ message: 'Deadline is required' });
+      }
+
+      const deadlineDate = new Date(deadline);
+      if (deadlineDate <= new Date()) {
+        return res.status(400).json({ message: 'Deadline must be in the future' });
+      }
+
+      // Check if quiz has submissions - restrict certain updates
+      const hasSubmissions = quiz.submissions && quiz.submissions.length > 0;
+      
+      const updateData = {
+        quizName: quizName.trim(),
+        description: description?.trim() || '',
+        deadline: deadlineDate,
+        timeLimit: timeLimit || 60,
+        category: category || 'general',
+        difficulty: difficulty || 'medium',
+        isPublic: isPublic || false,
+        allowRetakes: allowRetakes || false,
+        showResults: showResults !== false,
+        updatedAt: new Date()
+      };
+
+      // Only allow question updates if no submissions exist
+      if (!hasSubmissions) {
+        updateData.questions = questions.map((q, index) => ({
+          id: index + 1,
+          question: q.question.trim(),
+          type: q.type || 'multiple-choice',
+          options: q.options || [],
+          correctAnswer: q.correctAnswer || '',
+          points: q.points || 1,
+          explanation: q.explanation || ''
+        }));
+        updateData.totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
+        updateData.totalQuestions = questions.length;
+      }
+
+      const result = await db.collection('quizzes').updateOne(
+        { _id: new ObjectId(quizId) },
+        { $set: updateData }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      res.status(200).json({ 
+        message: 'Quiz updated successfully',
+        restrictedUpdate: hasSubmissions ? 'Questions cannot be modified after submissions' : null
+      });
+
+    } else if (req.method === 'DELETE') {
+      // Check if quiz has submissions
+      if (quiz.submissions && quiz.submissions.length > 0) {
+        return res.status(400).json({ 
+          message: 'Cannot delete quiz with existing submissions. Consider making it inactive instead.' 
+        });
+      }
+
+      const result = await db.collection('quizzes').deleteOne({
+        _id: new ObjectId(quizId)
+      });
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      res.status(200).json({ message: 'Quiz deleted successfully' });
+
+    } else {
+      res.status(405).json({ message: 'Method not allowed' });
+    }
+
+  } catch (error) {
+    console.error('Quiz management error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}

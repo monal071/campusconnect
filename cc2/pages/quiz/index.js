@@ -1,408 +1,491 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../../components/Layout';
+import CreateQuizModal from '../../components/CreateQuizModal';
+import QuizCard from '../../components/QuizCard';
+import QuizResultsModal from '../../components/QuizResultsModal';
+import TakeQuizModal from '../../components/TakeQuizModal';
+import JoinPrivateQuizModal from '../../components/JoinPrivateQuizModal';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import { 
-  AcademicCapIcon,
+  PlusIcon, 
+  AcademicCapIcon, 
+  MagnifyingGlassIcon,
+  ChartBarIcon,
+  UserGroupIcon,
   ClockIcon,
-  DocumentTextIcon,
-  EyeIcon,
-  TrashIcon,
-  PlusIcon,
-  CheckCircleIcon,
-  XMarkIcon
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 export default function QuizPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [facultyQuizzes, setFacultyQuizzes] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [quizPassword, setQuizPassword] = useState('');
-  const [currentQuiz, setCurrentQuiz] = useState(null);
-  const [studentId, setStudentId] = useState('');
-  const [studentName, setStudentName] = useState('');
-  const [answers, setAnswers] = useState([]);
-  const [marks, setMarks] = useState(null);
-  const [quizForm, setQuizForm] = useState({
-    quizName: '',
-    deadline: '',
-    questions: [{ question: '', options: ['', '', '', ''], correct: '' }]
-  });
-  const [quizPasswordCreated, setQuizPasswordCreated] = useState('');
-  const [results, setResults] = useState([]);
+
+  // State management
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [showTakeModal, setShowTakeModal] = useState(false);
+  const [showJoinPrivateModal, setShowJoinPrivateModal] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  
+  // Filter and search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created');
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/login');
+    if (status === 'authenticated') {
+      fetchQuizzes();
+    }
+  }, [status, searchTerm, statusFilter, sortBy]);
+
+  // Force refresh every time the page loads to avoid caching issues
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const timer = setTimeout(() => {
+        fetchQuizzes();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const fetchQuizzes = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const params = new URLSearchParams({
+        search: searchTerm,
+        status: statusFilter,
+        sortBy,
+        sortOrder: 'desc',
+        _t: Date.now() // Cache busting timestamp
+      });
+
+      const response = await fetch(`/api/quiz/list?${params}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Fresh quiz data received:', data.quizzes);
+        setQuizzes(data.quizzes || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch quizzes');
+      }
+    } catch (error) {
+      console.error('Fetch quizzes error:', error);
+      setError(error.message);
+      toast.error('Failed to load quizzes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateQuiz = () => {
+    if (session?.user?.role === 'faculty' || session?.user?.role === 'admin') {
+      setShowCreateModal(true);
+    } else {
+      toast.error('Only faculty members can create quizzes');
+    }
+  };
+
+  const handleQuizCreated = () => {
+    setShowCreateModal(false);
+    fetchQuizzes();
+    toast.success('Quiz created successfully!');
+  };
+
+  const handleViewResults = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowResultsModal(true);
+  };
+
+  const handleTakeQuiz = async (quiz) => {
+    try {
+      setLoading(true);
+      
+      // Fetch full quiz data with questions
+      const response = await fetch(`/api/quiz/${quiz._id}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to load quiz');
+        return;
+      }
+
+      const fullQuiz = await response.json();
+      setSelectedQuiz(fullQuiz);
+      setShowTakeModal(true);
+    } catch (error) {
+      toast.error('Failed to load quiz');
+      console.error('Error loading quiz:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoinPrivateQuiz = () => {
+    setShowJoinPrivateModal(true);
+  };
+
+  const handlePrivateQuizFound = (quiz) => {
+    // Add the found quiz to the list if it's not already there
+    setQuizzes(prev => {
+      const exists = prev.find(q => q._id === quiz._id);
+      if (exists) {
+        return prev;
+      }
+      return [quiz, ...prev];
+    });
+    
+    // Optionally auto-open the quiz for taking
+    toast.success('Private quiz added to your list!');
+  };
+
+  const handleQuizSubmit = async (submissionData) => {
+    try {
+      const response = await fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to submit quiz');
+      }
+
+      toast.success('Quiz submitted successfully!');
+      setShowTakeModal(false);
+      setSelectedQuiz(null);
+      fetchQuizzes();
+      
+      return result;
+    } catch (error) {
+      toast.error(error.message || 'Failed to submit quiz');
+      throw error;
+    }
+  };
+
+  const handleQuizSubmitted = () => {
+    setShowTakeModal(false);
+    setSelectedQuiz(null);
+    fetchQuizzes();
+  };
+
+  const handleEditQuiz = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteQuiz = async (quizId) => {
+    if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
       return;
     }
-    if (session.user.role === 'faculty') {
-      fetchFacultyQuizzes();
-    }
-  }, [session, status]);
 
-  // Faculty: fetch quizzes they created
-  const fetchFacultyQuizzes = async () => {
-    setLoading(true);
-    const res = await fetch('/api/quiz/list');
-    const data = await res.json();
-    setFacultyQuizzes(data.quizzes || []);
-    setLoading(false);
-  };
+    try {
+      const response = await fetch(`/api/quiz/${quizId}`, {
+        method: 'DELETE',
+      });
 
-  // Faculty: create quiz
-  const handleCreateQuiz = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const res = await fetch('/api/quiz/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(quizForm)
-    });
-    const data = await res.json();
-    setQuizPasswordCreated(data.password);
-    setLoading(false);
-    fetchFacultyQuizzes();
-  };
-
-  // Faculty: view results
-  const handleViewResults = async (quizId) => {
-    setLoading(true);
-    const res = await fetch(`/api/quiz/results?quizId=${quizId}`);
-    const data = await res.json();
-    if (res.ok) {
-      setResults(data.results.submissions || []);
-    } else {
-      if (data.timeRemaining !== undefined) {
-        const hours = Math.floor(data.timeRemaining / 60);
-        const minutes = data.timeRemaining % 60;
-        alert(`Quiz results will be available after the deadline. Time remaining: ${hours}h ${minutes}m`);
+      if (response.ok) {
+        toast.success('Quiz deleted successfully');
+        fetchQuizzes();
       } else {
-        alert(data.message);
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete quiz');
       }
+    } catch (error) {
+      toast.error('Error deleting quiz');
     }
-    setLoading(false);
   };
 
-  // Student: get quiz by password
-  const handleGetQuiz = async () => {
-    if (!quizPassword.trim()) return alert('Enter quiz password');
-    setLoading(true);
-    const res = await fetch(`/api/quiz/get?password=${quizPassword}`);
-    const data = await res.json();
-    if (res.ok) {
-      setCurrentQuiz(data.quiz);
-      setAnswers(new Array(data.quiz.questions.length).fill(''));
-    } else {
-      if (data.expired) {
-        alert(`Quiz deadline has passed. The deadline was: ${new Date(data.deadline).toLocaleString()}`);
-      } else {
-        alert(data.message);
-      }
+  const getQuizStats = () => {
+    const totalQuizzes = quizzes.length;
+    const activeQuizzes = quizzes.filter(quiz => quiz.status === 'active').length;
+    const totalSubmissions = quizzes.reduce((sum, quiz) => sum + (quiz.statistics?.submissions || 0), 0);
+    const averageScore = quizzes.length > 0 
+      ? Math.round(quizzes.reduce((sum, quiz) => sum + (quiz.statistics?.averageScore || 0), 0) / quizzes.length)
+      : 0;
+
+    return { totalQuizzes, activeQuizzes, totalSubmissions, averageScore };
+  };
+
+  const filteredQuizzes = quizzes.filter(quiz => {
+    if (searchTerm && !quiz.quizName.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !quiz.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
     }
-    setLoading(false);
-  };
+    return true;
+  });
 
-  // Student: submit quiz
-  const handleSubmitQuiz = async (e) => {
-    e.preventDefault();
-    if (!studentId.trim() || !studentName.trim()) return alert('Enter your ID and name');
-    setLoading(true);
-    const res = await fetch('/api/quiz/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quizId: currentQuiz._id,
-        studentId,
-        studentName,
-        answers
-      })
-    });
-    const data = await res.json();
-    setMarks(data.marks);
-    setLoading(false);
-  };
-
-  // UI rendering
-  if (status === 'loading') return <div className="flex items-center justify-center min-h-screen"><div className="text-lg">Loading...</div></div>;
-  if (!session) return null;
-  if (session.user.role === 'admin') return <div className="max-w-3xl mx-auto p-8 text-center"><div className="text-lg text-gray-600 dark:text-gray-400">Admins do not have quiz access.</div></div>;
-
-  // Faculty dashboard
-  if (session.user.role === 'faculty') {
+  if (status === 'loading') {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-          <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">Faculty Quiz Dashboard</h1>
-        <button className="mb-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors" onClick={() => setShowCreateForm(!showCreateForm)}>
-          {showCreateForm ? 'Hide Quiz Creator' : 'Create New Quiz'}
-        </button>
-        {showCreateForm && (
-          <form onSubmit={handleCreateQuiz} className="mb-8 p-6 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
-            <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Quiz Name</label>
-            <input 
-              value={quizForm.quizName} 
-              onChange={e => setQuizForm({ ...quizForm, quizName: e.target.value })} 
-              className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-              placeholder="Enter quiz name (e.g., Math Quiz)"
-              required 
-            />
-            <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Quiz Deadline</label>
-            <input 
-              type="datetime-local"
-              value={quizForm.deadline} 
-              onChange={e => setQuizForm({ ...quizForm, deadline: e.target.value })} 
-              className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-              required 
-            />
-            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">Students will not be able to access the quiz after this deadline.</p>
-            {quizForm.questions.map((q, idx) => (
-              <div key={idx} className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Question {idx + 1}</label>
-                <input 
-                  value={q.question} 
-                  onChange={e => {
-                    const updated = [...quizForm.questions];
-                    updated[idx].question = e.target.value;
-                    setQuizForm({ ...quizForm, questions: updated });
-                  }} 
-                  className="mb-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-                  placeholder="Enter your question here"
-                  required 
-                />
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  {q.options.map((opt, oIdx) => (
-                    <input 
-                      key={oIdx} 
-                      value={opt} 
-                      onChange={e => {
-                        const updated = [...quizForm.questions];
-                        updated[idx].options[oIdx] = e.target.value;
-                        setQuizForm({ ...quizForm, questions: updated });
-                      }} 
-                      className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-                      placeholder={`Option ${oIdx + 1}`} 
-                      required 
-                    />
-                  ))}
-                </div>
-                <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Correct Option (enter exact option text)</label>
-                <input 
-                  value={q.correct} 
-                  onChange={e => {
-                    const updated = [...quizForm.questions];
-                    updated[idx].correct = e.target.value;
-                    setQuizForm({ ...quizForm, questions: updated });
-                  }} 
-                  className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-                  placeholder="Enter the correct option text exactly as written above"
-                  required 
-                />
-              </div>
-            ))}
-            <div className="flex gap-3">
-              <button type="button" className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors" onClick={() => setQuizForm({ ...quizForm, questions: [...quizForm.questions, { question: '', options: ['', '', '', ''], correct: '' }] })}>Add Question</button>
-              <button type="submit" className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Quiz'}
-              </button>
-            </div>
-          </form>
-        )}
-        {quizPasswordCreated && (
-          <div className="mb-6 p-4 bg-yellow-100 border rounded">
-            <strong>Quiz Password:</strong> <span className="font-mono text-lg">{quizPasswordCreated}</span>
-            <div className="text-xs text-gray-600">Share this password with students to allow them to take the quiz.</div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center h-64">
+            <LoadingSpinner />
           </div>
-        )}
-        <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-100">Your Quizzes</h2>
-        {loading ? <div className="text-gray-600 dark:text-gray-400">Loading...</div> : (
-          <div className="mb-8 space-y-3">
-            {facultyQuizzes.map(q => {
-              const now = new Date();
-              const deadline = new Date(q.deadline);
-              const isExpired = now > deadline;
-              const timeRemaining = deadline - now;
-              const hoursRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60)));
-              const minutesRemaining = Math.max(0, Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60)));
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!session) {
+    router.push('/login');
+    return null;
+  }
+
+  const stats = getQuizStats();
+  const isFaculty = session.user?.role === 'faculty' || session.user?.role === 'admin';
+
+  return (
+    <Layout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Quizzes
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                {isFaculty ? 'Create and manage your quizzes' : 'Take quizzes and view your progress'}
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              {isFaculty && (
+                <button
+                  onClick={handleCreateQuiz}
+                  className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Create Quiz
+                </button>
+              )}
               
-              return (
-                <div key={q._id} className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{q.quizName}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        Deadline: {new Date(q.deadline).toLocaleString()}
-                      </p>
-                      <div className="mt-2">
-                        {isExpired ? (
-                          <span className="inline-block px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-xs rounded-full">
-                            Expired
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-full">
-                            Active - {hoursRemaining}h {minutesRemaining}m remaining
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button 
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        isExpired 
-                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
-                          : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
-                      }`}
-                      onClick={() => isExpired && handleViewResults(q._id)}
-                      disabled={!isExpired}
-                      title={isExpired ? 'View results' : 'Results available after deadline'}
-                    >
-                      {isExpired ? 'View Results' : 'Results Locked'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+              {!isFaculty && (
+                <button
+                  onClick={handleJoinPrivateQuiz}
+                  className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <LockClosedIcon className="h-5 w-5 mr-2" />
+                  Join Private Quiz
+                </button>
+              )}
+            </div>
           </div>
-        )}
-        {results.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-lg font-bold mb-2">Quiz Results</h3>
-            <table className="w-full border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border px-2 py-1">Student Name</th>
-                  <th className="border px-2 py-1">Student ID</th>
-                  <th className="border px-2 py-1">Marks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1">{r.studentName}</td>
-                    <td className="border px-2 py-1">{r.studentId}</td>
-                    <td className="border px-2 py-1">{r.marks}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        </div>
-      </Layout>
-    );
-  }
 
-  // Student quiz page
-  if (session.user.role === 'student') {
-    return (
-      <Layout>
-        <div className="max-w-2xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-          <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">Student Quiz Portal</h1>
-        {!currentQuiz ? (
-          <div className="mb-8 p-6 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
-            <label className="block mb-3 font-semibold text-gray-800 dark:text-gray-200">Enter Quiz Password</label>
-            <input 
-              value={quizPassword} 
-              onChange={e => setQuizPassword(e.target.value)} 
-              className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-              placeholder="Enter the quiz password provided by your teacher"
-            />
-            <button 
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium" 
-              onClick={handleGetQuiz}
-              disabled={loading}
-            >
-              {loading ? 'Loading Quiz...' : 'Access Quiz'}
-            </button>
-          </div>
-        ) : marks === null ? (
-          <form onSubmit={handleSubmitQuiz} className="mb-8 p-6 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
-            <div className="mb-6">
-              <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Your Full Name</label>
-              <input 
-                value={studentName} 
-                onChange={e => setStudentName(e.target.value)} 
-                className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-                placeholder="Enter your full name"
-                required 
-              />
-              <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Your Student ID</label>
-              <input 
-                value={studentId} 
-                onChange={e => setStudentId(e.target.value)} 
-                className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
-                placeholder="Enter your student ID"
-                required 
-              />
-            </div>
-            <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-lg">
-              <h2 className="text-xl font-bold mb-2 text-indigo-800 dark:text-indigo-200">{currentQuiz.quizName}</h2>
-              <div className="mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Deadline: </span>
-                <span className="text-sm text-red-600 dark:text-red-400 font-medium">
-                  {new Date(currentQuiz.deadline).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Answer all questions and click submit before the deadline.</p>
-            </div>
-            {currentQuiz.questions.map((q, idx) => (
-              <div key={idx} className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <label className="block mb-3 font-semibold text-gray-800 dark:text-gray-200">Q{idx + 1}: {q.question}</label>
-                <div className="space-y-2">
-                  {q.options.map((opt, oIdx) => (
-                    <label key={oIdx} className="flex items-center p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
-                      <input 
-                        type="radio" 
-                        name={`q${idx}`} 
-                        value={opt} 
-                        checked={answers[idx] === opt} 
-                        onChange={() => {
-                          const updated = [...answers];
-                          updated[idx] = opt;
-                          setAnswers(updated);
-                        }} 
-                        className="mr-3 text-indigo-600 focus:ring-indigo-500" 
-                      />
-                      <span className="text-gray-800 dark:text-gray-200">{opt}</span>
-                    </label>
-                  ))}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center">
+                <AcademicCapIcon className="h-8 w-8 text-indigo-600 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalQuizzes}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Quizzes</p>
                 </div>
               </div>
-            ))}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+            </div>
+            
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center">
+                <ClockIcon className="h-8 w-8 text-green-600 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeQuizzes}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center">
+                <UserGroupIcon className="h-8 w-8 text-blue-600 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalSubmissions}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Submissions</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center">
+                <ChartBarIcon className="h-8 w-8 text-purple-600 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.averageScore}%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Score</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
+              {/* Search */}
+              <div className="flex-1 max-w-md relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search quizzes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Manual Refresh Button for Debugging */}
+              <button 
+                onClick={() => {
+                  console.log('Manual refresh triggered');
+                  fetchQuizzes();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                🔄 Refresh
+              </button>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                  <option value="draft">Draft</option>
+                </select>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="created">Newest First</option>
+                  <option value="name">Name A-Z</option>
+                  <option value="submissions">Most Submissions</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <LoadingSpinner />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+            <button
+              onClick={fetchQuizzes}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
             >
-              {loading ? 'Submitting...' : 'Submit Quiz'}
+              Try Again
             </button>
-          </form>
+          </div>
+        ) : filteredQuizzes.length === 0 ? (
+          <div className="text-center py-12">
+            <AcademicCapIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {searchTerm ? 'No quizzes found' : 'No quizzes yet'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {searchTerm ? 'Try adjusting your search.' : 
+               isFaculty ? 'Create your first quiz to get started.' : 'Check back later for new quizzes.'}
+            </p>
+            {isFaculty && !searchTerm && (
+              <button
+                onClick={handleCreateQuiz}
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Create Your First Quiz
+              </button>
+            )}
+          </div>
         ) : (
-          <div className="p-6 border border-green-200 dark:border-green-600 rounded-lg bg-green-50 dark:bg-green-900/30">
-            <h2 className="text-xl font-bold mb-2 text-green-800 dark:text-green-200">Quiz Submitted Successfully!</h2>
-            <p className="text-lg text-green-700 dark:text-green-300">Your score: <span className="font-bold">{marks}/{currentQuiz.questions.length}</span></p>
-            <button 
-              onClick={() => {
-                setCurrentQuiz(null);
-                setQuizPassword('');
-                setAnswers([]);
-                setMarks(null);
-                setStudentName('');
-                setStudentId('');
-              }} 
-              className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-            >
-              Take Another Quiz
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredQuizzes.map((quiz, index) => (
+              <motion.div
+                key={quiz._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <QuizCard
+                  quiz={quiz}
+                  onTake={handleTakeQuiz}
+                  onViewResults={handleViewResults}
+                  onEdit={handleEditQuiz}
+                  onDelete={handleDeleteQuiz}
+                  userRole={session.user?.role}
+                />
+              </motion.div>
+            ))}
           </div>
         )}
-        </div>
-      </Layout>
-    );
-  }
 
-  return null;
+        {/* Modals */}
+        <CreateQuizModal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            setSelectedQuiz(null);
+          }}
+          onQuizCreated={handleQuizCreated}
+          editQuiz={selectedQuiz}
+        />
+
+        {selectedQuiz && (
+          <>
+            <QuizResultsModal
+              isOpen={showResultsModal}
+              onClose={() => {
+                setShowResultsModal(false);
+                setSelectedQuiz(null);
+              }}
+              quiz={selectedQuiz}
+            />
+
+            <TakeQuizModal
+              isOpen={showTakeModal}
+              onClose={() => {
+                setShowTakeModal(false);
+                setSelectedQuiz(null);
+              }}
+              quiz={selectedQuiz}
+              onSubmit={handleQuizSubmit}
+            />
+          </>
+        )}
+
+        <JoinPrivateQuizModal
+          isOpen={showJoinPrivateModal}
+          onClose={() => setShowJoinPrivateModal(false)}
+          onQuizFound={handlePrivateQuizFound}
+        />
+      </div>
+    </Layout>
+  );
 }

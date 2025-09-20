@@ -1,4 +1,6 @@
 import { MongoClient } from 'mongodb';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 
 const uri = process.env.MONGODB_URI;
 const options = {};
@@ -24,6 +26,12 @@ if (process.env.NODE_ENV === 'development') {
 export default async function handler(req, res) {
   try {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method not allowed' });
+    
+    const session = await getServerSession(req, res, authOptions);
+    if (!session) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
     const { password } = req.query;
     if (!password) return res.status(400).json({ message: 'Password required' });
 
@@ -41,15 +49,36 @@ export default async function handler(req, res) {
     // Check if quiz deadline has passed
     const now = new Date();
     const deadline = new Date(quiz.deadline);
-    if (now > deadline) {
+    
+    // Only check deadline if it's a valid date
+    if (!isNaN(deadline.getTime()) && now > deadline) {
       return res.status(403).json({ 
-        message: 'Quiz deadline has passed', 
+        message: `Quiz deadline has passed. Deadline was ${deadline.toLocaleString()}`, 
         deadline: quiz.deadline,
         expired: true 
       });
     }
 
-    res.status(200).json({ quiz });
+    const responseQuiz = {
+      _id: quiz._id,
+      quizName: quiz.quizName,
+      description: quiz.description,
+      questions: quiz.questions,
+      totalQuestions: quiz.totalQuestions,
+      totalPoints: quiz.totalPoints,
+      timeLimit: quiz.timeLimit,
+      deadline: quiz.deadline,
+      isPublic: quiz.isPublic,
+      allowRetakes: quiz.allowRetakes,
+      showResults: quiz.showResults,
+      category: quiz.category,
+      difficulty: quiz.difficulty,
+      password: quiz.password,
+      createdByName: quiz.createdByName || 'Unknown',
+      createdAt: quiz.createdAt
+    };
+
+    res.status(200).json({ quiz: responseQuiz });
   } catch (error) {
     console.error('Quiz get API error:', error);
     res.status(500).json({ message: 'Internal server error' });
