@@ -105,8 +105,9 @@ export default async function handler(req, res) {
         isValidDeadline = false;
       }
       
-      // Force valid date calculation
+      // Force valid date calculation - SIMPLIFIED LOGIC
       const isExpired = isValidDeadline && deadline.getTime() < now.getTime();
+      const status = isExpired ? 'expired' : 'active';
       
       console.log(`Quiz: ${quiz.quizName}`);
       console.log(`  Raw deadline: ${quiz.deadline} (type: ${typeof quiz.deadline})`);
@@ -114,14 +115,16 @@ export default async function handler(req, res) {
       console.log(`  Current time: ${now.toISOString()}`);
       console.log(`  Deadline timestamp: ${deadline.getTime()}`);
       console.log(`  Current timestamp: ${now.getTime()}`);
+      console.log(`  isValidDeadline: ${isValidDeadline}`);
       console.log(`  Is expired: ${isExpired}`);
+      console.log(`  Final status: ${status}`);
       console.log(`  Time difference (minutes): ${isValidDeadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60)) : 'N/A'}`);
       
       return {
         ...quiz,
         isExpired: isExpired,
-        timeRemaining: isValidDeadline && deadline.getTime() > now.getTime() ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60)) : 0,
-        status: isValidDeadline && deadline.getTime() > now.getTime() ? 'active' : 'expired'
+        timeRemaining: isValidDeadline && !isExpired ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60)) : 0,
+        status: status
       };
     });
 
