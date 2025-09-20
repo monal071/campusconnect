@@ -8,8 +8,16 @@ export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session || session.user.role !== 'faculty') return res.status(403).json({ message: 'Forbidden' });
 
-  const { quizName, questions } = req.body;
-  if (!quizName || !questions || !Array.isArray(questions)) return res.status(400).json({ message: 'Invalid input' });
+  const { quizName, questions, deadline } = req.body;
+  if (!quizName || !questions || !Array.isArray(questions) || !deadline) {
+    return res.status(400).json({ message: 'Invalid input: quizName, questions, and deadline are required' });
+  }
+
+  // Validate deadline is in the future
+  const deadlineDate = new Date(deadline);
+  if (deadlineDate <= new Date()) {
+    return res.status(400).json({ message: 'Deadline must be in the future' });
+  }
 
   const password = crypto.randomBytes(4).toString('hex');
   const client = await clientPromise;
@@ -18,6 +26,7 @@ export default async function handler(req, res) {
     quizName,
     questions,
     password,
+    deadline: deadlineDate,
     createdBy: session.user.id,
     createdAt: new Date(),
     submissions: []

@@ -28,6 +28,7 @@ export default function QuizPage() {
   const [marks, setMarks] = useState(null);
   const [quizForm, setQuizForm] = useState({
     quizName: '',
+    deadline: '',
     questions: [{ question: '', options: ['', '', '', ''], correct: '' }]
   });
   const [quizPasswordCreated, setQuizPasswordCreated] = useState('');
@@ -73,7 +74,17 @@ export default function QuizPage() {
     setLoading(true);
     const res = await fetch(`/api/quiz/results?quizId=${quizId}`);
     const data = await res.json();
-    setResults(data.submissions || []);
+    if (res.ok) {
+      setResults(data.results.submissions || []);
+    } else {
+      if (data.timeRemaining !== undefined) {
+        const hours = Math.floor(data.timeRemaining / 60);
+        const minutes = data.timeRemaining % 60;
+        alert(`Quiz results will be available after the deadline. Time remaining: ${hours}h ${minutes}m`);
+      } else {
+        alert(data.message);
+      }
+    }
     setLoading(false);
   };
 
@@ -87,7 +98,11 @@ export default function QuizPage() {
       setCurrentQuiz(data.quiz);
       setAnswers(new Array(data.quiz.questions.length).fill(''));
     } else {
-      alert(data.message);
+      if (data.expired) {
+        alert(`Quiz deadline has passed. The deadline was: ${new Date(data.deadline).toLocaleString()}`);
+      } else {
+        alert(data.message);
+      }
     }
     setLoading(false);
   };
@@ -136,6 +151,15 @@ export default function QuizPage() {
               placeholder="Enter quiz name (e.g., Math Quiz)"
               required 
             />
+            <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Quiz Deadline</label>
+            <input 
+              type="datetime-local"
+              value={quizForm.deadline} 
+              onChange={e => setQuizForm({ ...quizForm, deadline: e.target.value })} 
+              className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
+              required 
+            />
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">Students will not be able to access the quiz after this deadline.</p>
             {quizForm.questions.map((q, idx) => (
               <div key={idx} className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
                 <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Question {idx + 1}</label>
@@ -194,16 +218,54 @@ export default function QuizPage() {
             <div className="text-xs text-gray-600">Share this password with students to allow them to take the quiz.</div>
           </div>
         )}
-        <h2 className="text-xl font-semibold mb-2">Your Quizzes</h2>
-        {loading ? <div>Loading...</div> : (
-          <ul className="mb-8">
-            {facultyQuizzes.map(q => (
-              <li key={q._id} className="mb-2 p-3 border rounded bg-white flex justify-between items-center">
-                <span>{q.quizName}</span>
-                <button className="px-3 py-1 bg-indigo-500 text-white rounded" onClick={() => handleViewResults(q._id)}>View Results</button>
-              </li>
-            ))}
-          </ul>
+        <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-100">Your Quizzes</h2>
+        {loading ? <div className="text-gray-600 dark:text-gray-400">Loading...</div> : (
+          <div className="mb-8 space-y-3">
+            {facultyQuizzes.map(q => {
+              const now = new Date();
+              const deadline = new Date(q.deadline);
+              const isExpired = now > deadline;
+              const timeRemaining = deadline - now;
+              const hoursRemaining = Math.max(0, Math.floor(timeRemaining / (1000 * 60 * 60)));
+              const minutesRemaining = Math.max(0, Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60)));
+              
+              return (
+                <div key={q._id} className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{q.quizName}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Deadline: {new Date(q.deadline).toLocaleString()}
+                      </p>
+                      <div className="mt-2">
+                        {isExpired ? (
+                          <span className="inline-block px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 text-xs rounded-full">
+                            Expired
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-full">
+                            Active - {hoursRemaining}h {minutesRemaining}m remaining
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button 
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        isExpired 
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
+                          : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                      }`}
+                      onClick={() => isExpired && handleViewResults(q._id)}
+                      disabled={!isExpired}
+                      title={isExpired ? 'View results' : 'Results available after deadline'}
+                    >
+                      {isExpired ? 'View Results' : 'Results Locked'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
         {results.length > 0 && (
           <div className="mt-6">
@@ -236,47 +298,109 @@ export default function QuizPage() {
   // Student quiz page
   if (session.user.role === 'student') {
     return (
-      <div className="max-w-xl mx-auto p-8">
-        <h1 className="text-2xl font-bold mb-4">Student Quiz Page</h1>
+      <Layout>
+        <div className="max-w-2xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+          <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">Student Quiz Portal</h1>
         {!currentQuiz ? (
-          <div className="mb-6">
-            <label className="block mb-2 font-semibold">Enter Quiz Password</label>
-            <input value={quizPassword} onChange={e => setQuizPassword(e.target.value)} className="mb-4 p-2 border rounded w-full" />
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded" onClick={handleGetQuiz}>Get Quiz</button>
+          <div className="mb-8 p-6 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
+            <label className="block mb-3 font-semibold text-gray-800 dark:text-gray-200">Enter Quiz Password</label>
+            <input 
+              value={quizPassword} 
+              onChange={e => setQuizPassword(e.target.value)} 
+              className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
+              placeholder="Enter the quiz password provided by your teacher"
+            />
+            <button 
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium" 
+              onClick={handleGetQuiz}
+              disabled={loading}
+            >
+              {loading ? 'Loading Quiz...' : 'Access Quiz'}
+            </button>
           </div>
         ) : marks === null ? (
-          <form onSubmit={handleSubmitQuiz} className="mb-8 p-4 border rounded bg-gray-50">
-            <label className="block mb-2 font-semibold">Your Name</label>
-            <input value={studentName} onChange={e => setStudentName(e.target.value)} className="mb-4 p-2 border rounded w-full" required />
-            <label className="block mb-2 font-semibold">Your ID</label>
-            <input value={studentId} onChange={e => setStudentId(e.target.value)} className="mb-4 p-2 border rounded w-full" required />
-            <h2 className="text-lg font-bold mb-4">{currentQuiz.quizName}</h2>
+          <form onSubmit={handleSubmitQuiz} className="mb-8 p-6 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
+            <div className="mb-6">
+              <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Your Full Name</label>
+              <input 
+                value={studentName} 
+                onChange={e => setStudentName(e.target.value)} 
+                className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
+                placeholder="Enter your full name"
+                required 
+              />
+              <label className="block mb-2 font-semibold text-gray-800 dark:text-gray-200">Your Student ID</label>
+              <input 
+                value={studentId} 
+                onChange={e => setStudentId(e.target.value)} 
+                className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-colors" 
+                placeholder="Enter your student ID"
+                required 
+              />
+            </div>
+            <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-lg">
+              <h2 className="text-xl font-bold mb-2 text-indigo-800 dark:text-indigo-200">{currentQuiz.quizName}</h2>
+              <div className="mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Deadline: </span>
+                <span className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  {new Date(currentQuiz.deadline).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Answer all questions and click submit before the deadline.</p>
+            </div>
             {currentQuiz.questions.map((q, idx) => (
-              <div key={idx} className="mb-4">
-                <label className="block mb-1">Q{idx + 1}: {q.question}</label>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+              <div key={idx} className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <label className="block mb-3 font-semibold text-gray-800 dark:text-gray-200">Q{idx + 1}: {q.question}</label>
+                <div className="space-y-2">
                   {q.options.map((opt, oIdx) => (
-                    <label key={oIdx} className="flex items-center">
-                      <input type="radio" name={`q${idx}`} value={opt} checked={answers[idx] === opt} onChange={() => {
-                        const updated = [...answers];
-                        updated[idx] = opt;
-                        setAnswers(updated);
-                      }} className="mr-2" />
-                      {opt}
+                    <label key={oIdx} className="flex items-center p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+                      <input 
+                        type="radio" 
+                        name={`q${idx}`} 
+                        value={opt} 
+                        checked={answers[idx] === opt} 
+                        onChange={() => {
+                          const updated = [...answers];
+                          updated[idx] = opt;
+                          setAnswers(updated);
+                        }} 
+                        className="mr-3 text-indigo-600 focus:ring-indigo-500" 
+                      />
+                      <span className="text-gray-800 dark:text-gray-200">{opt}</span>
                     </label>
                   ))}
                 </div>
               </div>
             ))}
-            <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">Submit Quiz</button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+            >
+              {loading ? 'Submitting...' : 'Submit Quiz'}
+            </button>
           </form>
         ) : (
-          <div className="p-4 bg-green-100 border rounded">
-            <h2 className="text-lg font-bold mb-2">Quiz Submitted!</h2>
-            <div className="mb-2">Your Marks: <span className="font-mono text-lg">{marks}</span></div>
+          <div className="p-6 border border-green-200 dark:border-green-600 rounded-lg bg-green-50 dark:bg-green-900/30">
+            <h2 className="text-xl font-bold mb-2 text-green-800 dark:text-green-200">Quiz Submitted Successfully!</h2>
+            <p className="text-lg text-green-700 dark:text-green-300">Your score: <span className="font-bold">{marks}/{currentQuiz.questions.length}</span></p>
+            <button 
+              onClick={() => {
+                setCurrentQuiz(null);
+                setQuizPassword('');
+                setAnswers([]);
+                setMarks(null);
+                setStudentName('');
+                setStudentId('');
+              }} 
+              className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            >
+              Take Another Quiz
+            </button>
           </div>
         )}
-      </div>
+        </div>
+      </Layout>
     );
   }
 
