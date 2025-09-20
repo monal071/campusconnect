@@ -18,7 +18,6 @@ export default async function handler(req, res) {
       quizName, 
       description, 
       questions, 
-      deadline, 
       timeLimit, 
       category,
       difficulty,
@@ -35,16 +34,6 @@ export default async function handler(req, res) {
 
     if (!questions || !Array.isArray(questions) || questions.length === 0) {
       return res.status(400).json({ message: 'At least one question is required' });
-    }
-
-    if (!deadline) {
-      return res.status(400).json({ message: 'Deadline is required' });
-    }
-
-    // Validate deadline is in the future
-    const deadlineDate = new Date(deadline);
-    if (deadlineDate <= new Date()) {
-      return res.status(400).json({ message: 'Deadline must be in the future' });
     }
 
     // Validate questions structure
@@ -88,13 +77,13 @@ export default async function handler(req, res) {
         explanation: q.explanation || ''
       })),
       password: quizPassword,
-      deadline: deadlineDate,
-      timeLimit: timeLimit || 60, // minutes
+      timeLimit: timeLimit || 60, // minutes - only for individual quiz attempts
       category: category || 'general',
       difficulty: difficulty || 'medium',
       isPublic: isPublic || false,
       allowRetakes: allowRetakes || false,
       showResults: showResults !== false, // default true
+      isActive: true, // Quiz starts as active, teacher can end it manually
       createdBy: session.user.id,
       createdByName: session.user.name || session.user.email,
       createdAt: new Date(),
@@ -121,7 +110,8 @@ export default async function handler(req, res) {
         description: quiz.description,
         totalQuestions: quiz.totalQuestions,
         totalPoints: quiz.totalPoints,
-        deadline: quiz.deadline,
+        timeLimit: quiz.timeLimit,
+        isActive: quiz.isActive,
         password: quiz.password
       }
     });

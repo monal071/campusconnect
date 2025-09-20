@@ -135,16 +135,8 @@ export default function QuizCard({
     // Validate quiz object
     if (!quiz) return { status: 'unknown', canTake: false, displayText: 'Unknown' };
 
-    // Explicit check for isActive field - only true if explicitly set to true
-    const isActive = quiz.isActive === true;
+    const isActive = quiz.isActive !== false; // Default to active unless explicitly false
     const status = isActive ? 'active' : 'ended';
-    
-    console.log('🎯 QuizStatus calculation:', {
-      quizName: quiz.quizName,
-      rawIsActive: quiz.isActive,
-      calculatedIsActive: isActive,
-      finalStatus: status
-    });
     
     return {
       status,

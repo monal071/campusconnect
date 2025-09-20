@@ -59,10 +59,9 @@ export default async function handler(req, res) {
         return res.status(404).json({ message: 'Quiz not found or access denied' });
       }
 
-      // Check if quiz has expired
-      const deadline = new Date(quiz.deadline);
-      if (!isNaN(deadline.getTime()) && new Date() > deadline) {
-        return res.status(400).json({ message: 'Quiz deadline has passed' });
+      // Check if quiz is active (manual teacher control)
+      if (quiz.isActive === false) {
+        return res.status(400).json({ message: 'Quiz is not active' });
       }
 
       // Return appropriate data based on role
@@ -74,7 +73,7 @@ export default async function handler(req, res) {
         totalQuestions: quiz.totalQuestions,
         totalPoints: quiz.totalPoints,
         timeLimit: quiz.timeLimit,
-        deadline: quiz.deadline,
+        isActive: quiz.isActive,
         isPublic: quiz.isPublic,
         allowRetakes: quiz.allowRetakes,
         showResults: quiz.showResults,
@@ -149,14 +148,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'At least one question is required' });
       }
 
-      if (!deadline) {
-        return res.status(400).json({ message: 'Deadline is required' });
-      }
-
-      const deadlineDate = new Date(deadline);
-      if (deadlineDate <= new Date()) {
-        return res.status(400).json({ message: 'Deadline must be in the future' });
-      }
+      // No deadline validation needed - using manual teacher control instead
 
       // Check if quiz has submissions - restrict certain updates
       const hasSubmissions = quiz.submissions && quiz.submissions.length > 0;
@@ -164,7 +156,6 @@ export default async function handler(req, res) {
       const updateData = {
         quizName: quizName.trim(),
         description: description?.trim() || '',
-        deadline: deadlineDate,
         timeLimit: timeLimit || 60,
         category: category || 'general',
         difficulty: difficulty || 'medium',

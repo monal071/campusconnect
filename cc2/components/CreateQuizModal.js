@@ -20,7 +20,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
     category: 'general',
     difficulty: 'medium',
     timeLimit: 60,
-    deadline: '',
     isPublic: true,
     password: '',
     allowRetakes: false,
@@ -39,17 +38,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
   ]);
 
   const [errors, setErrors] = useState({});
-
-  // Set default deadline when modal opens
-  useEffect(() => {
-    if (isOpen && !quizData.deadline) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(23, 59); // Set to 11:59 PM tomorrow
-      const defaultDeadline = tomorrow.toISOString().slice(0, 16); // Format for datetime-local
-      setQuizData(prev => ({ ...prev, deadline: defaultDeadline }));
-    }
-  }, [isOpen]);
 
   const categories = [
     'general', 'programming', 'mathematics', 'science', 'literature', 
@@ -112,12 +100,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
     
     if (!quizData.quizName.trim()) {
       newErrors.quizName = 'Quiz name is required';
-    }
-    
-    if (!quizData.deadline) {
-      newErrors.deadline = 'Deadline is required';
-    } else if (new Date(quizData.deadline) <= new Date()) {
-      newErrors.deadline = 'Deadline must be in the future';
     }
     
     if (quizData.timeLimit < 1 || quizData.timeLimit > 180) {
@@ -211,7 +193,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
       category: 'general',
       difficulty: 'medium',
       timeLimit: 60,
-      deadline: '',
       isPublic: false,
       allowRetakes: false,
       showResults: true
@@ -307,19 +288,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
           {errors.timeLimit && <p className="mt-1 text-sm text-red-600">{errors.timeLimit}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Deadline *
-          </label>
-          <input
-            type="datetime-local"
-            value={quizData.deadline}
-            onChange={(e) => setQuizData({ ...quizData, deadline: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          />
-          {errors.deadline && <p className="mt-1 text-sm text-red-600">{errors.deadline}</p>}
         </div>
       </div>
 
@@ -561,13 +529,6 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Points</span>
             <p className="text-gray-900 dark:text-white">{questions.reduce((sum, q) => sum + q.points, 0)}</p>
           </div>
-        </div>
-
-        <div>
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Deadline</span>
-          <p className="text-gray-900 dark:text-white">
-            {new Date(quizData.deadline).toLocaleString()}
-          </p>
         </div>
 
         {quizData.description && (

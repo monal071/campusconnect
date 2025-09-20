@@ -216,6 +216,52 @@ export default function QuizPage() {
     }
   };
 
+  const handleEndQuiz = async (quizId) => {
+    try {
+      const response = await fetch('/api/quiz/end', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quizId }),
+      });
+
+      if (response.ok) {
+        toast.success('Quiz ended successfully');
+        fetchQuizzes(); // Refresh the quiz list
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to end quiz');
+      }
+    } catch (error) {
+      console.error('Error ending quiz:', error);
+      toast.error('Error ending quiz');
+    }
+  };
+
+  const handleActivateQuiz = async (quizId) => {
+    try {
+      const response = await fetch('/api/quiz/activate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quizId }),
+      });
+
+      if (response.ok) {
+        toast.success('Quiz activated successfully');
+        fetchQuizzes(); // Refresh the quiz list
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to activate quiz');
+      }
+    } catch (error) {
+      console.error('Error activating quiz:', error);
+      toast.error('Error activating quiz');
+    }
+  };
+
   const getQuizStats = () => {
     const totalQuizzes = quizzes.length;
     const activeQuizzes = quizzes.filter(quiz => quiz.status === 'active').length;
@@ -439,6 +485,8 @@ export default function QuizPage() {
                   onViewResults={handleViewResults}
                   onEdit={handleEditQuiz}
                   onDelete={handleDeleteQuiz}
+                  onEnd={handleEndQuiz}
+                  onActivate={handleActivateQuiz}
                   userRole={session.user?.role}
                 />
               </motion.div>

@@ -42,10 +42,9 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
-    // Check if quiz has expired
-    const deadline = new Date(quiz.deadline);
-    if (!isNaN(deadline.getTime()) && new Date() > deadline) {
-      return res.status(400).json({ message: 'Quiz deadline has passed' });
+    // Check if quiz is active (manual teacher control)
+    if (quiz.isActive === false) {
+      return res.status(400).json({ message: 'Quiz is not active' });
     }
 
     // Check password for protected quizzes

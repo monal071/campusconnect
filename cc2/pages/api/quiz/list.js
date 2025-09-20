@@ -69,11 +69,11 @@ export default async function handler(req, res) {
         difficulty: 1,
         totalQuestions: 1,
         totalPoints: 1,
-        deadline: 1,
         timeLimit: 1,
         isPublic: 1,
         allowRetakes: 1,
         showResults: 1,
+        isActive: 1, // Include the isActive field for manual control
         createdAt: 1,
         createdByName: 1,
         stats: 1,
@@ -82,49 +82,22 @@ export default async function handler(req, res) {
       })
       .toArray();
 
-    // Add computed fields
-    const now = new Date();
-    console.log('Current time in quiz list API:', now.toISOString());
-    
+    // Add computed fields - USE MANUAL CONTROL INSTEAD OF DEADLINE
     const enrichedQuizzes = quizzes.map(quiz => {
-      let deadline;
-      let isValidDeadline = false;
-      
-      // Handle different date formats
-      if (quiz.deadline instanceof Date) {
-        deadline = quiz.deadline;
-        isValidDeadline = true;
-      } else if (typeof quiz.deadline === 'string') {
-        deadline = new Date(quiz.deadline);
-        isValidDeadline = !isNaN(deadline.getTime());
-      } else if (typeof quiz.deadline === 'number') {
-        deadline = new Date(quiz.deadline);
-        isValidDeadline = !isNaN(deadline.getTime());
-      } else {
-        deadline = new Date();
-        isValidDeadline = false;
-      }
-      
-      // Force valid date calculation - SIMPLIFIED LOGIC
-      const isExpired = isValidDeadline && deadline.getTime() < now.getTime();
-      const status = isExpired ? 'expired' : 'active';
+      // Use the isActive field for manual teacher control
+      const isActive = quiz.isActive === true;
+      const status = isActive ? 'active' : 'ended';
       
       console.log(`Quiz: ${quiz.quizName}`);
-      console.log(`  Raw deadline: ${quiz.deadline} (type: ${typeof quiz.deadline})`);
-      console.log(`  Parsed deadline: ${deadline.toISOString()}`);
-      console.log(`  Current time: ${now.toISOString()}`);
-      console.log(`  Deadline timestamp: ${deadline.getTime()}`);
-      console.log(`  Current timestamp: ${now.getTime()}`);
-      console.log(`  isValidDeadline: ${isValidDeadline}`);
-      console.log(`  Is expired: ${isExpired}`);
+      console.log(`  isActive field: ${quiz.isActive} (type: ${typeof quiz.isActive})`);
+      console.log(`  Calculated isActive: ${isActive}`);
       console.log(`  Final status: ${status}`);
-      console.log(`  Time difference (minutes): ${isValidDeadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60)) : 'N/A'}`);
       
       return {
         ...quiz,
-        isExpired: isExpired,
-        timeRemaining: isValidDeadline && !isExpired ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60)) : 0,
-        status: status
+        isActive: isActive,
+        status: status,
+        canTake: isActive // Students can only take active quizzes
       };
     });
 

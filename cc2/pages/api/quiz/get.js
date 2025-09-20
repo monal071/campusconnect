@@ -46,16 +46,11 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
-    // Check if quiz deadline has passed
-    const now = new Date();
-    const deadline = new Date(quiz.deadline);
-    
-    // Only check deadline if it's a valid date
-    if (!isNaN(deadline.getTime()) && now > deadline) {
+    // Check if quiz is active (manual teacher control)
+    if (quiz.isActive === false) {
       return res.status(403).json({ 
-        message: `Quiz deadline has passed. Deadline was ${deadline.toLocaleString()}`, 
-        deadline: quiz.deadline,
-        expired: true 
+        message: 'Quiz is not active', 
+        isActive: false
       });
     }
 
@@ -67,7 +62,7 @@ export default async function handler(req, res) {
       totalQuestions: quiz.totalQuestions,
       totalPoints: quiz.totalPoints,
       timeLimit: quiz.timeLimit,
-      deadline: quiz.deadline,
+      isActive: quiz.isActive,
       isPublic: quiz.isPublic,
       allowRetakes: quiz.allowRetakes,
       showResults: quiz.showResults,
