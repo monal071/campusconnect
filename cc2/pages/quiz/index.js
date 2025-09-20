@@ -112,28 +112,69 @@ export default function QuizPage() {
   };
 
   const handleTakeQuiz = async (quiz) => {
+    console.log('🎯 handleTakeQuiz called with quiz:', quiz);
     try {
       setLoading(true);
       
       // Fetch full quiz data with questions
+      console.log('🔍 Fetching quiz data from API:', `/api/quiz/${quiz._id}`);
       const response = await fetch(`/api/quiz/${quiz._id}`, {
         method: 'GET',
       });
 
+      console.log('📡 API Response status:', response.status, response.ok);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ API Error:', error);
         toast.error(error.message || 'Failed to load quiz');
         return;
       }
 
       const fullQuiz = await response.json();
-      setSelectedQuiz(fullQuiz);
-      setShowTakeModal(true);
+      console.log('✅ Full quiz data received:', fullQuiz);
+      
+      // Check if this is a password-protected quiz without questions
+      if (fullQuiz.requiresPassword && !fullQuiz.questions) {
+        console.log('🔒 Password-protected quiz detected, will show password modal');
+        // Set the quiz data for password prompt
+        setSelectedQuiz(fullQuiz);
+        setShowTakeModal(true);
+      } else {
+        // Full quiz data with questions
+        setSelectedQuiz(fullQuiz);
+        console.log('🎯 Setting showTakeModal to true');
+        setShowTakeModal(true);
+      }
     } catch (error) {
+      console.error('💥 Exception in handleTakeQuiz:', error);
       toast.error('Failed to load quiz');
       console.error('Error loading quiz:', error);
     } finally {
       setLoading(false);
+      console.log('🏁 handleTakeQuiz finished');
+    }
+  };
+
+  // Handle password verification and re-fetch full quiz data
+  const handleQuizPasswordVerified = async (quizId, password) => {
+    console.log('🔑 Password verified, fetching full quiz data with password');
+    try {
+      const response = await fetch(`/api/quiz/${quizId}?password=${encodeURIComponent(password)}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to load quiz with password');
+      }
+
+      const fullQuiz = await response.json();
+      console.log('✅ Full quiz data with questions received:', fullQuiz);
+      setSelectedQuiz(fullQuiz);
+    } catch (error) {
+      console.error('❌ Error fetching quiz with password:', error);
+      toast.error('Failed to load quiz: ' + error.message);
     }
   };
 
@@ -524,6 +565,7 @@ export default function QuizPage() {
               }}
               quiz={selectedQuiz}
               onSubmit={handleQuizSubmit}
+              onPasswordVerified={handleQuizPasswordVerified}
             />
           </>
         )}

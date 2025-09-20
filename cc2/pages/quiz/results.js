@@ -142,7 +142,7 @@ export default function QuizResults() {
             <div className="flex items-center">
               <UserIcon className="w-8 h-8 text-blue-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.submissionCount}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.statistics?.totalSubmissions || 0}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Submissions</p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function QuizResults() {
             <div className="flex items-center">
               <ChartBarIcon className="w-8 h-8 text-green-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.averageScore}%</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.statistics?.averageScore || 0}%</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Average Score</p>
               </div>
             </div>
@@ -170,10 +170,10 @@ export default function QuizResults() {
             className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700"
           >
             <div className="flex items-center">
-              <DocumentTextIcon className="w-8 h-8 text-purple-500 mr-3" />
+              <AcademicCapIcon className="w-8 h-8 text-purple-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.totalQuestions}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Questions</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.statistics?.highestScore || 0}%</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Highest Score</p>
               </div>
             </div>
           </motion.div>
@@ -187,29 +187,107 @@ export default function QuizResults() {
             <div className="flex items-center">
               <ClockIcon className="w-8 h-8 text-orange-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.timeLimit}m</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatTime(results.statistics?.averageTimeSpent || 0)}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Time Spent</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Additional Statistics */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center">
+              <DocumentTextIcon className="w-8 h-8 text-indigo-500 mr-3" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.quiz?.totalQuestions || 0}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Questions</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center">
+              <CheckCircleIcon className="w-8 h-8 text-green-500 mr-3" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.statistics?.lowestScore || 0}%</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Lowest Score</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center">
+              <ClockIcon className="w-8 h-8 text-red-500 mr-3" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{results.quiz?.timeLimit || 0}m</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Time Limit</p>
               </div>
             </div>
           </motion.div>
         </div>
 
+        {/* Grade Distribution */}
+        {results.statistics?.gradeDistribution && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-8"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Grade Distribution</h2>
+            <div className="grid grid-cols-5 gap-4">
+              {Object.entries(results.statistics.gradeDistribution).map(([grade, count]) => (
+                <div key={grade} className="text-center">
+                  <div className={`w-full h-20 rounded-lg flex items-end justify-center mb-2 ${getGradeColor(grade === 'A' ? 95 : grade === 'B' ? 85 : grade === 'C' ? 75 : grade === 'D' ? 65 : 55)}`}>
+                    <div className="text-2xl font-bold mb-2">{count}</div>
+                  </div>
+                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Grade {grade}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Quiz Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.8 }}
           className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-8"
         >
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quiz Information</h2>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(results.createdAt)}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Quiz Name:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{results.quiz?.quizName || 'Unknown'}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
-              <span className="ml-2 text-green-600 dark:text-green-400">Active</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Description:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{results.quiz?.description || 'No description'}</span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{formatDate(results.quiz?.createdAt)}</span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700 dark:text-gray-300">Completion Rate:</span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">{results.statistics?.completionRate || 100}%</span>
             </div>
           </div>
         </motion.div>
@@ -260,7 +338,7 @@ export default function QuizResults() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {results.submissions
-                    .sort((a, b) => b.score - a.score) // Sort by score descending
+                    .sort((a, b) => b.percentage - a.percentage) // Sort by percentage descending
                     .map((submission, index) => (
                     <motion.tr
                       key={index}
@@ -286,22 +364,22 @@ export default function QuizResults() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          {submission.score}%
+                          {submission.percentage}%
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getGradeColor(submission.score)}`}>
-                          {getGradeLetter(submission.score)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getGradeColor(submission.percentage)}`}>
+                          {submission.grade}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <div className="flex items-center">
                           <CheckCircleIcon className="w-4 h-4 text-green-500 mr-1" />
-                          {submission.correctAnswers}/{submission.totalQuestions}
+                          {submission.score}/{submission.totalQuestions}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                        {formatTime(submission.timeTaken || 0)}
+                        {formatTime(submission.timeSpent || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(submission.submittedAt)}
@@ -313,34 +391,6 @@ export default function QuizResults() {
             </div>
           )}
         </motion.div>
-
-        {/* Grade Distribution */}
-        {results.submissions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Grade Distribution</h2>
-            <div className="grid grid-cols-5 gap-4">
-              {['A', 'B', 'C', 'D', 'F'].map(grade => {
-                const count = results.submissions.filter(s => getGradeLetter(s.score) === grade).length;
-                const percentage = results.submissions.length > 0 ? Math.round((count / results.submissions.length) * 100) : 0;
-                
-                return (
-                  <div key={grade} className="text-center">
-                    <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold ${getGradeColor(grade === 'A' ? 95 : grade === 'B' ? 85 : grade === 'C' ? 75 : grade === 'D' ? 65 : 55)}`}>
-                      {count}
-                    </div>
-                    <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Grade {grade}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{percentage}%</p>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
       </div>
     </Layout>
   );

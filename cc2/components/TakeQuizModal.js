@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import PasswordPromptModal from './PasswordPromptModal';
 
-export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
+export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPasswordVerified }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -80,7 +80,12 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
       setIsPasswordVerified(true);
       setShowPasswordModal(false);
       setShowStudentForm(true);
-      toast.success('Password verified! You can now proceed with the quiz.');
+      toast.success('Password verified! Loading full quiz...');
+      
+      // Re-fetch the full quiz data with questions using the provided handler
+      if (onPasswordVerified) {
+        await onPasswordVerified(quiz._id, password);
+      }
     } else {
       throw new Error('Incorrect password. Please try again.');
     }

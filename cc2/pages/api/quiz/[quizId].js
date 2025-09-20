@@ -4,14 +4,22 @@ import clientPromise from '../../../utils/mongodb';
 import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
+  console.log('🔍 Quiz API called:', req.method, 'Quiz ID:', req.query.quizId);
+  
   try {
     const session = await getServerSession(req, res, authOptions);
+    console.log('🔍 Session user:', session?.user?.role, session?.user?.id);
+    
     if (!session) {
+      console.log('❌ No session found');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     const { quizId } = req.query;
+    console.log('🔍 Processing quiz ID:', quizId);
+    
     if (!quizId || !ObjectId.isValid(quizId)) {
+      console.log('❌ Invalid quiz ID:', quizId);
       return res.status(400).json({ message: 'Valid quiz ID is required' });
     }
 
@@ -19,10 +27,12 @@ export default async function handler(req, res) {
     const db = client.db('campusconnect');
 
     if (req.method === 'GET') {
+      console.log('🔍 GET request for quiz');
       // Handle GET request for both faculty and students
       let quiz;
       
       if (session.user.role === 'faculty') {
+        console.log('🎓 Faculty user fetching quiz');
         // Faculty can only access their own quizzes for editing
         quiz = await db.collection('quizzes').findOne({
           _id: new ObjectId(quizId),
@@ -32,37 +42,52 @@ export default async function handler(req, res) {
           ]
         });
       } else if (session.user.role === 'student') {
+        console.log('🎒 Student user fetching quiz');
         // Students can access any quiz for taking
         quiz = await db.collection('quizzes').findOne({ _id: new ObjectId(quizId) });
+        console.log('🔍 Found quiz for student:', quiz ? quiz.quizName : 'Not found');
         
-        // Check if quiz is accessible to students
-        if (quiz && !quiz.isPublic && session.user.role === 'student') {
-          // For password-protected quizzes, return basic info only
-          return res.status(200).json({
-            _id: quiz._id,
-            quizName: quiz.quizName,
-            description: quiz.description,
-            totalQuestions: quiz.totalQuestions,
-            totalPoints: quiz.totalPoints,
-            timeLimit: quiz.timeLimit,
-            deadline: quiz.deadline,
-            isPublic: quiz.isPublic,
-            allowRetakes: quiz.allowRetakes,
-            showResults: quiz.showResults,
-            password: quiz.password, // Include password for verification
-            requiresPassword: true
-          });
+        // Check if quiz is private and requires password
+        if (quiz && !quiz.isPublic && quiz.password) {
+          const { password } = req.query; // Check for password in query params
+          console.log('🔒 Quiz is private, checking password...');
+          
+          if (!password || password !== quiz.password) {
+            console.log('❌ Invalid or missing password');
+            // Return basic info for password prompt
+            return res.status(200).json({
+              _id: quiz._id,
+              quizName: quiz.quizName,
+              description: quiz.description,
+              totalQuestions: quiz.totalQuestions,
+              totalPoints: quiz.totalPoints,
+              timeLimit: quiz.timeLimit,
+              isActive: quiz.isActive,
+              isPublic: quiz.isPublic,
+              allowRetakes: quiz.allowRetakes,
+              showResults: quiz.showResults,
+              password: quiz.password, // Include password for verification
+              requiresPassword: true
+            });
+          }
+          console.log('✅ Password correct, proceeding with full quiz data');
         }
       }
 
       if (!quiz) {
+        console.log('❌ Quiz not found or access denied');
         return res.status(404).json({ message: 'Quiz not found or access denied' });
       }
 
+      console.log('✅ Quiz found:', quiz.quizName, 'isActive:', quiz.isActive);
+
       // Check if quiz is active (manual teacher control)
       if (quiz.isActive === false) {
+        console.log('❌ Quiz is not active');
         return res.status(400).json({ message: 'Quiz is not active' });
       }
+
+      console.log('✅ Quiz is active, preparing response data');
 
       // Return appropriate data based on role
       const responseData = {
@@ -93,6 +118,7 @@ export default async function handler(req, res) {
         responseData.password = quiz.password;
       }
 
+      console.log('✅ Returning quiz data to', session.user.role);
       return res.status(200).json(responseData);
     }
 

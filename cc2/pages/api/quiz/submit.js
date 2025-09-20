@@ -91,12 +91,16 @@ export default async function handler(req, res) {
 
     const percentageScore = (totalScore / quiz.totalPoints) * 100;
 
-    // Create submission object
+    // Create submission object for separate collection (better performance)
     const submission = {
+      _id: new ObjectId(),
       submissionId: new ObjectId().toString(),
+      quizId: new ObjectId(quizId),
+      quizName: quiz.quizName,
       studentId: studentId.trim(),
       studentName: studentName.trim(),
       userId: session.user.id,
+      userEmail: session.user.email,
       submittedAt: new Date(),
       answers: gradedAnswers,
       totalScore,
@@ -108,19 +112,54 @@ export default async function handler(req, res) {
       grade: getLetterGrade(percentageScore)
     };
 
-    // Remove previous submission if retakes allowed
+    // Insert submission into separate collection for better querying
+    const submissionResult = await db.collection('quizSubmissions').insertOne(submission);
+    
+    if (!submissionResult.insertedId) {
+      throw new Error('Failed to save submission');
+    }
+
+    console.log('✅ Submission saved with ID:', submissionResult.insertedId);
+
+    // Also store simplified version in quiz document for quick access
     let updatedSubmissions = quiz.submissions || [];
     if (quiz.allowRetakes) {
       updatedSubmissions = updatedSubmissions.filter(
         sub => sub.studentId !== studentId.trim()
       );
     }
-    updatedSubmissions.push(submission);
+    
+    // Add simplified submission to quiz document
+    updatedSubmissions.push({
+      submissionId: submission.submissionId,
+      studentId: submission.studentId,
+      studentName: submission.studentName,
+      totalScore: submission.totalScore,
+      percentageScore: submission.percentageScore,
+      submittedAt: submission.submittedAt,
+      grade: submission.grade
+    });
 
-    // Update quiz with new submission and recalculate stats
-    const totalSubmissions = updatedSubmissions.length;
+    // Calculate comprehensive statistics from all submissions
+    const allSubmissions = await db.collection('quizSubmissions')
+      .find({ quizId: new ObjectId(quizId) })
+      .toArray();
+      
+    const totalSubmissions = allSubmissions.length;
     const averageScore = totalSubmissions > 0 
-      ? updatedSubmissions.reduce((sum, sub) => sum + sub.percentageScore, 0) / totalSubmissions 
+      ? allSubmissions.reduce((sum, sub) => sum + sub.percentageScore, 0) / totalSubmissions 
+      : 0;
+    
+    const highestScore = totalSubmissions > 0 
+      ? Math.max(...allSubmissions.map(sub => sub.percentageScore))
+      : 0;
+      
+    const lowestScore = totalSubmissions > 0 
+      ? Math.min(...allSubmissions.map(sub => sub.percentageScore))
+      : 0;
+      
+    const passRate = totalSubmissions > 0
+      ? (allSubmissions.filter(sub => sub.percentageScore >= 60).length / totalSubmissions) * 100
       : 0;
 
     const updateResult = await db.collection('quizzes').updateOne(
@@ -130,11 +169,21 @@ export default async function handler(req, res) {
           submissions: updatedSubmissions,
           'stats.totalSubmissions': totalSubmissions,
           'stats.averageScore': Math.round(averageScore * 100) / 100,
-          'stats.completionRate': Math.round((totalSubmissions / 100) * 100) / 100,
+          'stats.highestScore': Math.round(highestScore * 100) / 100,
+          'stats.lowestScore': Math.round(lowestScore * 100) / 100,
+          'stats.passRate': Math.round(passRate * 100) / 100,
+          'stats.lastSubmissionAt': new Date(),
           updatedAt: new Date()
         }
       }
     );
+
+    console.log('✅ Quiz stats updated:', {
+      totalSubmissions,
+      averageScore: Math.round(averageScore * 100) / 100,
+      highestScore: Math.round(highestScore * 100) / 100,
+      passRate: Math.round(passRate * 100) / 100
+    });
 
     if (updateResult.matchedCount === 0) {
       return res.status(404).json({ message: 'Quiz not found' });
