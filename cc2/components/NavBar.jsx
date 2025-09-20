@@ -14,6 +14,7 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PeopleIcon from "@mui/icons-material/People";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import QuizIcon from "@mui/icons-material/Quiz";
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -203,6 +204,18 @@ export default function NavBar() {
                   </span>
                 )}
               </button>
+            )}
+            
+            {/* Quiz link - only for faculty and students */}
+            {session && (userRole === 'faculty' || userRole === 'student') && (
+              <Link 
+                href="/quiz" 
+                className="nav-link flex items-center"
+                title="Quiz"
+              >
+                <QuizIcon className="w-5 h-5 mr-1" />
+                Quiz
+              </Link>
             )}
             
             <Link 
@@ -495,6 +508,20 @@ export default function NavBar() {
                     )}
                   </div>
                 </button>
+              )}
+              
+              {/* Quiz link for mobile - only for faculty and students */}
+              {session && (userRole === 'faculty' || userRole === 'student') && (
+                <Link
+                  href="/quiz"
+                  className="block w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center">
+                    <QuizIcon className="w-4 h-4 mr-2" />
+                    Quiz
+                  </div>
+                </Link>
               )}
               
               {/* Admin Panel link in mobile menu - only visible to admins */}
