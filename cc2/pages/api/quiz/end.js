@@ -31,12 +31,38 @@ export default async function handler(req, res) {
     console.log('🔍 Database connected');
 
     // Verify the quiz exists and belongs to the teacher
+    // Try both string and ObjectId formats for createdBy
     const quiz = await db.collection('quizzes').findOne({
-      _id: new ObjectId(quizId),
-      createdBy: session.user.id
+      $and: [
+        { _id: new ObjectId(quizId) },
+        {
+          $or: [
+            { createdBy: session.user.id }, // string format
+            { createdBy: new ObjectId(session.user.id) } // ObjectId format
+          ]
+        }
+      ]
     });
 
     console.log('🔍 Found quiz:', quiz ? quiz.quizName : 'Not found');
+    console.log('🔍 Session user ID:', session.user.id);
+    
+    // Debug: Check if quiz exists at all (regardless of creator)
+    const anyQuiz = await db.collection('quizzes').findOne({
+      _id: new ObjectId(quizId)
+    });
+    
+    if (anyQuiz) {
+      console.log('🔍 Quiz exists! createdBy:', anyQuiz.createdBy);
+      console.log('🔍 Types - Quiz createdBy:', typeof anyQuiz.createdBy, 'Session ID:', typeof session.user.id);
+    } else {
+      console.log('🔍 Quiz with this ID does not exist at all');
+    }
+    
+    if (quiz) {
+      console.log('🔍 Quiz createdBy:', quiz.createdBy);
+      console.log('🔍 Types - Quiz createdBy:', typeof quiz.createdBy, 'Session ID:', typeof session.user.id);
+    }
 
     if (!quiz) {
       console.log('❌ Quiz not found or no permission');

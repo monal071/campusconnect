@@ -7,6 +7,7 @@ import QuizCard from '../../components/QuizCard';
 import QuizResultsModal from '../../components/QuizResultsModal';
 import TakeQuizModal from '../../components/TakeQuizModal';
 import JoinPrivateQuizModal from '../../components/JoinPrivateQuizModal';
+import QuizHistory from '../../components/QuizHistory';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { 
   PlusIcon, 
@@ -15,7 +16,8 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   ClockIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -32,6 +34,7 @@ export default function QuizPage() {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [showTakeModal, setShowTakeModal] = useState(false);
   const [showJoinPrivateModal, setShowJoinPrivateModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   
   // Filter and search state
@@ -78,7 +81,7 @@ export default function QuizPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Fresh quiz data received:', data.quizzes);
+        // console.log('Fresh quiz data received:', data.quizzes);
         setQuizzes(data.quizzes || []);
       } else {
         throw new Error(data.message || 'Failed to fetch quizzes');
@@ -111,8 +114,13 @@ export default function QuizPage() {
     setShowResultsModal(true);
   };
 
+  const handleViewHistory = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowHistoryModal(true);
+  };
+
   const handleTakeQuiz = async (quiz) => {
-    console.log('🎯 handleTakeQuiz called with quiz:', quiz);
+    // console.log('🎯 handleTakeQuiz called with quiz:', quiz);
     try {
       setLoading(true);
       
@@ -132,14 +140,31 @@ export default function QuizPage() {
       }
 
       const fullQuiz = await response.json();
-      console.log('✅ Full quiz data received:', fullQuiz);
+      // console.log('✅ Full quiz data received:', fullQuiz);
       
       // Check if this is a password-protected quiz without questions
       if (fullQuiz.requiresPassword && !fullQuiz.questions) {
-        console.log('🔒 Password-protected quiz detected, will show password modal');
-        // Set the quiz data for password prompt
-        setSelectedQuiz(fullQuiz);
-        setShowTakeModal(true);
+        console.log('🔒 Password-protected quiz detected, fetching with password');
+        // For private quiz, try to fetch with the password from the quiz object
+        if (quiz.password) {
+          console.log('🔑 Using password from quiz object to fetch full data');
+          const passwordResponse = await fetch(`/api/quiz/${quiz._id}?password=${encodeURIComponent(quiz.password)}`, {
+            method: 'GET',
+          });
+
+          if (passwordResponse.ok) {
+            const fullQuizWithPassword = await passwordResponse.json();
+            console.log('✅ Full quiz data with questions received');
+            setSelectedQuiz(fullQuizWithPassword);
+            setShowTakeModal(true);
+          } else {
+            console.error('❌ Failed to fetch quiz with password');
+            toast.error('Unable to access this private quiz');
+          }
+        } else {
+          console.error('❌ Private quiz but no password available');
+          toast.error('This private quiz requires a password. Use "Join Private Quiz" to access it.');
+        }
       } else {
         // Full quiz data with questions
         setSelectedQuiz(fullQuiz);
@@ -192,8 +217,9 @@ export default function QuizPage() {
       return [quiz, ...prev];
     });
     
-    // Optionally auto-open the quiz for taking
-    toast.success('Private quiz added to your list!');
+    // Auto-open the quiz for taking since password was already verified
+    toast.success('Private quiz found! Opening quiz...');
+    handleTakeQuiz(quiz);
   };
 
   const handleQuizSubmit = async (submissionData) => {
@@ -306,12 +332,8 @@ export default function QuizPage() {
   const getQuizStats = () => {
     const totalQuizzes = quizzes.length;
     const activeQuizzes = quizzes.filter(quiz => quiz.status === 'active').length;
-    const totalSubmissions = quizzes.reduce((sum, quiz) => sum + (quiz.statistics?.submissions || 0), 0);
-    const averageScore = quizzes.length > 0 
-      ? Math.round(quizzes.reduce((sum, quiz) => sum + (quiz.statistics?.averageScore || 0), 0) / quizzes.length)
-      : 0;
 
-    return { totalQuizzes, activeQuizzes, totalSubmissions, averageScore };
+    return { totalQuizzes, activeQuizzes };
   };
 
   const filteredQuizzes = quizzes.filter(quiz => {
@@ -358,6 +380,16 @@ export default function QuizPage() {
             </div>
             
             <div className="flex space-x-3">
+              {!isFaculty && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                >
+                  <BookOpenIcon className="h-5 w-5 mr-2" />
+                  History
+                </button>
+              )}
+              
               {isFaculty && (
                 <button
                   onClick={handleCreateQuiz}
@@ -380,48 +412,30 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="flex items-center">
-                <AcademicCapIcon className="h-8 w-8 text-indigo-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalQuizzes}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Quizzes</p>
+          {/* Stats Cards - Only show for faculty */}
+          {isFaculty && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center">
+                  <AcademicCapIcon className="h-8 w-8 text-indigo-600 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalQuizzes}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">My Quizzes</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center">
+                  <ClockIcon className="h-8 w-8 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeQuizzes}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="flex items-center">
-                <ClockIcon className="h-8 w-8 text-green-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeQuizzes}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="flex items-center">
-                <UserGroupIcon className="h-8 w-8 text-blue-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalSubmissions}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Submissions</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div className="flex items-center">
-                <ChartBarIcon className="h-8 w-8 text-purple-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.averageScore}%</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Score</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Search and Filters */}
           <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -456,9 +470,8 @@ export default function QuizPage() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="expired">Expired</option>
+                  <option value="all">All Active</option>
+                  <option value="active">Active Only</option>
                   <option value="draft">Draft</option>
                 </select>
 
@@ -469,7 +482,6 @@ export default function QuizPage() {
                 >
                   <option value="created">Newest First</option>
                   <option value="name">Name A-Z</option>
-                  <option value="submissions">Most Submissions</option>
                 </select>
               </div>
             </div>
@@ -524,11 +536,13 @@ export default function QuizPage() {
                   quiz={quiz}
                   onTake={handleTakeQuiz}
                   onViewResults={handleViewResults}
+                  onViewHistory={handleViewHistory}
                   onEdit={handleEditQuiz}
                   onDelete={handleDeleteQuiz}
                   onEnd={handleEndQuiz}
                   onActivate={handleActivateQuiz}
                   userRole={session.user?.role}
+                  userSession={session}
                 />
               </motion.div>
             ))}
@@ -565,7 +579,6 @@ export default function QuizPage() {
               }}
               quiz={selectedQuiz}
               onSubmit={handleQuizSubmit}
-              onPasswordVerified={handleQuizPasswordVerified}
             />
           </>
         )}
@@ -574,6 +587,13 @@ export default function QuizPage() {
           isOpen={showJoinPrivateModal}
           onClose={() => setShowJoinPrivateModal(false)}
           onQuizFound={handlePrivateQuizFound}
+        />
+
+        <QuizHistory
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          quiz={selectedQuiz}
+          userRole={session?.user?.role}
         />
       </div>
     </Layout>

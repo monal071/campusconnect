@@ -129,7 +129,7 @@ export default function NavBar() {
         {/* Logo and brand */}
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <Link href="/home" className="flex items-center">
+            <Link href="/dashboard" className="flex items-center">
               <Image 
                 src="/campusconnect-logo.svg" 
                 alt="CampusConnect Logo" 
@@ -147,12 +147,6 @@ export default function NavBar() {
         {/* Desktop navigation links */}
         <div className="hidden md:block">
           <div className="ml-10 flex items-center space-x-6">
-            <Link 
-              href="/home" 
-              className="nav-link"
-            >
-              Home
-            </Link>
             <Link 
               href="/dashboard" 
               className="nav-link"
@@ -319,16 +313,6 @@ export default function NavBar() {
                     </div>
                     
                     <Link 
-                      href="/home" 
-                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <div className="flex items-center">
-                        <HomeIcon className="h-4 w-4 mr-2" /> Home
-                      </div>
-                    </Link>
-                    
-                    <Link 
                       href="/dashboard" 
                       className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700"
                       onClick={() => setShowProfileMenu(false)}
@@ -442,11 +426,11 @@ export default function NavBar() {
               )}
               
               <Link 
-                href="/home" 
+                href="/dashboard" 
                 className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Home
+                Dashboard
               </Link>
               <Link 
                 href="/events" 

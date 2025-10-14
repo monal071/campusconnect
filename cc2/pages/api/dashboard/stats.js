@@ -75,7 +75,54 @@ export default async function handler(req, res) {
       postedBy: userId
     });
 
+    // Get quiz statistics based on user role
+    let quizStats = {
+      totalQuizzes: 0,
+      activeQuizzes: 0,
+      submissions: 0,
+      averageScore: 0
+    };
+
+    if (session.user.role === 'faculty' || session.user.role === 'admin') {
+      // Teacher stats: quizzes they created (no submission/score stats for faculty)
+      const teacherEmail = session.user.email;
+      
+      const totalQuizzes = await db.collection("quizzes").countDocuments({
+        createdBy: teacherEmail
+      });
+      
+      const activeQuizzes = await db.collection("quizzes").countDocuments({
+        createdBy: teacherEmail,
+        isActive: true
+      });
+      
+      quizStats = {
+        totalQuizzes,
+        activeQuizzes,
+        submissions: 0, // Remove submission stats for faculty
+        averageScore: 0 // Remove average score for faculty
+      };
+      
+    } else if (session.user.role === 'student') {
+      // Student stats: No quiz stats displayed for students
+      quizStats = {
+        totalQuizzes: 0,
+        activeQuizzes: 0,
+        submissions: 0,
+        averageScore: 0
+      };
+    }
+
     // Return the stats
+    console.log('Dashboard stats being returned:', {
+      connections: connectionsCount,
+      posts: postsCount,
+      events: eventsCount,
+      resources: resourcesCount,
+      jobs: jobsCount,
+      quizzes: quizStats
+    });
+    
     return res.status(200).json({
       message: "Stats retrieved successfully",
       data: {
@@ -83,7 +130,8 @@ export default async function handler(req, res) {
         posts: postsCount,
         events: eventsCount,
         resources: resourcesCount,
-        jobs: jobsCount
+        jobs: jobsCount,
+        quizzes: quizStats
       }
     });
   } catch (error) {

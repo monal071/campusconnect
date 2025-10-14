@@ -33,10 +33,10 @@ export default function Login() {
               if (data.role === 'admin') {
                 router.push('/admin');
               } else if (data.role === 'student' || data.role === 'faculty') {
-                router.push('/home');
+                router.push('/dashboard');
               } else {
                 // Handle legacy 'user' role if it exists
-                router.push('/home');
+                router.push('/dashboard');
               }
             } else {
               // User needs to complete registration
@@ -44,7 +44,7 @@ export default function Login() {
             }
           } else {
             // Default redirect if check fails
-            router.push('/home');
+            router.push('/dashboard');
           }
         } catch (error) {
           console.error('Error checking registration:', error);

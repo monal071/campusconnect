@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from '../../utils/mongodb';
 
-const TABLE_NAME = 'Events';
+const TABLE_NAME = 'events';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {

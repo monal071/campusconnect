@@ -75,7 +75,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
                   Try Again
                 </motion.button>
                 
-                <Link href="/home" className="block">
+                <Link href="/dashboard" className="block">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

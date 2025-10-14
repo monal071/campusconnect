@@ -55,11 +55,22 @@ export default async function handler(req, res) {
     }
 
     // Check if student has already submitted (if retakes not allowed)
+    console.log(`🔍 Checking submission for quiz "${quiz.quizName}":`, {
+      allowRetakes: quiz.allowRetakes,
+      studentId: studentId.trim(),
+      existingSubmissions: quiz.submissions?.map(s => ({
+        studentId: s.studentId,
+        studentName: s.studentName,
+        submittedAt: s.submittedAt
+      })) || []
+    });
+
     if (!quiz.allowRetakes) {
       const existingSubmission = quiz.submissions?.find(
         submission => submission.studentId === studentId.trim()
       );
       if (existingSubmission) {
+        console.log('❌ Student has already submitted this quiz');
         return res.status(400).json({ message: 'You have already submitted this quiz' });
       }
     }

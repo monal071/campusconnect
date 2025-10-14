@@ -43,13 +43,21 @@ export default async function handler(req, res) {
       query.category = category;
     }
 
-    // Status filter for faculty
-    if (session.user.role === 'faculty' && status !== 'all') {
-      const now = new Date();
+    // Status filter - for teachers, show all quizzes by default
+    if (session.user.role === 'faculty') {
+      // Teachers see all their quizzes (active and ended) by default
       if (status === 'active') {
-        query.deadline = { $gt: now };
+        query.isActive = true;
       } else if (status === 'expired') {
-        query.deadline = { $lte: now };
+        query.isActive = false;
+      }
+      // For 'all' status, don't add isActive filter (show both active and ended)
+    } else {
+      // For students, only show active quizzes unless specifically requesting ended ones
+      if (status === 'expired') {
+        query.isActive = false;
+      } else {
+        query.isActive = true;
       }
     }
 
@@ -77,10 +85,22 @@ export default async function handler(req, res) {
         createdAt: 1,
         createdByName: 1,
         stats: 1,
-        // Include password only for faculty viewing their own quizzes
-        ...(session.user.role === 'faculty' ? { password: 1 } : {})
+        // Include password for faculty viewing their own quizzes, and for students to verify private quiz passwords
+        password: 1
       })
       .toArray();
+
+    // For students, get their submissions to check completion status
+    let studentSubmissions = [];
+    if (session.user.role === 'student') {
+      studentSubmissions = await db.collection('quizSubmissions').find({
+        $or: [
+          { userId: session.user.id },
+          { userEmail: session.user.email },
+          { studentId: session.user.studentId || session.user.email }
+        ]
+      }).toArray();
+    }
 
     // Add computed fields - USE MANUAL CONTROL INSTEAD OF DEADLINE
     const enrichedQuizzes = quizzes.map(quiz => {
@@ -88,16 +108,22 @@ export default async function handler(req, res) {
       const isActive = quiz.isActive === true;
       const status = isActive ? 'active' : 'ended';
       
+      // Check if student has submitted this quiz
+      const hasSubmitted = session.user.role === 'student' && 
+        studentSubmissions.some(sub => sub.quizId.toString() === quiz._id.toString());
+      
       console.log(`Quiz: ${quiz.quizName}`);
       console.log(`  isActive field: ${quiz.isActive} (type: ${typeof quiz.isActive})`);
       console.log(`  Calculated isActive: ${isActive}`);
       console.log(`  Final status: ${status}`);
+      console.log(`  Has submitted: ${hasSubmitted}`);
       
       return {
         ...quiz,
         isActive: isActive,
         status: status,
-        canTake: isActive // Students can only take active quizzes
+        canTake: isActive && !hasSubmitted, // Students can only take active quizzes they haven't submitted
+        hasSubmitted: hasSubmitted
       };
     });
 

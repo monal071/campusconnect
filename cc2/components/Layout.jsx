@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
   const [isGuest, setIsGuest] = useState(false);
   
   // Pages where we don't show the NavBar or footer
-  const noNavBarPages = ['/login', '/signup'];
+  const noNavBarPages = ['/', '/login', '/signup'];
   const showNavBar = !noNavBarPages.includes(router.pathname);
   
   useEffect(() => {
@@ -26,7 +26,7 @@ const Layout = ({ children }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 container pt-16 w-full"
+        className={showNavBar ? "flex-1 container pt-16 w-full" : "flex-1 w-full"}
       >
         {children}
       </motion.main>

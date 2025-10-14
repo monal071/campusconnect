@@ -112,7 +112,7 @@ export default function AdminPage() {
         fetchJobs();
       } catch (error) {
         console.error("Failed to verify admin status:", error);
-        router.push('/home');
+        router.push('/dashboard');
       }
     };
     

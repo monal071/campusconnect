@@ -6,14 +6,20 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import UserNotifications from '../../components/UserNotifications';
 
-// Material UI Icons
-import EventIcon from '@mui/icons-material/Event';
-import WorkIcon from '@mui/icons-material/Work';
-import PeopleIcon from '@mui/icons-material/People';
-import ArticleIcon from '@mui/icons-material/Article';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import NewspaperIcon from '@mui/icons-material/Newspaper';
-import EditIcon from '@mui/icons-material/Edit';
+// Heroicons
+import { 
+  CalendarIcon,
+  BriefcaseIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+  BookOpenIcon,
+  NewspaperIcon,
+  PencilIcon,
+  AcademicCapIcon,
+  PlayIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -24,17 +30,39 @@ export default function Dashboard() {
     posts: 0,
     events: 0,
     resources: 0,
-    jobs: 0
+    jobs: 0,
+    quizzes: {
+      totalQuizzes: 0,
+      activeQuizzes: 0
+    }
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
-  // Check if user is authenticated
+  // Check if user is authenticated and set up real-time updates
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (status === 'authenticated') {
       fetchDashboardData();
+      
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(() => {
+        fetchDashboardData();
+      }, 30000);
+      
+      // Refresh when page becomes visible
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchDashboardData();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        clearInterval(interval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, [status, router]);
 
@@ -42,18 +70,30 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch user stats
-      const statsRes = await fetch('/api/dashboard/stats');
+      // Fetch user stats with cache busting
+      const statsRes = await fetch(`/api/dashboard/stats?_t=${Date.now()}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const statsData = await statsRes.json();
       if (statsRes.ok && statsData.data) {
+        console.log('Dashboard stats received:', statsData.data);
         setStats(statsData.data);
       } else {
+        console.error('Failed to fetch stats:', statsData);
         setStats({
           connections: 0,
           posts: 0,
           events: 0,
           resources: 0,
-          jobs: 0
+          jobs: 0,
+          quizzes: {
+            totalQuizzes: 0,
+            activeQuizzes: 0
+          }
         });
       }
 
@@ -133,12 +173,12 @@ export default function Dashboard() {
   // Get icon component for activity
   const getActivityIcon = (iconName) => {
     switch (iconName) {
-      case 'PeopleIcon': return <PeopleIcon />;
-      case 'ArticleIcon': return <ArticleIcon />;
-      case 'EventIcon': return <EventIcon />;
-      case 'MenuBookIcon': return <MenuBookIcon />;
-      case 'WorkIcon': return <WorkIcon />;
-      default: return <ArticleIcon />;
+      case 'PeopleIcon': return <UserGroupIcon />;
+      case 'ArticleIcon': return <NewspaperIcon />;
+      case 'EventIcon': return <CalendarIcon />;
+      case 'MenuBookIcon': return <BookOpenIcon />;
+      case 'WorkIcon': return <BriefcaseIcon />;
+      default: return <NewspaperIcon />;
     }
   };
 
@@ -195,7 +235,7 @@ export default function Dashboard() {
                 </div>
                 <Link href="/profile" className="bg-white bg-opacity-25 hover:bg-opacity-40 transition-colors duration-200 py-2 px-4 rounded-lg text-sm font-medium">
                   <div className="flex items-center">
-                    <EditIcon className="w-4 h-4 mr-2" />
+                    <PencilIcon className="w-4 h-4 mr-2" />
                     Edit Profile
                   </div>
                 </Link>
@@ -203,56 +243,35 @@ export default function Dashboard() {
             </div>
           </motion.section>
 
-          {/* Stats Section */}
-          <motion.section 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
-                <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-3 mb-2">
-                  <PeopleIcon className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+          {/* Quiz Stats Section - Only show for faculty */}
+          {(session?.user?.role === 'faculty' || session?.user?.role === 'admin') && (
+            <motion.section 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                {/* Total Quizzes */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
+                  <div className="rounded-full bg-indigo-100 dark:bg-indigo-900 p-3 mb-2">
+                    <AcademicCapIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.quizzes?.totalQuizzes || 0}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">My Quizzes</div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.connections}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Connections</div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
-                <div className="rounded-full bg-purple-100 dark:bg-purple-900 p-3 mb-2">
-                  <ArticleIcon className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+                
+                {/* Active Quizzes */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
+                  <div className="rounded-full bg-green-100 dark:bg-green-900 p-3 mb-2">
+                    <PlayIcon className="h-6 w-6 text-green-600 dark:text-green-300" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.quizzes?.activeQuizzes || 0}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Active</div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.posts}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Posts</div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
-                <div className="rounded-full bg-green-100 dark:bg-green-900 p-3 mb-2">
-                  <EventIcon className="h-6 w-6 text-green-600 dark:text-green-300" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.events}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Events</div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
-                <div className="rounded-full bg-red-100 dark:bg-red-900 p-3 mb-2">
-                  <MenuBookIcon className="h-6 w-6 text-red-600 dark:text-red-300" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.resources}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Resources</div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 flex flex-col items-center">
-                <div className="rounded-full bg-amber-100 dark:bg-amber-900 p-3 mb-2">
-                  <WorkIcon className="h-6 w-6 text-amber-600 dark:text-amber-300" />
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.jobs}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Jobs</div>
-              </div>
-              
 
-            </div>
-          </motion.section>
+              </div>
+            </motion.section>
+          )}
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -271,7 +290,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
-                            <PeopleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <UserGroupIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">Total Connections</p>
@@ -297,7 +316,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="text-center py-6">
                       <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <PeopleIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        <UserGroupIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 mb-2">No connections yet</p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Start building your network!</p>
@@ -323,7 +342,7 @@ export default function Dashboard() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Joined Events</h2>
-                  <EventIcon className="h-5 w-5 text-indigo-500" />
+                  <CalendarIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
                   {upcomingEvents.length > 0 ? (
@@ -345,7 +364,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="text-center py-6">
                       <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <EventIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                        <CalendarIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 mb-2">No joined events</p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Join events to see them here</p>
@@ -365,7 +384,7 @@ export default function Dashboard() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Posts</h2>
-                  <ArticleIcon className="h-5 w-5 text-indigo-500" />
+                  <NewspaperIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
                   {stats.posts > 0 ? (
@@ -373,7 +392,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
-                            <ArticleIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                            <NewspaperIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">Total Posts</p>
@@ -399,7 +418,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="text-center py-6">
                       <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ArticleIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                        <NewspaperIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 mb-2">No posts yet</p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Share your first post!</p>
@@ -427,7 +446,7 @@ export default function Dashboard() {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Resources</h2>
-                  <MenuBookIcon className="h-5 w-5 text-indigo-500" />
+                  <BookOpenIcon className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-4">
                   {stats.resources > 0 ? (
@@ -435,7 +454,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
-                            <MenuBookIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                            <BookOpenIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">Shared Resources</p>
@@ -461,7 +480,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="text-center py-6">
                       <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <MenuBookIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
+                        <BookOpenIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 mb-2">No resources shared</p>
                       <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Share educational resources!</p>
@@ -485,22 +504,22 @@ export default function Dashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Link href="/posts/create" className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all">
-                    <ArticleIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
+                    <NewspaperIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">New Post</span>
                   </Link>
                   
                   <Link href="/events" className="flex flex-col items-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all">
-                    <EventIcon className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
+                    <CalendarIcon className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">Events</span>
                   </Link>
                   
                   <Link href="/connections" className="flex flex-col items-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all">
-                    <PeopleIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
+                    <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">Connect</span>
                   </Link>
                   
                   <Link href="/jobs" className="flex flex-col items-center p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all">
-                    <WorkIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 mb-2" />
+                    <BriefcaseIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 mb-2" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">Jobs</span>
                   </Link>
                 </div>

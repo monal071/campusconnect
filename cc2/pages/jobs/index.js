@@ -71,9 +71,13 @@ export default function Jobs() {
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.skills.some(skill => 
+      (job.skills && job.skills.some(skill => 
         skill.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      )) ||
+      (job.location && job.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (job.requirements && job.requirements.some(req => 
+        req.toLowerCase().includes(searchTerm.toLowerCase())
+      ));
     
     const matchesType = selectedType === 'all' || job.type === selectedType;
     
@@ -130,20 +134,86 @@ export default function Jobs() {
           {filteredJobs.map((job) => (
             <div
               key={job._id}
-              className="card p-4 hover:shadow-md transition-all animate-fade-in"
+              className="card p-6 hover:shadow-md transition-all animate-fade-in"
             >
-              <div className="flex justify-between items-start">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{job.title}</h2>
+              {/* Header */}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">{job.title}</h2>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-slate-600 dark:text-slate-300 font-medium">{job.company}</p>
+                    {job.location && (
+                      <span className="text-slate-500 dark:text-slate-400">• {job.location}</span>
+                    )}
+                  </div>
+                </div>
                 <span className="badge badge-primary">{job.type}</span>
               </div>
-              <p className="text-slate-600 dark:text-slate-300 font-medium mt-1 mb-3">{job.company}</p>
+
+              {/* Salary */}
+              {job.salary && (
+                <div className="mb-3">
+                  <span className="text-green-600 dark:text-green-400 font-semibold text-lg">{job.salary}</span>
+                </div>
+              )}
+
+              {/* Description */}
               <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-3">{job.description}</p>
-              <div className="flex flex-wrap gap-2 mt-auto">
-                {job.skills.map(skill => (
-                  <span key={skill} className="badge badge-blue">
-                    {skill}
-                  </span>
-                ))}
+
+              {/* Requirements */}
+              {job.requirements && job.requirements.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Requirements:</h4>
+                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                    {job.requirements.slice(0, 3).map((req, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-blue-500 mr-2">•</span>
+                        {req}
+                      </li>
+                    ))}
+                    {job.requirements.length > 3 && (
+                      <li className="text-slate-500 dark:text-slate-400 text-xs">
+                        +{job.requirements.length - 3} more requirements
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* Skills */}
+              {job.skills && job.skills.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Skills:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {job.skills.map(skill => (
+                      <span key={skill} className="badge badge-blue text-xs">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer with dates */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-4">
+                  {job.postedAt && (
+                    <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
+                  )}
+                </div>
+                {job.expiresAt && (
+                  <div className="flex items-center gap-1">
+                    <span className={`font-medium ${
+                      new Date(job.expiresAt) < new Date() 
+                        ? 'text-red-500' 
+                        : new Date(job.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                        ? 'text-orange-500'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}>
+                      Deadline: {new Date(job.expiresAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

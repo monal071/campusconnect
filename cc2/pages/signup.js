@@ -90,7 +90,7 @@ export default function Signup() {
             if (data.role === 'admin') {
               router.push('/admin');
             } else {
-              router.push('/home');
+              router.push('/dashboard');
             }
           } else {
             // User authenticated but needs to select a role
@@ -153,7 +153,7 @@ export default function Signup() {
       if (role === 'admin') {
         router.push('/admin');
       } else {
-        router.push('/home');
+        router.push('/dashboard');
       }
     } catch (error) {
       setError(error.message);

@@ -6,8 +6,8 @@ export default function HomeRedirect() {
   const router = useRouter();
   
   useEffect(() => {
-    // Let middleware handle admin redirects, just go to root
-    router.replace("/");
+    // Redirect to dashboard instead of root to avoid landing page loop
+    router.replace("/dashboard");
   }, [router]);
   
   return null;

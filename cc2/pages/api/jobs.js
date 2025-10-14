@@ -3,14 +3,15 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from '../../utils/mongodb';
 
-const TABLE_NAME = 'Jobs';
+const TABLE_NAME = 'jobs';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const jobs = await getAllItems(TABLE_NAME);
-      // Fix: Return the items array directly, not wrapped in an object
-      const validJobs = (Array.isArray(jobs) ? jobs : (jobs.items || [])).filter(job => 
+      const result = await getAllItems(TABLE_NAME);
+      // Extract the data array from the result object
+      const jobs = result.data || [];
+      const validJobs = jobs.filter(job => 
         job && 
         typeof job === 'object' && 
         job.title && 

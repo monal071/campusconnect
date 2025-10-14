@@ -11,9 +11,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import PasswordPromptModal from './PasswordPromptModal';
 
-export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPasswordVerified }) {
+
+export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -21,26 +21,32 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPassw
   const [studentInfo, setStudentInfo] = useState({ studentId: '', studentName: '' });
   const [showStudentForm, setShowStudentForm] = useState(true);
   const [startTime, setStartTime] = useState(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+
 
   // Initialize quiz when quiz changes
   useEffect(() => {
+    console.log('🔄 TakeQuizModal useEffect triggered:', {
+      quizId: quiz?._id,
+      hasQuestions: !!(quiz?.questions?.length),
+      questionsCount: quiz?.questions?.length || 0,
+      isOpen,
+      requiresPassword: !quiz?.isPublic && quiz?.password
+    });
+    
     if (quiz && isOpen) {
       setAnswers(new Array(quiz.questions?.length || 0).fill(''));
       setTimeRemaining(quiz.timeLimit * 60); // Convert minutes to seconds
       setCurrentQuestion(0);
       setStartTime(null);
       
-      // Check if quiz requires password
-      if (!quiz.isPublic && quiz.password) {
-        setShowPasswordModal(true);
-        setShowStudentForm(false);
-        setIsPasswordVerified(false);
-      } else {
+      // Always show student form if quiz has questions, regardless of password
+      if (quiz.questions && quiz.questions.length > 0) {
+        console.log('✅ Quiz has questions, showing student form');
         setShowStudentForm(true);
-        setShowPasswordModal(false);
-        setIsPasswordVerified(true);
+      } else {
+        console.log('❌ Quiz missing questions, need to fetch full quiz data');
+        // Quiz doesn't have questions, need to fetch them
+        setShowStudentForm(false);
       }
     }
   }, [quiz, isOpen]);
@@ -73,22 +79,6 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPassw
     if (percentage > 50) return 'text-green-600 dark:text-green-400';
     if (percentage > 25) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-red-600 dark:text-red-400';
-  };
-
-  const handlePasswordSubmit = async (password) => {
-    if (password === quiz.password) {
-      setIsPasswordVerified(true);
-      setShowPasswordModal(false);
-      setShowStudentForm(true);
-      toast.success('Password verified! Loading full quiz...');
-      
-      // Re-fetch the full quiz data with questions using the provided handler
-      if (onPasswordVerified) {
-        await onPasswordVerified(quiz._id, password);
-      }
-    } else {
-      throw new Error('Incorrect password. Please try again.');
-    }
   };
 
   const handleStudentInfoSubmit = (e) => {
@@ -167,7 +157,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPassw
   };
 
   const handleClose = () => {
-    if (!showStudentForm && !showPasswordModal && getAnsweredQuestionsCount() > 0) {
+    if (!showStudentForm && getAnsweredQuestionsCount() > 0) {
       const confirmed = confirm('Are you sure you want to exit? Your progress will be lost.');
       if (!confirmed) return;
     }
@@ -177,8 +167,6 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPassw
     setTimeRemaining(0);
     setStudentInfo({ studentId: '', studentName: '' });
     setShowStudentForm(true);
-    setShowPasswordModal(false);
-    setIsPasswordVerified(false);
     setStartTime(null);
     onClose();
   };
@@ -476,13 +464,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit, onPassw
         </div>
       </Dialog>
       
-      {/* Password Prompt Modal */}
-      <PasswordPromptModal
-        isOpen={showPasswordModal}
-        onClose={handleClose}
-        onPasswordSubmit={handlePasswordSubmit}
-        quizName={quiz?.quizName || 'Quiz'}
-      />
+
     </Transition>
   );
 }

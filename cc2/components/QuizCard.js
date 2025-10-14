@@ -47,24 +47,26 @@ const buttonVariants = {
 export default function QuizCard({ 
   quiz, 
   userRole, 
+  userSession,
   onEdit, 
   onDelete, 
   onViewResults, 
   onTake,
   onEnd,
-  onActivate
+  onActivate,
+  onViewHistory
 }) {
   // State management
   const [isLoading, setIsLoading] = useState(false);
   const [actionType, setActionType] = useState(null); // Track which action is loading
 
   // Debug logging
-  console.log('🎯 QuizCard render:', {
-    quizName: quiz?.quizName,
-    status: quiz?.status,
-    isActive: quiz?.isActive,
-    userRole
-  });
+  // console.log('🎯 QuizCard render:', {
+  //   quizName: quiz?.quizName,
+  //   status: quiz?.status,
+  //   isActive: quiz?.isActive,
+  //   userRole
+  // });
 
   // Memoized computed values
   const isTeacher = useMemo(() => 
@@ -105,6 +107,8 @@ export default function QuizCard({
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200';
       case 'ended':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200';
       case 'expired':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-200';
       case 'draft':
@@ -133,27 +137,42 @@ export default function QuizCard({
   // Enhanced quiz status computation
   const quizStatus = useMemo(() => {
     // Validate quiz object
-    if (!quiz) return { status: 'unknown', canTake: false, displayText: 'Unknown' };
+    if (!quiz) return { status: 'unknown', canTake: false, displayText: 'Unknown', hasSubmitted: false };
 
     // Explicit check for isActive field - only true if explicitly set to true
     const isActive = quiz.isActive === true;
     const status = isActive ? 'active' : 'ended';
     
-    console.log('🎯 QuizStatus calculation:', {
-      quizName: quiz.quizName,
-      rawIsActive: quiz.isActive,
-      calculatedIsActive: isActive,
-      finalStatus: status
-    });
+    // Use hasSubmitted field from API (calculated server-side)
+    const hasSubmitted = quiz.hasSubmitted || false;
+    
+    // console.log('🎯 QuizStatus calculation:', {
+    //   quizName: quiz.quizName,
+    //   rawIsActive: quiz.isActive,
+    //   calculatedIsActive: isActive,
+    //   finalStatus: status,
+    //   hasSubmitted,
+    //   userEmail: userSession?.user?.email,
+    //   userStudentId: userSession?.user?.studentId
+    // });
+    
+    let canTake = isActive && !isTeacher && !hasSubmitted;
+    let displayText = status === 'active' ? 'Active' : 'Ended';
+    
+    if (hasSubmitted) {
+      displayText = 'Completed';
+      canTake = false;
+    }
     
     return {
       status,
       isActive,
-      canTake: isActive && !isTeacher,
-      displayText: status === 'active' ? 'Active' : 'Ended',
-      color: getStatusColor(status)
+      canTake,
+      hasSubmitted,
+      displayText,
+      color: getStatusColor(hasSubmitted ? 'completed' : status)
     };
-  }, [quiz, isTeacher, getStatusColor]);
+  }, [quiz, isTeacher, isStudent, userSession, getStatusColor]);
 
   // Enhanced error handling for async operations
   const handleAsyncOperation = async (operation, operationType) => {
@@ -369,7 +388,7 @@ export default function QuizCard({
         </div>
       </div>
 
-      {/* Teacher-only Stats */}
+      {/* Teacher-only Stats - Removed submission and average score stats */}
       {isTeacher && quiz.statistics && (
         <div className="px-6 pb-4">
           <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
@@ -377,19 +396,7 @@ export default function QuizCard({
               <ChartBarIcon className="h-4 w-4 mr-2" />
               Quiz Statistics
             </h4>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {quiz.statistics.submissions || 0}
-                </p>
-                <p className="text-indigo-700 dark:text-indigo-300">Submissions</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {Math.round(quiz.statistics.averageScore || 0)}%
-                </p>
-                <p className="text-indigo-700 dark:text-indigo-300">Avg Score</p>
-              </div>
+            <div className="flex justify-center">
               <div className="text-center">
                 <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                   {Math.round(quiz.statistics.completionRate || 0)}%
@@ -416,6 +423,18 @@ export default function QuizCard({
               >
                 <ChartBarIcon className="h-4 w-4 mr-2" />
                 Results
+              </motion.button>
+
+              {/* History Button */}
+              <motion.button
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                onClick={() => onViewHistory?.(quiz)}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              >
+                <ClockIcon className="h-4 w-4 mr-2" />
+                History
               </motion.button>
               
               {/* Edit Button */}
@@ -466,7 +485,7 @@ export default function QuizCard({
               )}
             </div>
           ) : (
-            <div className="flex-1">
+            <div className="flex-1 space-y-2">
               <motion.button
                 variants={buttonVariants}
                 whileHover="hover"
@@ -476,8 +495,22 @@ export default function QuizCard({
                 className="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-all disabled:cursor-not-allowed w-full justify-center"
               >
                 <PlayIcon className="h-5 w-5 mr-2" />
-                {quizStatus.canTake ? 'Take Quiz' : 'Quiz Not Available'}
+                {quizStatus.canTake ? 'Take Quiz' : quizStatus.hasSubmitted ? 'Completed' : 'Quiz Not Available'}
               </motion.button>
+              
+              {/* History Button for Students */}
+              {quizStatus.hasSubmitted && (
+                <motion.button
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  onClick={() => onViewHistory?.(quiz)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all w-full justify-center"
+                >
+                  <ClockIcon className="h-4 w-4 mr-2" />
+                  View History
+                </motion.button>
+              )}
             </div>
           )}
 

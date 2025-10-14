@@ -8,7 +8,7 @@ import {
   ClockIcon,
   AcademicCapIcon,
   DocumentTextIcon,
-  DownloadIcon,
+  ArrowDownTrayIcon,
   EyeIcon
 } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
@@ -265,7 +265,7 @@ export default function QuizResultsModal({ isOpen, onClose, quiz }) {
           onClick={exportResults}
           className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
         >
-          <DownloadIcon className="h-4 w-4 mr-2" />
+          <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
           Export CSV
         </button>
       </div>

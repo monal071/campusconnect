@@ -73,9 +73,9 @@ export default async function handler(req, res) {
         userId: submission.userId,
         studentName: submission.studentName,
         studentId: submission.studentId,
-        score: submission.score,
+        score: submission.totalScore,
         totalQuestions: submission.totalQuestions,
-        percentage: submission.percentage,
+        percentage: submission.percentageScore,
         grade: submission.grade,
         timeSpent: submission.timeSpent,
         submittedAt: submission.submittedAt,
@@ -90,10 +90,10 @@ export default async function handler(req, res) {
     let averageTimeSpent = 0;
 
     if (totalSubmissions > 0) {
-      const totalPercentage = submissions.reduce((sum, sub) => sum + sub.percentage, 0);
+      const totalPercentage = submissions.reduce((sum, sub) => sum + (sub.percentageScore || 0), 0);
       averageScore = Math.round(totalPercentage / totalSubmissions);
 
-      const totalTime = submissions.reduce((sum, sub) => sum + sub.timeSpent, 0);
+      const totalTime = submissions.reduce((sum, sub) => sum + (sub.timeSpent || 0), 0);
       averageTimeSpent = Math.round(totalTime / totalSubmissions);
 
       submissions.forEach(sub => {

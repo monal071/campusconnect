@@ -11,6 +11,13 @@ export async function middleware(req) {
   const publicPaths = [
     '/login', 
     '/signup', 
+    '/dashboard',
+    '/events',
+    '/resources', 
+    '/jobs',
+    '/posts',
+    '/connections',
+    '/quiz',
     '/api/auth/authenticate',
     '/api/debug/session',  // Allow debug endpoints without auth
     '/api/migrate-user-roles'  // Allow migration during development
@@ -40,8 +47,12 @@ export async function middleware(req) {
       secret: process.env.NEXTAUTH_SECRET 
     });
     
-    // If not authenticated, redirect to login
-    if (!token) {
+    // Check for guest access
+    const guestCookie = req.cookies.get('guest');
+    const hasGuestAccess = guestCookie?.value === 'true';
+    
+    // If not authenticated and not guest access, redirect to login
+    if (!token && !hasGuestAccess) {
       console.log(`Unauthenticated access to ${pathname}. Redirecting to login.`);
       const url = req.nextUrl.clone();
       url.pathname = "/login";
