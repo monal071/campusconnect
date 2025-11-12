@@ -211,10 +211,6 @@ export default function NavBar() {
               </Link>
             )}
 
-            <Link href="/posts" className="nav-link">
-              Posts
-            </Link>
-
             {/* Admin Panel link - only visible to admins */}
             {userRole === "admin" && (
               <Link href="/admin" className="btn btn-secondary text-sm">
@@ -498,13 +494,6 @@ export default function NavBar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Jobs
-              </Link>
-              <Link
-                href="/posts"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Posts
               </Link>
               <Link
                 href="/communities"

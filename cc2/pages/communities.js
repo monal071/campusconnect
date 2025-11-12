@@ -23,6 +23,7 @@ export default function Communities() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all' or 'my'
+  const isAdmin = session?.user?.role === 'admin';
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -77,6 +78,11 @@ export default function Communities() {
     } catch (error) {
       toast.error(error.message);
     }
+  };
+
+  const handleDeleteCommunity = (communityId) => {
+    setCommunities(communities.filter(c => c._id !== communityId));
+    setMyCommunities(myCommunities.filter(c => c._id !== communityId));
   };
 
   const filteredCommunities = communities.filter(
@@ -171,6 +177,8 @@ export default function Communities() {
                     key={community._id}
                     community={community}
                     onJoin={handleJoinCommunity}
+                    onDelete={handleDeleteCommunity}
+                    isAdmin={isAdmin}
                     isMember={myCommunities.some(
                       (c) => c._id === community._id
                     )}
@@ -182,6 +190,8 @@ export default function Communities() {
                     community={community}
                     isMember={true}
                     showEnter={true}
+                    onDelete={handleDeleteCommunity}
+                    isAdmin={isAdmin}
                   />
                 ))}
           </div>
@@ -220,9 +230,10 @@ export default function Communities() {
   );
 }
 
-function CommunityCard({ community, onJoin, isMember, showEnter }) {
+function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdmin }) {
   const router = useRouter();
   const [joinStatus, setJoinStatus] = useState(community.joinStatus || "none");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleJoinClick = async () => {
     await onJoin(community._id, community.isPrivate);
@@ -230,6 +241,33 @@ function CommunityCard({ community, onJoin, isMember, showEnter }) {
       setJoinStatus("pending");
     } else {
       setJoinStatus("member");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${community.name}"? This will delete all posts and cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/communities/${community._id}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete community');
+      }
+
+      toast.success('Community deleted successfully');
+      if (onDelete) {
+        onDelete(community._id);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -305,6 +343,18 @@ function CommunityCard({ community, onJoin, isMember, showEnter }) {
               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-semibold transition-all"
             >
               {community.isPrivate ? "Request to Join" : "Join Community"}
+            </button>
+          )}
+          
+          {/* Admin Delete Button */}
+          {isAdmin && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              title="Delete Community (Admin)"
+            >
+              {isDeleting ? "..." : "🗑️"}
             </button>
           )}
         </div>

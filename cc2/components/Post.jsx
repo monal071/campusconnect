@@ -8,7 +8,7 @@ import {
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 
-const Post = ({ post, onDelete }) => {
+const Post = ({ post, onDelete, canDelete = false }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [likes, setLikes] = useState(post.likes || 0);
   const [liked, setLiked] = useState(() => {
@@ -74,8 +74,6 @@ const Post = ({ post, onDelete }) => {
     }
   };
 
-  const isAuthor = false; // For now, hide delete for guests
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -123,7 +121,7 @@ const Post = ({ post, onDelete }) => {
             )}
             <span className="text-sm font-medium ml-1">{likes}</span>
           </button>
-          {isAuthor && (
+          {canDelete && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}

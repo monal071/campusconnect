@@ -86,22 +86,11 @@ const Sidebar = () => {
 
       {/* Actions Section */}
       <div className="mt-auto px-4 py-4 space-y-2">
-        <Link href="/posts">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="btn btn-primary w-full hover-lift"
-          >
-            <AddRoundedIcon className="mr-2" />
-            <span>Create Post</span>
-          </motion.button>
-        </Link>
-
         <Link href="/communities">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="btn btn-secondary w-full hover-lift"
+            className="btn btn-primary w-full hover-lift"
           >
             <GroupsIcon className="mr-2" />
             <span>Communities</span>

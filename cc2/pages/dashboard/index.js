@@ -581,85 +581,6 @@ export default function Dashboard() {
                 </Link>
               </div>
             </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  My Posts
-                </h2>
-                <NewspaperIcon className="h-5 w-5 text-indigo-500" />
-              </div>
-              <div className="space-y-4">
-                {stats.posts > 0 ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
-                          <NewspaperIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            Total Posts
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {stats.posts} posts shared
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
-                          <span className="text-green-600 dark:text-green-400 font-bold">
-                            +
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            Create New Post
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Share your thoughts
-                          </p>
-                        </div>
-                      </div>
-                      <Link
-                        href="/posts/create"
-                        className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-                      >
-                        <span className="text-xl">→</span>
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <NewspaperIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">
-                      No posts yet
-                    </p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-                      Share your first post!
-                    </p>
-                    <Link
-                      href="/posts/create"
-                      className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      Create Post
-                    </Link>
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <Link
-                  href="/posts"
-                  className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
-                >
-                  View all posts →
-                </Link>
-              </div>
-            </div>
           </motion.section>
 
           {/* Right Column - My Resources and Quick Actions */}
@@ -756,16 +677,6 @@ export default function Dashboard() {
                 <span className="text-indigo-500">⚡</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/posts/create"
-                  className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all"
-                >
-                  <NewspaperIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    New Post
-                  </span>
-                </Link>
-
                 <Link
                   href="/events"
                   className="flex flex-col items-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all"

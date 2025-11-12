@@ -45,8 +45,8 @@ export default function Home() {
     },
     {
       icon: ChatBubbleBottomCenterTextIcon,
-      title: "Community Posts",
-      description: "Share experiences, ask questions, and engage with your campus community.",
+      title: "Community Groups",
+      description: "Join communities, share experiences, and engage with your campus community.",
       color: "from-indigo-500 to-purple-500"
     },
     {
@@ -296,7 +296,7 @@ export default function Home() {
               { href: "/events", label: "Events", icon: "📅" },
               { href: "/resources", label: "Resources", icon: "📚" },
               { href: "/jobs", label: "Jobs", icon: "💼" },
-              { href: "/posts", label: "Community", icon: "💬" },
+              { href: "/communities", label: "Communities", icon: "�" },
               { href: "/connections", label: "Network", icon: "🤝" },
               { href: "/quiz", label: "Quizzes", icon: "🧠" },
               { href: "/login", label: "Sign In", icon: "👤" }

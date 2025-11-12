@@ -316,7 +316,12 @@ export default function CommunityPage() {
           {/* Posts Feed */}
           <div className="space-y-4">
             {posts.map((post) => (
-              <Post key={post._id} post={post} onDelete={handleDeletePost} />
+              <Post 
+                key={post._id} 
+                post={post} 
+                onDelete={handleDeletePost}
+                canDelete={community.isCreator || post.author?.email === session?.user?.email}
+              />
             ))}
             {posts.length === 0 && (
               <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl">
