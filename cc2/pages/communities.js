@@ -105,68 +105,111 @@ export default function Communities() {
         <title>Communities - CampusConnect</title>
       </Head>
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Communities
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Join communities and connect with people who share your
-                interests
-              </p>
+          {/* Header with gradient */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 mb-8 shadow-2xl"
+          >
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-4xl font-black text-white mb-2 flex items-center gap-3">
+                  <span className="text-5xl">🌐</span>
+                  Communities
+                </h1>
+                <p className="text-blue-100 text-lg">
+                  Join communities and connect with people who share your interests
+                </p>
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
+                    {communities.length} Total Communities
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
+                    {myCommunities.length} Joined
+                  </div>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCreateModal(true)}
+                className="mt-6 md:mt-0 bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-xl transition-all"
+              >
+                <AddIcon className="text-2xl" />
+                Create Community
+              </motion.button>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 md:mt-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg transition-all"
-            >
-              <AddIcon />
-              Create Community
-            </button>
-          </div>
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
+          </motion.div>
 
-          {/* Tabs */}
-          <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex gap-4">
+          {/* Modern Tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-2 inline-flex gap-2">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`pb-3 px-2 font-semibold transition-colors ${
+                className={`px-6 py-3 rounded-xl font-bold transition-all ${
                   activeTab === "all"
-                    ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
-                All Communities ({communities.length})
+                <span className="flex items-center gap-2">
+                  🌍 All Communities
+                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                    {communities.length}
+                  </span>
+                </span>
               </button>
               <button
                 onClick={() => setActiveTab("my")}
-                className={`pb-3 px-2 font-semibold transition-colors ${
+                className={`px-6 py-3 rounded-xl font-bold transition-all ${
                   activeTab === "my"
-                    ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
-                My Communities ({myCommunities.length})
+                <span className="flex items-center gap-2">
+                  ⭐ My Communities
+                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                    {myCommunities.length}
+                  </span>
+                </span>
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Search Bar */}
+          {/* Enhanced Search Bar */}
           {activeTab === "all" && (
-            <div className="mb-6">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search communities..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-8"
+            >
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity blur"></div>
+                <div className="relative">
+                  <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-2xl" />
+                  <input
+                    type="text"
+                    placeholder="🔍 Search communities by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-14 pr-4 py-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-lg"
+                  />
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Communities Grid */}
@@ -196,22 +239,63 @@ export default function Communities() {
                 ))}
           </div>
 
+          {/* Enhanced Empty States */}
           {activeTab === "all" && filteredCommunities.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                {searchTerm
-                  ? "No communities found matching your search."
-                  : "No communities available yet."}
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-20"
+            >
+              <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg">
+                <div className="text-7xl mb-4">
+                  {searchTerm ? "🔍" : "🌟"}
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  {searchTerm ? "No Results Found" : "No Communities Yet"}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  {searchTerm
+                    ? "Try adjusting your search terms"
+                    : "Be the first to create a community!"}
+                </p>
+                {!searchTerm && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all"
+                  >
+                    Create First Community
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
           )}
 
           {activeTab === "my" && myCommunities.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                You haven't joined any communities yet.
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-20"
+            >
+              <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg">
+                <div className="text-7xl mb-4">👋</div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  No Communities Yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Start exploring and join communities that match your interests!
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setActiveTab("all")}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all"
+                >
+                  Explore Communities
+                </motion.button>
+              </div>
+            </motion.div>
           )}
         </div>
       </div>
@@ -275,87 +359,135 @@ function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdm
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
     >
-      {/* Cover Image */}
-      <div className="h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+      {/* Enhanced Cover Image with Gradient Overlay */}
+      <div className="relative h-40 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full -ml-12 -mb-12 group-hover:scale-150 transition-transform duration-500"></div>
+        </div>
+        
+        {/* Privacy Badge */}
+        <div className="absolute top-4 right-4 z-10">
+          {community.isPrivate ? (
+            <div className="bg-orange-500/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 text-white font-semibold text-xs shadow-lg">
+              <LockIcon fontSize="small" />
+              Private
+            </div>
+          ) : (
+            <div className="bg-green-500/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 text-white font-semibold text-xs shadow-lg">
+              <PublicIcon fontSize="small" />
+              Public
+            </div>
+          )}
+        </div>
+
+        {/* Community Initial/Icon */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 border-4 border-white dark:border-gray-700">
+            {community.name?.charAt(0).toUpperCase()}
+          </div>
+        </div>
+      </div>
 
       {/* Content */}
       <div className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+        <div className="mb-3">
+          <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2 line-clamp-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all">
             {community.name}
           </h3>
-          <div className="flex items-center gap-2">
-            {community.isPrivate ? (
-              <LockIcon
-                className="text-gray-500 dark:text-gray-400"
-                fontSize="small"
-              />
-            ) : (
-              <PublicIcon className="text-green-500" fontSize="small" />
-            )}
-          </div>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-          {community.description || "No description"}
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2 leading-relaxed">
+          {community.description || "No description available"}
         </p>
 
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <PeopleIcon fontSize="small" />
-            <span>{community.memberCount || 0} members</span>
+        {/* Stats */}
+        <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <PeopleIcon className="text-blue-600 dark:text-blue-400" fontSize="small" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 dark:text-white">{community.memberCount || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Members</p>
+            </div>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {community.isPrivate ? "Private" : "Public"}
-          </span>
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+              <span className="text-purple-600 dark:text-purple-400 text-lg">📝</span>
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 dark:text-white">{community.postCount || 0}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Posts</p>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
           {showEnter || isMember ? (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push(`/communities/${community._id}`)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2"
             >
-              Enter Community
-            </button>
+              <span>🚀</span> Enter Community
+            </motion.button>
           ) : joinStatus === "pending" ? (
             <button
               disabled
-              className="flex-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 py-2 rounded-lg font-semibold flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg cursor-not-allowed"
             >
-              <HourglassEmptyIcon fontSize="small" />
+              <HourglassEmptyIcon fontSize="small" className="animate-pulse" />
               Pending Approval
             </button>
           ) : joinStatus === "member" ? (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push(`/communities/${community._id}`)}
-              className="flex-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 py-2 rounded-lg font-semibold flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2"
             >
               <CheckCircleIcon fontSize="small" />
-              Joined
-            </button>
+              View Community
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleJoinClick}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-semibold transition-all"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2"
             >
-              {community.isPrivate ? "Request to Join" : "Join Community"}
-            </button>
+              {community.isPrivate ? (
+                <>
+                  <LockIcon fontSize="small" /> Request to Join
+                </>
+              ) : (
+                <>
+                  <span>✨</span> Join Now
+                </>
+              )}
+            </motion.button>
           )}
           
           {/* Admin Delete Button */}
           {isAdmin && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title="Delete Community (Admin)"
             >
-              {isDeleting ? "..." : "🗑️"}
-            </button>
+              {isDeleting ? "⏳" : "🗑️"}
+            </motion.button>
           )}
         </div>
       </div>

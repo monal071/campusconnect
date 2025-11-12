@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     // Check if user is a member
     const isMember = community.members?.includes(user._id.toString());
     const isPending = community.pendingRequests?.includes(user._id.toString());
-    const isCreator = community.creatorId === user._id.toString();
+    const isCreator = community.createdBy === user._id.toString() || community.creatorId === user._id.toString();
 
     // If private and not a member, deny access
     if (community.isPrivate && !isMember) {

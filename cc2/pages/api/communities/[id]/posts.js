@@ -89,7 +89,7 @@ async function handleGet(req, res, db, communityId) {
 
 async function handlePost(req, res, db, communityId, user) {
   try {
-    const { content, images } = req.body;
+    const { content, images, isAnnouncement } = req.body;
 
     if (!content && (!images || images.length === 0)) {
       return res
@@ -101,10 +101,28 @@ async function handlePost(req, res, db, communityId, user) {
       return res.status(400).json({ message: "Maximum 4 images allowed" });
     }
 
+    // If announcement, check if user is creator
+    if (isAnnouncement) {
+      const community = await db
+        .collection("communities")
+        .findOne({ _id: new ObjectId(communityId) });
+      
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+
+      if (community.createdBy !== user._id.toString()) {
+        return res
+          .status(403)
+          .json({ message: "Only community creators can post announcements" });
+      }
+    }
+
     const post = {
       communityId,
       content: content?.trim() || "",
       images: images || [],
+      isAnnouncement: isAnnouncement || false,
       author: {
         id: user._id.toString(),
         name: user.name,
