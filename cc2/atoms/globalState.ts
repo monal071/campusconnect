@@ -1,45 +1,49 @@
-import { atom } from 'recoil';
+import { atom } from "recoil";
 
 interface LoadingState {
   isLoading: boolean;
   message?: string;
 }
 
+// Use timestamp to ensure unique keys during development hot reload
+const isDev = process.env.NODE_ENV === "development";
+const timestamp = isDev ? Date.now().toString() : "";
+
 export const globalLoadingState = atom<LoadingState>({
-  key: 'globalLoadingState',
+  key: `globalLoadingState${timestamp}`,
   default: {
-    isLoading: false
-  }
+    isLoading: false,
+  },
 });
 
 export const authState = atom({
-  key: 'authState',
+  key: `authState${timestamp}`,
   default: {
     isAuthenticated: false,
     isGuest: false,
-    user: null
-  }
+    user: null,
+  },
 });
 
 export const themeState = atom({
-  key: 'themeState',
-  default: 'dark'
+  key: `themeState${timestamp}`,
+  default: "dark",
 });
 
 export const toastState = atom({
-  key: 'toastState',
+  key: `toastState${timestamp}`,
   default: {
     open: false,
-    message: '',
-    type: 'info' as 'info' | 'success' | 'error' | 'warning'
-  }
+    message: "",
+    type: "info" as "info" | "success" | "error" | "warning",
+  },
 });
 
 export const modalState = atom({
-  key: 'modalState',
+  key: `modalState${timestamp}`,
   default: {
     open: false,
     type: null as string | null,
-    data: null as any
-  }
+    data: null as any,
+  },
 });

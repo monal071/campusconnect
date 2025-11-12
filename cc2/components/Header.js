@@ -27,13 +27,15 @@ const Header = () => {
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const { data: session } = useSession();
-  const userRole = session?.user?.role || localStorage.getItem('role') || 'user';
+  const userRole =
+    session?.user?.role || localStorage.getItem("role") || "user";
 
   useEffect(() => setMounted(true), []);
 
   const navigationItems = [
     { href: "/", Icon: HomeIcon, text: "Home" },
     { href: "/posts", Icon: CreateIcon, text: "Posts" },
+    { href: "/communities", Icon: PeopleIcon, text: "Communities" },
     { href: "/dashboard", Icon: DashboardIcon, text: "Dashboard" },
     { href: "/events", Icon: EventIcon, text: "Events" },
     { href: "/connect", Icon: PeopleIcon, text: "Connect" },
@@ -41,10 +43,14 @@ const Header = () => {
     { href: "/resources", Icon: MenuBookIcon, text: "Resources" },
     { href: "/news", Icon: NewspaperIcon, text: "News" },
   ];
-  
+
   // Add admin link only for admin users
-  if (userRole === 'admin') {
-    navigationItems.push({ href: "/admin", Icon: DashboardIcon, text: "Admin" });
+  if (userRole === "admin") {
+    navigationItems.push({
+      href: "/admin",
+      Icon: DashboardIcon,
+      text: "Admin",
+    });
   }
 
   const NavLink = ({ href, Icon, text }) => {
@@ -114,7 +120,9 @@ const Header = () => {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                onClick={() =>
+                  setTheme(resolvedTheme === "dark" ? "light" : "dark")
+                }
                 className="p-2 rounded-lg hover:bg-gray-700/50 transition-colors"
               >
                 {resolvedTheme === "dark" ? (

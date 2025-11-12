@@ -7,6 +7,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import PersonIcon from "@mui/icons-material/Person";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PostAddIcon from "@mui/icons-material/PostAdd";
+import GroupsIcon from "@mui/icons-material/Groups";
 
 const stats = [
   { label: "Profile Views", value: 0, Icon: VisibilityIcon },
@@ -37,7 +38,7 @@ const Sidebar = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/80" />
         </div>
-        
+
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -93,6 +94,17 @@ const Sidebar = () => {
           >
             <AddRoundedIcon className="mr-2" />
             <span>Create Post</span>
+          </motion.button>
+        </Link>
+
+        <Link href="/communities">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="btn btn-secondary w-full hover-lift"
+          >
+            <GroupsIcon className="mr-2" />
+            <span>Communities</span>
           </motion.button>
         </Link>
       </div>

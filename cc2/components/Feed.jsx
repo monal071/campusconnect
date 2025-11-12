@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import PostForm from './PostForm';
-import Post from './Post';
-import LoadingSpinner from './LoadingSpinner';
-import ErrorMessage from './ErrorMessage';
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import PostForm from "./PostForm";
+import Post from "./Post";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorMessage from "./ErrorMessage";
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
-  const [guestName, setGuestName] = useState('');
+  const [guestName, setGuestName] = useState("");
 
   useEffect(() => {
     // Detect guest session
-    if (typeof window !== 'undefined') {
-      const guest = localStorage.getItem('guest');
+    if (typeof window !== "undefined") {
+      const guest = localStorage.getItem("guest");
       setIsGuest(!!guest);
-      const storedName = localStorage.getItem('guestName');
+      const storedName = localStorage.getItem("guestName");
       if (storedName) setGuestName(storedName);
     }
   }, []);
@@ -28,15 +28,15 @@ const Feed = () => {
       setIsLoading(true);
       try {
         // Replace with your API call
-        const response = await fetch('/api/posts');
+        const response = await fetch("/api/posts");
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error("Network response was not ok");
         }
         const data = await response.json();
         setPosts(data);
       } catch (error) {
-        console.error('Error loading posts:', error);
-        setError('Failed to load posts');
+        console.error("Error loading posts:", error);
+        setError("Failed to load posts");
       } finally {
         setIsLoading(false);
       }
@@ -48,36 +48,37 @@ const Feed = () => {
   // Save guest name to localStorage
   useEffect(() => {
     if (isGuest && guestName) {
-      localStorage.setItem('guestName', guestName);
+      localStorage.setItem("guestName", guestName);
     }
   }, [isGuest, guestName]);
 
-  const handlePostCreated = async (content, name) => {
+  const handlePostCreated = async (content, name, images = []) => {
     try {
       const newPost = {
         content: content.trim(),
         author: isGuest ? { name: name || guestName } : undefined,
+        images: images, // Add images to the post
       };
 
       // Replace with your API call
-      const response = await fetch('/api/posts', {
-        method: 'POST',
+      const response = await fetch("/api/posts", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newPost),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error("Network response was not ok");
       }
 
       const savedPost = await response.json();
       setPosts((prevPosts) => [savedPost, ...prevPosts]);
-      toast.success('Post created successfully!');
+      toast.success("Post created successfully!");
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post');
+      console.error("Error creating post:", error);
+      toast.error("Failed to create post");
     }
   };
 
@@ -85,18 +86,18 @@ const Feed = () => {
     try {
       // Replace with your API call
       const response = await fetch(`/api/posts/${postId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error("Network response was not ok");
       }
 
       setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
-      toast.success('Post deleted successfully!');
+      toast.success("Post deleted successfully!");
     } catch (error) {
-      console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
+      console.error("Error deleting post:", error);
+      toast.error("Failed to delete post");
     }
   };
 
@@ -105,7 +106,9 @@ const Feed = () => {
   }
 
   if (error) {
-    return <ErrorMessage message={error} onRetry={() => window.location.reload()} />;
+    return (
+      <ErrorMessage message={error} onRetry={() => window.location.reload()} />
+    );
   }
 
   return (

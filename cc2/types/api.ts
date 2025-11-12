@@ -29,10 +29,11 @@ export interface Post {
   id: string;
   content: string;
   author: {
-    id: string;
+    id?: string;
     name: string;
     image?: string;
   };
+  images?: string[];
   likes: string[];
   comments: Comment[];
   createdAt: string;
@@ -56,7 +57,7 @@ export interface Event {
   description: string;
   date: string;
   location: string;
-  type: 'in-person' | 'online' | 'hybrid';
+  type: "in-person" | "online" | "hybrid";
   organizer: {
     id: string;
     name: string;
@@ -73,7 +74,7 @@ export interface Resource {
   id: string;
   title: string;
   description: string;
-  type: 'document' | 'link' | 'video' | 'other';
+  type: "document" | "link" | "video" | "other";
   url: string;
   author: {
     id: string;
@@ -90,7 +91,7 @@ export interface Connection {
   id: string;
   userId: string;
   connectedUserId: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   createdAt: string;
   updatedAt: string;
 }
