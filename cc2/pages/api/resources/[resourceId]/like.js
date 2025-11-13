@@ -3,19 +3,19 @@ import { updateItem, getItem } from '../../../../utils/db';
 const TABLE_NAME = 'Resources';
 
 export default async function handler(req, res) {
-  const { id } = req.query;
+  const { resourceId } = req.query;
 
   if (req.method === 'POST') {
     try {
       // Get current resource to check if it exists
-      const resource = await getItem(TABLE_NAME, { id });
+      const resource = await getItem(TABLE_NAME, { id: resourceId });
       if (!resource) {
         return res.status(404).json({ error: 'Resource not found' });
       }
 
       // Increment likes
       const currentLikes = resource.likes || 0;
-      await updateItem(TABLE_NAME, { id }, { likes: currentLikes + 1 });
+      await updateItem(TABLE_NAME, { id: resourceId }, { likes: currentLikes + 1 });
       
       res.status(200).json({ message: 'Resource liked successfully' });
     } catch (error) {
