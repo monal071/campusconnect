@@ -580,6 +580,7 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
                 transition={{ duration: 0.2 }}
                 className="w-full max-w-4xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
                 onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">

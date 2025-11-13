@@ -63,6 +63,7 @@ export default function JoinPrivateQuizModal({ isOpen, onClose, onQuizFound }) {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-md transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
                 onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">

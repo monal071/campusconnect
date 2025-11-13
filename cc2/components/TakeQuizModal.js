@@ -8,7 +8,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 
@@ -195,7 +194,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-4xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
                 onClick={(e) => e.stopPropagation()}
-                
+              >
                 {/* Student Information Form */}
                 {showStudentForm && (
                   <div className="p-8">
