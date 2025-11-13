@@ -61,8 +61,8 @@ export default function CommunityPage() {
         const data = await postsRes.json();
         // Separate announcements from regular posts
         const allPosts = data.posts || [];
-        setAnnouncements(allPosts.filter(p => p.isAnnouncement));
-        setPosts(allPosts.filter(p => !p.isAnnouncement));
+        setAnnouncements(allPosts.filter((p) => p.isAnnouncement));
+        setPosts(allPosts.filter((p) => !p.isAnnouncement));
       }
 
       if (membersRes.ok) {
@@ -248,12 +248,12 @@ export default function CommunityPage() {
               <ArrowBackIcon />
               <span>Back to Communities</span>
             </button>
-            
+
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                 {community.name?.charAt(0).toUpperCase()}
               </div>
-              
+
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   {community.name || "Unnamed Community"}
@@ -289,7 +289,6 @@ export default function CommunityPage() {
 
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-6 py-6">
-          
           {/* Announcements Section */}
           <div className="mb-6">
             <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800 overflow-hidden">
@@ -337,7 +336,9 @@ export default function CommunityPage() {
                         </button>
                         <button
                           type="submit"
-                          disabled={!announcementContent.trim() || isPostingAnnouncement}
+                          disabled={
+                            !announcementContent.trim() || isPostingAnnouncement
+                          }
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isPostingAnnouncement ? "Posting..." : "Post"}
@@ -375,13 +376,23 @@ export default function CommunityPage() {
                                 {announcement.author?.name}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(announcement.createdAt).toLocaleDateString()} at{" "}
-                                {new Date(announcement.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(
+                                  announcement.createdAt
+                                ).toLocaleDateString()}{" "}
+                                at{" "}
+                                {new Date(
+                                  announcement.createdAt
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </p>
                             </div>
                             {community.isCreator && (
                               <button
-                                onClick={() => handleDeletePost(announcement._id)}
+                                onClick={() =>
+                                  handleDeletePost(announcement._id)
+                                }
                                 className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                               >
                                 <DeleteIcon fontSize="small" />
@@ -411,8 +422,6 @@ export default function CommunityPage() {
               </div>
             </div>
           </div>
-
-
 
           {/* Create Post Form */}
           <motion.div
@@ -509,11 +518,14 @@ export default function CommunityPage() {
               Community Posts
             </h3>
             {posts.map((post) => (
-              <Post 
+              <Post
                 key={post._id}
-                post={post} 
+                post={post}
                 onDelete={handleDeletePost}
-                canDelete={community.isCreator || post.author?.email === session?.user?.email}
+                canDelete={
+                  community.isCreator ||
+                  post.author?.email === session?.user?.email
+                }
               />
             ))}
             {posts.length === 0 && (

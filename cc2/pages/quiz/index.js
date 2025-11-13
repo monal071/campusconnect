@@ -1,26 +1,24 @@
 import { useState, useEffect } from "react";
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
-import Layout from '../../components/Layout';
-import CreateQuizModal from '../../components/CreateQuizModal';
-import QuizCard from '../../components/QuizCard';
-import QuizResultsModal from '../../components/QuizResultsModal';
-import TakeQuizModal from '../../components/TakeQuizModal';
-import JoinPrivateQuizModal from '../../components/JoinPrivateQuizModal';
-import QuizHistory from '../../components/QuizHistory';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { 
-  PlusIcon, 
-  AcademicCapIcon, 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import Layout from "../../components/Layout";
+import CreateQuizModal from "../../components/CreateQuizModal";
+import QuizCard from "../../components/QuizCard";
+import QuizResultsModal from "../../components/QuizResultsModal";
+import TakeQuizModal from "../../components/TakeQuizModal";
+import JoinPrivateQuizModal from "../../components/JoinPrivateQuizModal";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import {
+  PlusIcon,
+  AcademicCapIcon,
   MagnifyingGlassIcon,
   ChartBarIcon,
   UserGroupIcon,
   ClockIcon,
   LockClosedIcon,
-  BookOpenIcon
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 export default function QuizPage() {
   const { data: session, status } = useSession();
@@ -34,23 +32,22 @@ export default function QuizPage() {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [showTakeModal, setShowTakeModal] = useState(false);
   const [showJoinPrivateModal, setShowJoinPrivateModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
-  
+
   // Filter and search state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("created");
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === "authenticated") {
       fetchQuizzes();
     }
   }, [status, searchTerm, statusFilter, sortBy]);
 
   // Force refresh every time the page loads to avoid caching issues
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === "authenticated") {
       const timer = setTimeout(() => {
         fetchQuizzes();
       }, 100);
@@ -61,22 +58,22 @@ export default function QuizPage() {
   const fetchQuizzes = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const params = new URLSearchParams({
         search: searchTerm,
         status: statusFilter,
         sortBy,
-        sortOrder: 'desc',
-        _t: Date.now() // Cache busting timestamp
+        sortOrder: "desc",
+        _t: Date.now(), // Cache busting timestamp
       });
 
       const response = await fetch(`/api/quiz/list?${params}`, {
-        cache: 'no-cache',
+        cache: "no-cache",
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
       });
       const data = await response.json();
 
@@ -84,29 +81,29 @@ export default function QuizPage() {
         // console.log('Fresh quiz data received:', data.quizzes);
         setQuizzes(data.quizzes || []);
       } else {
-        throw new Error(data.message || 'Failed to fetch quizzes');
+        throw new Error(data.message || "Failed to fetch quizzes");
       }
     } catch (error) {
-      console.error('Fetch quizzes error:', error);
+      console.error("Fetch quizzes error:", error);
       setError(error.message);
-      toast.error('Failed to load quizzes');
+      toast.error("Failed to load quizzes");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateQuiz = () => {
-    if (session?.user?.role === 'faculty' || session?.user?.role === 'admin') {
+    if (session?.user?.role === "faculty" || session?.user?.role === "admin") {
       setShowCreateModal(true);
     } else {
-      toast.error('Only faculty members can create quizzes');
+      toast.error("Only faculty members can create quizzes");
     }
   };
 
   const handleQuizCreated = () => {
     setShowCreateModal(false);
     fetchQuizzes();
-    toast.success('Quiz created successfully!');
+    toast.success("Quiz created successfully!");
   };
 
   const handleViewResults = (quiz) => {
@@ -114,92 +111,99 @@ export default function QuizPage() {
     setShowResultsModal(true);
   };
 
-  const handleViewHistory = (quiz) => {
-    setSelectedQuiz(quiz);
-    setShowHistoryModal(true);
-  };
-
   const handleTakeQuiz = async (quiz) => {
     // console.log('🎯 handleTakeQuiz called with quiz:', quiz);
     try {
       setLoading(true);
-      
+
       // Fetch full quiz data with questions
-      console.log('🔍 Fetching quiz data from API:', `/api/quiz/${quiz._id}`);
+      console.log("🔍 Fetching quiz data from API:", `/api/quiz/${quiz._id}`);
       const response = await fetch(`/api/quiz/${quiz._id}`, {
-        method: 'GET',
+        method: "GET",
       });
 
-      console.log('📡 API Response status:', response.status, response.ok);
+      console.log("📡 API Response status:", response.status, response.ok);
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ API Error:', error);
-        toast.error(error.message || 'Failed to load quiz');
+        console.error("❌ API Error:", error);
+        toast.error(error.message || "Failed to load quiz");
         return;
       }
 
       const fullQuiz = await response.json();
       // console.log('✅ Full quiz data received:', fullQuiz);
-      
+
       // Check if this is a password-protected quiz without questions
       if (fullQuiz.requiresPassword && !fullQuiz.questions) {
-        console.log('🔒 Password-protected quiz detected, fetching with password');
+        console.log(
+          "🔒 Password-protected quiz detected, fetching with password"
+        );
         // For private quiz, try to fetch with the password from the quiz object
         if (quiz.password) {
-          console.log('🔑 Using password from quiz object to fetch full data');
-          const passwordResponse = await fetch(`/api/quiz/${quiz._id}?password=${encodeURIComponent(quiz.password)}`, {
-            method: 'GET',
-          });
+          console.log("🔑 Using password from quiz object to fetch full data");
+          const passwordResponse = await fetch(
+            `/api/quiz/${quiz._id}?password=${encodeURIComponent(
+              quiz.password
+            )}`,
+            {
+              method: "GET",
+            }
+          );
 
           if (passwordResponse.ok) {
             const fullQuizWithPassword = await passwordResponse.json();
-            console.log('✅ Full quiz data with questions received');
+            console.log("✅ Full quiz data with questions received");
             setSelectedQuiz(fullQuizWithPassword);
             setShowTakeModal(true);
           } else {
-            console.error('❌ Failed to fetch quiz with password');
-            toast.error('Unable to access this private quiz');
+            console.error("❌ Failed to fetch quiz with password");
+            toast.error("Unable to access this private quiz");
           }
         } else {
-          console.error('❌ Private quiz but no password available');
-          toast.error('This private quiz requires a password. Use "Join Private Quiz" to access it.');
+          console.error("❌ Private quiz but no password available");
+          toast.error(
+            'This private quiz requires a password. Use "Join Private Quiz" to access it.'
+          );
         }
       } else {
         // Full quiz data with questions
         setSelectedQuiz(fullQuiz);
-        console.log('🎯 Setting showTakeModal to true');
+        console.log("🎯 Setting showTakeModal to true");
         setShowTakeModal(true);
       }
     } catch (error) {
-      console.error('💥 Exception in handleTakeQuiz:', error);
-      toast.error('Failed to load quiz');
-      console.error('Error loading quiz:', error);
+      console.error("💥 Exception in handleTakeQuiz:", error);
+      toast.error("Failed to load quiz");
+      console.error("Error loading quiz:", error);
     } finally {
       setLoading(false);
-      console.log('🏁 handleTakeQuiz finished');
+      console.log("🏁 handleTakeQuiz finished");
     }
   };
 
   // Handle password verification and re-fetch full quiz data
   const handleQuizPasswordVerified = async (quizId, password) => {
-    console.log('🔑 Password verified, fetching full quiz data with password');
+    console.log("🔑 Password verified, fetching full quiz data with password");
     try {
-      const response = await fetch(`/api/quiz/${quizId}?password=${encodeURIComponent(password)}`, {
-        method: 'GET',
-      });
+      const response = await fetch(
+        `/api/quiz/${quizId}?password=${encodeURIComponent(password)}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to load quiz with password');
+        throw new Error(error.message || "Failed to load quiz with password");
       }
 
       const fullQuiz = await response.json();
-      console.log('✅ Full quiz data with questions received:', fullQuiz);
+      console.log("✅ Full quiz data with questions received:", fullQuiz);
       setSelectedQuiz(fullQuiz);
     } catch (error) {
-      console.error('❌ Error fetching quiz with password:', error);
-      toast.error('Failed to load quiz: ' + error.message);
+      console.error("❌ Error fetching quiz with password:", error);
+      toast.error("Failed to load quiz: " + error.message);
     }
   };
 
@@ -209,25 +213,25 @@ export default function QuizPage() {
 
   const handlePrivateQuizFound = (quiz) => {
     // Add the found quiz to the list if it's not already there
-    setQuizzes(prev => {
-      const exists = prev.find(q => q._id === quiz._id);
+    setQuizzes((prev) => {
+      const exists = prev.find((q) => q._id === quiz._id);
       if (exists) {
         return prev;
       }
       return [quiz, ...prev];
     });
-    
+
     // Auto-open the quiz for taking since password was already verified
-    toast.success('Private quiz found! Opening quiz...');
+    toast.success("Private quiz found! Opening quiz...");
     handleTakeQuiz(quiz);
   };
 
   const handleQuizSubmit = async (submissionData) => {
     try {
-      const response = await fetch('/api/quiz/submit', {
-        method: 'POST',
+      const response = await fetch("/api/quiz/submit", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(submissionData),
       });
@@ -235,17 +239,17 @@ export default function QuizPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to submit quiz');
+        throw new Error(result.message || "Failed to submit quiz");
       }
 
-      toast.success('Quiz submitted successfully!');
+      toast.success("Quiz submitted successfully!");
       setShowTakeModal(false);
       setSelectedQuiz(null);
       fetchQuizzes();
-      
+
       return result;
     } catch (error) {
-      toast.error(error.message || 'Failed to submit quiz');
+      toast.error(error.message || "Failed to submit quiz");
       throw error;
     }
   };
@@ -262,89 +266,98 @@ export default function QuizPage() {
   };
 
   const handleDeleteQuiz = async (quizId) => {
-    if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this quiz? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     try {
       const response = await fetch(`/api/quiz/${quizId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
-        toast.success('Quiz deleted successfully');
+        toast.success("Quiz deleted successfully");
         fetchQuizzes();
       } else {
         const data = await response.json();
-        toast.error(data.message || 'Failed to delete quiz');
+        toast.error(data.message || "Failed to delete quiz");
       }
     } catch (error) {
-      toast.error('Error deleting quiz');
+      toast.error("Error deleting quiz");
     }
   };
 
   const handleEndQuiz = async (quizId) => {
     try {
-      const response = await fetch('/api/quiz/end', {
-        method: 'POST',
+      const response = await fetch("/api/quiz/end", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ quizId }),
       });
 
       if (response.ok) {
-        toast.success('Quiz ended successfully');
+        toast.success("Quiz ended successfully");
         fetchQuizzes(); // Refresh the quiz list
       } else {
         const data = await response.json();
-        toast.error(data.message || 'Failed to end quiz');
+        toast.error(data.message || "Failed to end quiz");
       }
     } catch (error) {
-      console.error('Error ending quiz:', error);
-      toast.error('Error ending quiz');
+      console.error("Error ending quiz:", error);
+      toast.error("Error ending quiz");
     }
   };
 
   const handleActivateQuiz = async (quizId) => {
     try {
-      const response = await fetch('/api/quiz/activate', {
-        method: 'POST',
+      const response = await fetch("/api/quiz/activate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ quizId }),
       });
 
       if (response.ok) {
-        toast.success('Quiz activated successfully');
+        toast.success("Quiz activated successfully");
         fetchQuizzes(); // Refresh the quiz list
       } else {
         const data = await response.json();
-        toast.error(data.message || 'Failed to activate quiz');
+        toast.error(data.message || "Failed to activate quiz");
       }
     } catch (error) {
-      console.error('Error activating quiz:', error);
-      toast.error('Error activating quiz');
+      console.error("Error activating quiz:", error);
+      toast.error("Error activating quiz");
     }
   };
 
   const getQuizStats = () => {
     const totalQuizzes = quizzes.length;
-    const activeQuizzes = quizzes.filter(quiz => quiz.status === 'active').length;
+    const activeQuizzes = quizzes.filter(
+      (quiz) => quiz.status === "active"
+    ).length;
 
     return { totalQuizzes, activeQuizzes };
   };
 
-  const filteredQuizzes = quizzes.filter(quiz => {
-    if (searchTerm && !quiz.quizName.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !quiz.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
+  const filteredQuizzes = quizzes.filter((quiz) => {
+    if (
+      searchTerm &&
+      !quiz.quizName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !quiz.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) {
       return false;
     }
     return true;
   });
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -357,12 +370,13 @@ export default function QuizPage() {
   }
 
   if (!session) {
-    router.push('/login');
+    router.push("/login");
     return null;
   }
 
   const stats = getQuizStats();
-  const isFaculty = session.user?.role === 'faculty' || session.user?.role === 'admin';
+  const isFaculty =
+    session.user?.role === "faculty" || session.user?.role === "admin";
 
   return (
     <Layout>
@@ -375,21 +389,13 @@ export default function QuizPage() {
                 Quizzes
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                {isFaculty ? 'Create and manage your quizzes' : 'Take quizzes and view your progress'}
+                {isFaculty
+                  ? "Create and manage your quizzes"
+                  : "Take quizzes and view your progress"}
               </p>
             </div>
-            
+
             <div className="flex space-x-3">
-              {!isFaculty && (
-                <button
-                  onClick={() => setShowHistoryModal(true)}
-                  className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                >
-                  <BookOpenIcon className="h-5 w-5 mr-2" />
-                  History
-                </button>
-              )}
-              
               {isFaculty && (
                 <button
                   onClick={handleCreateQuiz}
@@ -399,7 +405,7 @@ export default function QuizPage() {
                   Create Quiz
                 </button>
               )}
-              
+
               {!isFaculty && (
                 <button
                   onClick={handleJoinPrivateQuiz}
@@ -419,18 +425,26 @@ export default function QuizPage() {
                 <div className="flex items-center">
                   <AcademicCapIcon className="h-8 w-8 text-indigo-600 mr-3" />
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalQuizzes}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">My Quizzes</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.totalQuizzes}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      My Quizzes
+                    </p>
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                 <div className="flex items-center">
                   <ClockIcon className="h-8 w-8 text-green-600 mr-3" />
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeQuizzes}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.activeQuizzes}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Active
+                    </p>
                   </div>
                 </div>
               </div>
@@ -453,9 +467,9 @@ export default function QuizPage() {
               </div>
 
               {/* Manual Refresh Button for Debugging */}
-              <button 
+              <button
                 onClick={() => {
-                  console.log('Manual refresh triggered');
+                  console.log("Manual refresh triggered");
                   fetchQuizzes();
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -507,11 +521,14 @@ export default function QuizPage() {
           <div className="text-center py-12">
             <AcademicCapIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {searchTerm ? 'No quizzes found' : 'No quizzes yet'}
+              {searchTerm ? "No quizzes found" : "No quizzes yet"}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {searchTerm ? 'Try adjusting your search.' : 
-               isFaculty ? 'Create your first quiz to get started.' : 'Check back later for new quizzes.'}
+              {searchTerm
+                ? "Try adjusting your search."
+                : isFaculty
+                ? "Create your first quiz to get started."
+                : "Check back later for new quizzes."}
             </p>
             {isFaculty && !searchTerm && (
               <button
@@ -536,7 +553,6 @@ export default function QuizPage() {
                   quiz={quiz}
                   onTake={handleTakeQuiz}
                   onViewResults={handleViewResults}
-                  onViewHistory={handleViewHistory}
                   onEdit={handleEditQuiz}
                   onDelete={handleDeleteQuiz}
                   onEnd={handleEndQuiz}
@@ -587,13 +603,6 @@ export default function QuizPage() {
           isOpen={showJoinPrivateModal}
           onClose={() => setShowJoinPrivateModal(false)}
           onQuizFound={handlePrivateQuizFound}
-        />
-
-        <QuizHistory
-          isOpen={showHistoryModal}
-          onClose={() => setShowHistoryModal(false)}
-          quiz={selectedQuiz}
-          userRole={session?.user?.role}
         />
       </div>
     </Layout>

@@ -76,7 +76,7 @@ export default function NavBar() {
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
-        const unread = data.notifications.filter(n => !n.read).length;
+        const unread = data.notifications.filter((n) => !n.read).length;
         setUnreadNotifications(unread);
       }
     } catch (error) {
@@ -158,7 +158,10 @@ export default function NavBar() {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowProfileMenu(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     };
@@ -181,24 +184,60 @@ export default function NavBar() {
   const getNotificationIcon = (type) => {
     const iconClass = "w-10 h-10 rounded-full p-2";
     switch (type) {
-      case 'connection_request':
-        return <div className={`${iconClass} bg-blue-100 dark:bg-blue-900/30`}><PeopleIcon className="text-blue-600 dark:text-blue-400" /></div>;
-      case 'connection_accepted':
-        return <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>✓</div>;
-      case 'community_request':
-        return <div className={`${iconClass} bg-purple-100 dark:bg-purple-900/30`}>🌐</div>;
-      case 'community_approved':
-        return <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>✓</div>;
-      case 'new_job':
-        return <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>💼</div>;
-      case 'new_event':
-        return <div className={`${iconClass} bg-blue-100 dark:bg-blue-900/30`}>📅</div>;
-      case 'new_post':
-        return <div className={`${iconClass} bg-purple-100 dark:bg-purple-900/30`}>📝</div>;
-      case 'message':
-        return <div className={`${iconClass} bg-pink-100 dark:bg-pink-900/30`}><ChatBubbleOutlineIcon className="text-pink-600 dark:text-pink-400" /></div>;
+      case "connection_request":
+        return (
+          <div className={`${iconClass} bg-blue-100 dark:bg-blue-900/30`}>
+            <PeopleIcon className="text-blue-600 dark:text-blue-400" />
+          </div>
+        );
+      case "connection_accepted":
+        return (
+          <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>
+            ✓
+          </div>
+        );
+      case "community_request":
+        return (
+          <div className={`${iconClass} bg-purple-100 dark:bg-purple-900/30`}>
+            🌐
+          </div>
+        );
+      case "community_approved":
+        return (
+          <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>
+            ✓
+          </div>
+        );
+      case "new_job":
+        return (
+          <div className={`${iconClass} bg-green-100 dark:bg-green-900/30`}>
+            💼
+          </div>
+        );
+      case "new_event":
+        return (
+          <div className={`${iconClass} bg-blue-100 dark:bg-blue-900/30`}>
+            📅
+          </div>
+        );
+      case "new_post":
+        return (
+          <div className={`${iconClass} bg-purple-100 dark:bg-purple-900/30`}>
+            📝
+          </div>
+        );
+      case "message":
+        return (
+          <div className={`${iconClass} bg-pink-100 dark:bg-pink-900/30`}>
+            <ChatBubbleOutlineIcon className="text-pink-600 dark:text-pink-400" />
+          </div>
+        );
       default:
-        return <div className={`${iconClass} bg-gray-100 dark:bg-gray-700`}><NotificationsIcon className="text-gray-600 dark:text-gray-400" /></div>;
+        return (
+          <div className={`${iconClass} bg-gray-100 dark:bg-gray-700`}>
+            <NotificationsIcon className="text-gray-600 dark:text-gray-400" />
+          </div>
+        );
     }
   };
 
@@ -211,7 +250,7 @@ export default function NavBar() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
@@ -353,7 +392,7 @@ export default function NavBar() {
                 )}
                 {unreadNotifications > 0 && (
                   <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
               </button>
@@ -371,7 +410,9 @@ export default function NavBar() {
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <NotificationsActiveIcon className="text-white text-2xl" />
-                        <h3 className="text-white font-bold text-lg">Notifications</h3>
+                        <h3 className="text-white font-bold text-lg">
+                          Notifications
+                        </h3>
                       </div>
                       <button
                         onClick={() => setShowNotifications(false)}
@@ -386,7 +427,9 @@ export default function NavBar() {
                       {notifications.length === 0 ? (
                         <div className="p-8 text-center">
                           <NotificationsIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                          <p className="text-gray-500 dark:text-gray-400">No notifications yet</p>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            No notifications yet
+                          </p>
                         </div>
                       ) : (
                         notifications.map((notification) => (
@@ -398,7 +441,9 @@ export default function NavBar() {
                               }
                             }}
                             className={`p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
-                              !notification.read ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                              !notification.read
+                                ? "bg-indigo-50 dark:bg-indigo-900/20"
+                                : ""
                             }`}
                           >
                             <div className="flex items-start gap-3">
@@ -413,7 +458,9 @@ export default function NavBar() {
                                   {notification.message}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                  {formatNotificationTime(notification.createdAt)}
+                                  {formatNotificationTime(
+                                    notification.createdAt
+                                  )}
                                 </p>
                               </div>
                               {!notification.read && (
@@ -432,7 +479,9 @@ export default function NavBar() {
                           onClick={() => {
                             setShowNotifications(false);
                             // Mark all as read
-                            notifications.filter(n => !n.read).forEach(n => markAsRead(n._id));
+                            notifications
+                              .filter((n) => !n.read)
+                              .forEach((n) => markAsRead(n._id));
                           }}
                           className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold"
                         >

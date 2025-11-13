@@ -1,39 +1,60 @@
-import { useState } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
-import { XMarkIcon, CloudArrowUpIcon, DocumentIcon, LinkIcon, TagIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import {
+  XMarkIcon,
+  CloudArrowUpIcon,
+  DocumentIcon,
+  LinkIcon,
+  TagIcon,
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
-export default function AddResourceModal({ isOpen, onClose, onAdd, resource = null }) {
+export default function AddResourceModal({
+  isOpen,
+  onClose,
+  onAdd,
+  resource = null,
+}) {
   const isEditing = !!resource;
-  
+
   const [formData, setFormData] = useState({
-    title: resource?.title || '',
-    description: resource?.description || '',
-    type: resource?.type || 'document',
-    category: resource?.category || 'general',
-    url: resource?.url || '',
-    downloadUrl: resource?.downloadUrl || '',
-    tags: resource?.tags?.join(', ') || '',
+    title: resource?.title || "",
+    description: resource?.description || "",
+    type: resource?.type || "document",
+    category: resource?.category || "general",
+    url: resource?.url || "",
+    downloadUrl: resource?.downloadUrl || "",
+    tags: resource?.tags?.join(", ") || "",
     isPublic: resource?.isPublic !== undefined ? resource.isPublic : true,
     file: null,
-    fileName: ''
+    fileName: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const resourceTypes = [
-    { value: 'document', label: 'Document' },
-    { value: 'book', label: 'Book' },
-    { value: 'video', label: 'Video' },
-    { value: 'link', label: 'Link' }
+    { value: "document", label: "Document" },
+    { value: "book", label: "Book" },
+    { value: "video", label: "Video" },
+    { value: "link", label: "Link" },
   ];
 
   const categories = [
-    'general', 'programming', 'mathematics', 'science', 'literature', 
-    'history', 'business', 'design', 'technology', 'research', 'tutorial', 'reference'
+    "general",
+    "programming",
+    "mathematics",
+    "science",
+    "literature",
+    "history",
+    "business",
+    "design",
+    "technology",
+    "research",
+    "tutorial",
+    "reference",
   ];
 
   const handleFileUpload = async (e) => {
@@ -41,43 +62,45 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
     if (file) {
       // Validate file size (50MB limit)
       if (file.size > 50 * 1024 * 1024) {
-        setError('File size must be less than 50MB');
+        setError("File size must be less than 50MB");
         return;
       }
 
       // Validate file type
       const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/plain',
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp'
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
       ];
 
       if (!allowedTypes.includes(file.type)) {
-        setError('File type not supported. Please upload PDF, Word, PowerPoint, Excel, text, or image files.');
+        setError(
+          "File type not supported. Please upload PDF, Word, PowerPoint, Excel, text, or image files."
+        );
         return;
       }
 
-      setError('');
+      setError("");
       setIsLoading(true);
-      
+
       try {
         // Create FormData for file upload
         const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
+        uploadFormData.append("file", file);
 
         // Simulate upload progress
         setUploadProgress(0);
         const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
+          setUploadProgress((prev) => {
             if (prev >= 90) {
               clearInterval(progressInterval);
               return prev;
@@ -86,8 +109,8 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
           });
         }, 100);
 
-        const response = await fetch('/api/resources/upload', {
-          method: 'POST',
+        const response = await fetch("/api/resources/upload", {
+          method: "POST",
           body: uploadFormData,
         });
 
@@ -95,24 +118,27 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
         setUploadProgress(100);
 
         if (!response.ok) {
-          throw new Error('File upload failed');
+          throw new Error("File upload failed");
         }
 
         const result = await response.json();
-        
-        setFormData(prev => ({
+
+        // Set both url and downloadUrl to the uploaded file URL
+        // This ensures the resource can be viewed and downloaded
+        setFormData((prev) => ({
           ...prev,
           file: file,
           fileName: file.name,
-          downloadUrl: result.file.url
+          url: result.file.url,
+          downloadUrl: result.file.url,
         }));
 
         setTimeout(() => setUploadProgress(0), 1000);
-        toast.success('File uploaded successfully!');
+        toast.success("File uploaded successfully!");
       } catch (error) {
         setError(error.message);
         setUploadProgress(0);
-        toast.error('File upload failed');
+        toast.error("File upload failed");
       } finally {
         setIsLoading(false);
       }
@@ -121,37 +147,42 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (isLoading) return;
-    
+
     try {
       setIsLoading(true);
-      setError('');
-      
+      setError("");
+
       if (!formData.title.trim() || !formData.description.trim()) {
-        throw new Error('Title and description are required');
+        throw new Error("Title and description are required");
       }
 
-      if (formData.url.trim()) {
+      // Validate URL if provided (allow relative paths for uploaded files)
+      if (formData.url.trim() && !formData.url.startsWith("/")) {
         try {
           new URL(formData.url);
         } catch {
-          throw new Error('Please enter a valid URL');
+          throw new Error("Please enter a valid URL");
         }
       }
 
-      if (formData.downloadUrl.trim()) {
+      // Validate downloadUrl if provided (allow relative paths for uploaded files)
+      if (
+        formData.downloadUrl.trim() &&
+        !formData.downloadUrl.startsWith("/")
+      ) {
         try {
           new URL(formData.downloadUrl);
         } catch {
-          throw new Error('Please enter a valid download URL');
+          throw new Error("Please enter a valid download URL");
         }
       }
 
       const tagsArray = formData.tags
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0)
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
         .slice(0, 10);
 
       const resourceData = {
@@ -162,7 +193,7 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
         url: formData.url.trim() || null,
         downloadUrl: formData.downloadUrl.trim() || null,
         tags: tagsArray,
-        isPublic: formData.isPublic
+        isPublic: formData.isPublic,
       };
 
       if (isEditing) {
@@ -171,7 +202,7 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
 
       await onAdd(resourceData);
       handleClose();
-      toast.success(isEditing ? 'Resource updated!' : 'Resource added!');
+      toast.success(isEditing ? "Resource updated!" : "Resource added!");
     } catch (error) {
       setError(error.message);
       toast.error(error.message);
@@ -182,18 +213,18 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
 
   const handleClose = () => {
     setFormData({
-      title: '',
-      description: '',
-      type: 'document',
-      category: 'general',
-      url: '',
-      downloadUrl: '',
-      tags: '',
+      title: "",
+      description: "",
+      type: "document",
+      category: "general",
+      url: "",
+      downloadUrl: "",
+      tags: "",
       isPublic: true,
       file: null,
-      fileName: ''
+      fileName: "",
     });
-    setError('');
+    setError("");
     setUploadProgress(0);
     onClose();
   };
@@ -228,10 +259,11 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {isEditing ? 'Edit Resource' : 'Add New Resource'}
+                      {isEditing ? "Edit Resource" : "Add New Resource"}
                     </Dialog.Title>
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Share your knowledge with the community! All students, faculty, and members can contribute resources.
+                      Share your knowledge with the community! All students,
+                      faculty, and members can contribute resources.
                     </p>
                   </div>
                   <button
@@ -244,7 +276,9 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
 
                 {error && (
                   <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {error}
+                    </p>
                   </div>
                 )}
 
@@ -256,7 +290,9 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                     <input
                       type="text"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="Enter resource title"
                       required
@@ -269,7 +305,12 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                     </label>
                     <textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       rows={4}
                       placeholder="Describe what this resource is about"
@@ -284,10 +325,12 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       </label>
                       <select
                         value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, type: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
-                        {resourceTypes.map(type => (
+                        {resourceTypes.map((type) => (
                           <option key={type.value} value={type.value}>
                             {type.label}
                           </option>
@@ -301,12 +344,15 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       </label>
                       <select
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
-                        {categories.map(category => (
+                        {categories.map((category) => (
                           <option key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category.charAt(0).toUpperCase() +
+                              category.slice(1)}
                           </option>
                         ))}
                       </select>
@@ -318,6 +364,10 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Upload File (Optional)
                     </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      Upload a file OR provide a URL below. Uploaded files will
+                      be stored on our server.
+                    </p>
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
                       <input
                         type="file"
@@ -330,26 +380,34 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       <label htmlFor="file-upload" className="cursor-pointer">
                         <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium text-indigo-600 dark:text-indigo-400">Click to upload</span> or drag and drop
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                            Click to upload
+                          </span>{" "}
+                          or drag and drop
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500">
                           PDF, DOC, PPT, XLS, TXT, or images up to 50MB
                         </p>
                       </label>
-                      
+
                       {formData.fileName && (
-                        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                           <div className="flex items-center justify-center space-x-2">
-                            <DocumentIcon className="h-5 w-5 text-gray-500" />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{formData.fileName}</span>
+                            <DocumentIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                              {formData.fileName}
+                            </span>
                           </div>
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                            ✓ File uploaded successfully
+                          </p>
                         </div>
                       )}
-                      
+
                       {uploadProgress > 0 && uploadProgress < 100 && (
                         <div className="mt-4">
                           <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
@@ -362,30 +420,66 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Resource URL (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.url}
-                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="https://example.com/resource"
-                    />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        OR provide external links
+                      </span>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Download URL (Optional)
+                      <div className="flex items-center space-x-2">
+                        <LinkIcon className="h-4 w-4" />
+                        <span>Resource URL (Optional)</span>
+                      </div>
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, url: e.target.value })
+                      }
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="https://example.com/resource or leave empty if file uploaded"
+                      disabled={isLoading || !!formData.fileName}
+                    />
+                    {formData.fileName && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        ℹ️ URL is auto-filled from uploaded file
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <div className="flex items-center space-x-2">
+                        <DocumentIcon className="h-4 w-4" />
+                        <span>Download URL (Optional)</span>
+                      </div>
                     </label>
                     <input
                       type="url"
                       value={formData.downloadUrl}
-                      onChange={(e) => setFormData({ ...formData, downloadUrl: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          downloadUrl: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="https://example.com/download"
+                      placeholder="https://example.com/download or leave empty if file uploaded"
+                      disabled={isLoading || !!formData.fileName}
                     />
+                    {formData.fileName && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        ℹ️ Download URL is auto-filled from uploaded file
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -397,13 +491,16 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       <input
                         type="text"
                         value={formData.tags}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, tags: e.target.value })
+                        }
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="programming, tutorial, beginner (comma-separated, max 10)"
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Add up to 10 tags separated by commas to help others find your resource
+                      Add up to 10 tags separated by commas to help others find
+                      your resource
                     </p>
                   </div>
 
@@ -412,7 +509,12 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       <input
                         type="checkbox"
                         checked={formData.isPublic}
-                        onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            isPublic: e.target.checked,
+                          })
+                        }
                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -436,12 +538,30 @@ export default function AddResourceModal({ isOpen, onClose, onAdd, resource = nu
                       className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
                     >
                       {isLoading && (
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                       )}
-                      <span>{isEditing ? 'Update Resource' : 'Add Resource'}</span>
+                      <span>
+                        {isEditing ? "Update Resource" : "Add Resource"}
+                      </span>
                     </button>
                   </div>
                 </form>

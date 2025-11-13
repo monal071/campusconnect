@@ -23,7 +23,7 @@ export default function Communities() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all' or 'my'
-  const isAdmin = session?.user?.role === 'admin';
+  const isAdmin = session?.user?.role === "admin";
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -81,8 +81,8 @@ export default function Communities() {
   };
 
   const handleDeleteCommunity = (communityId) => {
-    setCommunities(communities.filter(c => c._id !== communityId));
-    setMyCommunities(myCommunities.filter(c => c._id !== communityId));
+    setCommunities(communities.filter((c) => c._id !== communityId));
+    setMyCommunities(myCommunities.filter((c) => c._id !== communityId));
   };
 
   const filteredCommunities = communities.filter(
@@ -121,7 +121,8 @@ export default function Communities() {
                   Communities
                 </h1>
                 <p className="text-blue-100 text-lg">
-                  Join communities and connect with people who share your interests
+                  Join communities and connect with people who share your
+                  interests
                 </p>
                 <div className="flex items-center gap-4 mt-4">
                   <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
@@ -247,9 +248,7 @@ export default function Communities() {
               className="text-center py-20"
             >
               <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-lg">
-                <div className="text-7xl mb-4">
-                  {searchTerm ? "🔍" : "🌟"}
-                </div>
+                <div className="text-7xl mb-4">{searchTerm ? "🔍" : "🌟"}</div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {searchTerm ? "No Results Found" : "No Communities Yet"}
                 </h3>
@@ -284,7 +283,8 @@ export default function Communities() {
                   No Communities Yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  Start exploring and join communities that match your interests!
+                  Start exploring and join communities that match your
+                  interests!
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -314,7 +314,14 @@ export default function Communities() {
   );
 }
 
-function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdmin }) {
+function CommunityCard({
+  community,
+  onJoin,
+  isMember,
+  showEnter,
+  onDelete,
+  isAdmin,
+}) {
   const router = useRouter();
   const [joinStatus, setJoinStatus] = useState(community.joinStatus || "none");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -329,22 +336,26 @@ function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdm
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${community.name}"? This will delete all posts and cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${community.name}"? This will delete all posts and cannot be undone.`
+      )
+    ) {
       return;
     }
 
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/communities/${community._id}/delete`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete community');
+        throw new Error(error.message || "Failed to delete community");
       }
 
-      toast.success('Community deleted successfully');
+      toast.success("Community deleted successfully");
       if (onDelete) {
         onDelete(community._id);
       }
@@ -370,7 +381,7 @@ function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdm
           <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full -ml-12 -mb-12 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
-        
+
         {/* Privacy Badge */}
         <div className="absolute top-4 right-4 z-10">
           {community.isPrivate ? (
@@ -410,19 +421,30 @@ function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdm
         <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <PeopleIcon className="text-blue-600 dark:text-blue-400" fontSize="small" />
+              <PeopleIcon
+                className="text-blue-600 dark:text-blue-400"
+                fontSize="small"
+              />
             </div>
             <div>
-              <p className="font-bold text-gray-900 dark:text-white">{community.memberCount || 0}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Members</p>
+              <p className="font-bold text-gray-900 dark:text-white">
+                {community.memberCount || 0}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Members
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <span className="text-purple-600 dark:text-purple-400 text-lg">📝</span>
+              <span className="text-purple-600 dark:text-purple-400 text-lg">
+                📝
+              </span>
             </div>
             <div>
-              <p className="font-bold text-gray-900 dark:text-white">{community.postCount || 0}</p>
+              <p className="font-bold text-gray-900 dark:text-white">
+                {community.postCount || 0}
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Posts</p>
             </div>
           </div>
@@ -475,7 +497,7 @@ function CommunityCard({ community, onJoin, isMember, showEnter, onDelete, isAdm
               )}
             </motion.button>
           )}
-          
+
           {/* Admin Delete Button */}
           {isAdmin && (
             <motion.button
