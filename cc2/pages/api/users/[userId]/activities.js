@@ -1,16 +1,16 @@
-import { getSession } from 'next-auth/react';
-import { connectToDatabase } from '../../../../utils/mongodb';
-import { ObjectId } from 'mongodb';
+import { getSession } from "next-auth/react";
+import { connectToDatabase } from "../../../../utils/mongodb";
+import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
   const session = await getSession({ req });
   if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { userId } = req.query;
 
-  if (req.method === 'GET') {
+  if (req.method === "GET") {
     try {
       const { db } = await connectToDatabase();
 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
       // Posts
       const posts = await db
-        .collection('posts')
+        .collection("posts")
         .find({ userId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -35,9 +35,11 @@ export default async function handler(req, res) {
       posts.forEach((post) => {
         activities.push({
           _id: post._id,
-          type: 'post',
-          description: 'Created a new post',
-          details: post.content?.substring(0, 100) + (post.content?.length > 100 ? '...' : ''),
+          type: "post",
+          description: "Created a new post",
+          details:
+            post.content?.substring(0, 100) +
+            (post.content?.length > 100 ? "..." : ""),
           timestamp: post.createdAt,
           link: `/posts/${post._id}`,
         });
@@ -45,7 +47,7 @@ export default async function handler(req, res) {
 
       // Resources
       const resources = await db
-        .collection('resources')
+        .collection("resources")
         .find({ userId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -54,8 +56,8 @@ export default async function handler(req, res) {
       resources.forEach((resource) => {
         activities.push({
           _id: resource._id,
-          type: 'resource',
-          description: 'Shared a new resource',
+          type: "resource",
+          description: "Shared a new resource",
           details: resource.title,
           timestamp: resource.createdAt,
           link: `/resources/${resource._id}`,
@@ -64,7 +66,7 @@ export default async function handler(req, res) {
 
       // Events
       const events = await db
-        .collection('events')
+        .collection("events")
         .find({ userId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -73,8 +75,8 @@ export default async function handler(req, res) {
       events.forEach((event) => {
         activities.push({
           _id: event._id,
-          type: 'event',
-          description: 'Created an event',
+          type: "event",
+          description: "Created an event",
           details: event.title,
           timestamp: event.createdAt,
           link: `/events/${event._id}`,
@@ -83,7 +85,7 @@ export default async function handler(req, res) {
 
       // Quizzes
       const quizzes = await db
-        .collection('quizzes')
+        .collection("quizzes")
         .find({ userId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -92,8 +94,8 @@ export default async function handler(req, res) {
       quizzes.forEach((quiz) => {
         activities.push({
           _id: quiz._id,
-          type: 'quiz',
-          description: 'Created a quiz',
+          type: "quiz",
+          description: "Created a quiz",
           details: quiz.title,
           timestamp: quiz.createdAt,
           link: `/quiz/${quiz._id}`,
@@ -102,13 +104,13 @@ export default async function handler(req, res) {
 
       // Connections
       const connections = await db
-        .collection('connections')
+        .collection("connections")
         .find({
           $or: [
             { userId: new ObjectId(targetUserId) },
             { connectedUserId: new ObjectId(targetUserId) },
           ],
-          status: 'accepted',
+          status: "accepted",
         })
         .sort({ acceptedAt: -1 })
         .limit(limit)
@@ -121,13 +123,13 @@ export default async function handler(req, res) {
             : connection.userId;
 
         const otherUser = await db
-          .collection('users')
+          .collection("users")
           .findOne({ _id: new ObjectId(otherUserId) });
 
         activities.push({
           _id: connection._id,
-          type: 'connection',
-          description: `Connected with ${otherUser?.name || 'someone'}`,
+          type: "connection",
+          description: `Connected with ${otherUser?.name || "someone"}`,
           timestamp: connection.acceptedAt || connection.createdAt,
           link: `/connections/${otherUserId}`,
         });
@@ -135,7 +137,7 @@ export default async function handler(req, res) {
 
       // Bookmarks
       const bookmarks = await db
-        .collection('bookmarks')
+        .collection("bookmarks")
         .find({ userId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -144,17 +146,20 @@ export default async function handler(req, res) {
       bookmarks.forEach((bookmark) => {
         activities.push({
           _id: bookmark._id,
-          type: 'bookmark',
+          type: "bookmark",
           description: `Saved a ${bookmark.itemType}`,
           details: bookmark.itemTitle,
           timestamp: bookmark.createdAt,
-          link: bookmark.itemType === 'post' ? `/posts/${bookmark.itemId}` : `/${bookmark.itemType}s/${bookmark.itemId}`,
+          link:
+            bookmark.itemType === "post"
+              ? `/posts/${bookmark.itemId}`
+              : `/${bookmark.itemType}s/${bookmark.itemId}`,
         });
       });
 
       // Follows
       const follows = await db
-        .collection('follows')
+        .collection("follows")
         .find({ followerId: new ObjectId(targetUserId) })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -162,13 +167,13 @@ export default async function handler(req, res) {
 
       for (const follow of follows) {
         const followedUser = await db
-          .collection('users')
+          .collection("users")
           .findOne({ _id: new ObjectId(follow.followingId) });
 
         activities.push({
           _id: follow._id,
-          type: 'follow',
-          description: `Started following ${followedUser?.name || 'someone'}`,
+          type: "follow",
+          description: `Started following ${followedUser?.name || "someone"}`,
           timestamp: follow.createdAt,
           link: `/connections/${follow.followingId}`,
         });
@@ -187,10 +192,10 @@ export default async function handler(req, res) {
         total: activities.length,
       });
     } catch (error) {
-      console.error('Error fetching activities:', error);
-      res.status(500).json({ error: 'Failed to fetch activities' });
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
     }
   } else {
-    res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: "Method not allowed" });
   }
 }

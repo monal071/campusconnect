@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FunnelIcon,
   XMarkIcon,
@@ -9,22 +9,25 @@ import {
   AdjustmentsHorizontalIcon,
   BookmarkIcon,
   CheckIcon,
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
-export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' }) {
+export default function AdvancedFilters({
+  onApplyFilters,
+  contentType = "posts",
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState({
-    dateRange: 'all', // all, today, week, month, custom
-    startDate: '',
-    endDate: '',
+    dateRange: "all", // all, today, week, month, custom
+    startDate: "",
+    endDate: "",
     tags: [],
-    author: '',
-    sortBy: 'recent', // recent, popular, mostLiked, mostViewed
+    author: "",
+    sortBy: "recent", // recent, popular, mostLiked, mostViewed
     showVerified: false,
   });
   const [savedPresets, setSavedPresets] = useState([]);
-  const [presetName, setPresetName] = useState('');
+  const [presetName, setPresetName] = useState("");
   const [availableTags, setAvailableTags] = useState([]);
   const [showSavePreset, setShowSavePreset] = useState(false);
 
@@ -49,58 +52,58 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
         setAvailableTags(data.tags || []);
       }
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      console.error("Error fetching tags:", error);
     }
   };
 
   const handleApply = () => {
     // Build filter object
     const appliedFilters = { ...filters };
-    
+
     // Handle date range
-    if (filters.dateRange !== 'all' && filters.dateRange !== 'custom') {
+    if (filters.dateRange !== "all" && filters.dateRange !== "custom") {
       const now = new Date();
       let startDate = new Date();
-      
+
       switch (filters.dateRange) {
-        case 'today':
+        case "today":
           startDate.setHours(0, 0, 0, 0);
           break;
-        case 'week':
+        case "week":
           startDate.setDate(now.getDate() - 7);
           break;
-        case 'month':
+        case "month":
           startDate.setMonth(now.getMonth() - 1);
           break;
       }
-      
+
       appliedFilters.startDate = startDate.toISOString();
       appliedFilters.endDate = now.toISOString();
     }
 
     onApplyFilters(appliedFilters);
     setIsOpen(false);
-    toast.success('Filters applied!');
+    toast.success("Filters applied!");
   };
 
   const handleReset = () => {
     const resetFilters = {
-      dateRange: 'all',
-      startDate: '',
-      endDate: '',
+      dateRange: "all",
+      startDate: "",
+      endDate: "",
       tags: [],
-      author: '',
-      sortBy: 'recent',
+      author: "",
+      sortBy: "recent",
       showVerified: false,
     };
     setFilters(resetFilters);
     onApplyFilters(resetFilters);
-    toast.success('Filters reset!');
+    toast.success("Filters reset!");
   };
 
   const handleSavePreset = () => {
     if (!presetName.trim()) {
-      toast.error('Please enter a preset name');
+      toast.error("Please enter a preset name");
       return;
     }
 
@@ -112,9 +115,12 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
 
     const updated = [...savedPresets, newPreset];
     setSavedPresets(updated);
-    localStorage.setItem(`filter-presets-${contentType}`, JSON.stringify(updated));
-    
-    setPresetName('');
+    localStorage.setItem(
+      `filter-presets-${contentType}`,
+      JSON.stringify(updated)
+    );
+
+    setPresetName("");
     setShowSavePreset(false);
     toast.success(`Preset "${presetName}" saved!`);
   };
@@ -125,18 +131,21 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
   };
 
   const handleDeletePreset = (presetId) => {
-    const updated = savedPresets.filter(p => p.id !== presetId);
+    const updated = savedPresets.filter((p) => p.id !== presetId);
     setSavedPresets(updated);
-    localStorage.setItem(`filter-presets-${contentType}`, JSON.stringify(updated));
-    toast.success('Preset deleted');
+    localStorage.setItem(
+      `filter-presets-${contentType}`,
+      JSON.stringify(updated)
+    );
+    toast.success("Preset deleted");
   };
 
   const toggleTag = (tag) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       tags: prev.tags.includes(tag)
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
+        ? prev.tags.filter((t) => t !== tag)
+        : [...prev.tags, tag],
     }));
   };
 
@@ -151,9 +160,13 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Filters
         </span>
-        {(filters.tags.length > 0 || filters.dateRange !== 'all' || filters.showVerified) && (
+        {(filters.tags.length > 0 ||
+          filters.dateRange !== "all" ||
+          filters.showVerified) && (
           <span className="ml-2 px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">
-            {filters.tags.length + (filters.dateRange !== 'all' ? 1 : 0) + (filters.showVerified ? 1 : 0)}
+            {filters.tags.length +
+              (filters.dateRange !== "all" ? 1 : 0) +
+              (filters.showVerified ? 1 : 0)}
           </span>
         )}
       </button>
@@ -202,22 +215,24 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                     <span>Date Range</span>
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {['all', 'today', 'week', 'month'].map((range) => (
+                    {["all", "today", "week", "month"].map((range) => (
                       <button
                         key={range}
-                        onClick={() => setFilters(prev => ({ ...prev, dateRange: range }))}
+                        onClick={() =>
+                          setFilters((prev) => ({ ...prev, dateRange: range }))
+                        }
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           filters.dateRange === range
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                       >
                         {range.charAt(0).toUpperCase() + range.slice(1)}
                       </button>
                     ))}
                   </div>
-                  
-                  {filters.dateRange === 'custom' && (
+
+                  {filters.dateRange === "custom" && (
                     <div className="grid grid-cols-2 gap-4 mt-3">
                       <div>
                         <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
@@ -226,7 +241,12 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                         <input
                           type="date"
                           value={filters.startDate}
-                          onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              startDate: e.target.value,
+                            }))
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                         />
                       </div>
@@ -237,7 +257,12 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                         <input
                           type="date"
                           value={filters.endDate}
-                          onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              endDate: e.target.value,
+                            }))
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                         />
                       </div>
@@ -258,8 +283,8 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                         onClick={() => toggleTag(tag)}
                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                           filters.tags.includes(tag)
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                       >
                         {tag}
@@ -279,7 +304,12 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                   </label>
                   <select
                     value={filters.sortBy}
-                    onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        sortBy: e.target.value,
+                      }))
+                    }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="recent">Most Recent</option>
@@ -290,13 +320,18 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                 </div>
 
                 {/* Show Verified Only */}
-                {contentType === 'resources' && (
+                {contentType === "resources" && (
                   <div>
                     <label className="flex items-center space-x-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={filters.showVerified}
-                        onChange={(e) => setFilters(prev => ({ ...prev, showVerified: e.target.checked }))}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            showVerified: e.target.checked,
+                          }))
+                        }
                         className="w-5 h-5 text-blue-500 rounded focus:ring-2 focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -346,7 +381,9 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                       onChange={(e) => setPresetName(e.target.value)}
                       placeholder="Preset name..."
                       className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSavePreset()}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleSavePreset()
+                      }
                     />
                     <button
                       onClick={handleSavePreset}
@@ -357,7 +394,7 @@ export default function AdvancedFilters({ onApplyFilters, contentType = 'posts' 
                     <button
                       onClick={() => {
                         setShowSavePreset(false);
-                        setPresetName('');
+                        setPresetName("");
                       }}
                       className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
                     >

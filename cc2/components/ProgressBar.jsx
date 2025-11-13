@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/router';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useRouter } from "next/router";
 
 export default function ProgressBar() {
   const [progress, setProgress] = useState(0);
@@ -31,9 +31,9 @@ export default function ProgressBar() {
       }, 300);
     };
 
-    router.events.on('routeChangeStart', handleRouteChangeStart);
-    router.events.on('routeChangeComplete', handleRouteChangeComplete);
-    router.events.on('routeChangeError', handleRouteChangeError);
+    router.events.on("routeChangeStart", handleRouteChangeStart);
+    router.events.on("routeChangeComplete", handleRouteChangeComplete);
+    router.events.on("routeChangeError", handleRouteChangeError);
 
     // Increment progress gradually
     if (isLoading && progress < 90) {
@@ -44,9 +44,9 @@ export default function ProgressBar() {
 
     return () => {
       clearTimeout(timer);
-      router.events.off('routeChangeStart', handleRouteChangeStart);
-      router.events.off('routeChangeComplete', handleRouteChangeComplete);
-      router.events.off('routeChangeError', handleRouteChangeError);
+      router.events.off("routeChangeStart", handleRouteChangeStart);
+      router.events.off("routeChangeComplete", handleRouteChangeComplete);
+      router.events.off("routeChangeError", handleRouteChangeError);
     };
   }, [router, isLoading, progress]);
 
@@ -61,9 +61,9 @@ export default function ProgressBar() {
     >
       <motion.div
         className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-lg"
-        initial={{ width: '0%' }}
+        initial={{ width: "0%" }}
         animate={{ width: `${progress}%` }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       />
     </motion.div>
   );
@@ -77,7 +77,7 @@ export function UploadProgressBar({ progress, fileName }) {
     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-          {fileName || 'Uploading...'}
+          {fileName || "Uploading..."}
         </span>
         <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 ml-2">
           {Math.round(progress)}%
@@ -96,11 +96,11 @@ export function UploadProgressBar({ progress, fileName }) {
 }
 
 // Circular Progress
-export function CircularProgress({ 
-  progress, 
-  size = 120, 
+export function CircularProgress({
+  progress,
+  size = 120,
   strokeWidth = 8,
-  showPercentage = true 
+  showPercentage = true,
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -108,11 +108,7 @@ export function CircularProgress({
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      <svg
-        width={size}
-        height={size}
-        className="transform -rotate-90"
-      >
+      <svg width={size} height={size} className="transform -rotate-90">
         {/* Background circle */}
         <circle
           cx={size / 2}
@@ -135,7 +131,7 @@ export function CircularProgress({
           className="text-blue-500"
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
           style={{
             strokeDasharray: circumference,
           }}
@@ -153,18 +149,18 @@ export function CircularProgress({
 }
 
 // Linear Progress with label
-export function LinearProgress({ 
-  progress, 
-  label, 
-  color = 'blue',
-  showPercentage = true 
+export function LinearProgress({
+  progress,
+  label,
+  color = "blue",
+  showPercentage = true,
 }) {
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    red: 'bg-red-500',
-    yellow: 'bg-yellow-500',
+    blue: "bg-blue-500",
+    green: "bg-green-500",
+    purple: "bg-purple-500",
+    red: "bg-red-500",
+    yellow: "bg-yellow-500",
   };
 
   return (
@@ -185,7 +181,9 @@ export function LinearProgress({
       )}
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
         <motion.div
-          className={`h-2.5 rounded-full ${colorClasses[color] || colorClasses.blue}`}
+          className={`h-2.5 rounded-full ${
+            colorClasses[color] || colorClasses.blue
+          }`}
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.3 }}
@@ -196,27 +194,29 @@ export function LinearProgress({
 }
 
 // Indeterminate Progress (loading)
-export function IndeterminateProgress({ color = 'blue' }) {
+export function IndeterminateProgress({ color = "blue" }) {
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    red: 'bg-red-500',
+    blue: "bg-blue-500",
+    green: "bg-green-500",
+    purple: "bg-purple-500",
+    red: "bg-red-500",
   };
 
   return (
     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 overflow-hidden">
       <motion.div
-        className={`h-1 rounded-full ${colorClasses[color] || colorClasses.blue}`}
+        className={`h-1 rounded-full ${
+          colorClasses[color] || colorClasses.blue
+        }`}
         animate={{
-          x: ['-100%', '100%'],
+          x: ["-100%", "100%"],
         }}
         transition={{
           duration: 1.5,
           repeat: Infinity,
-          ease: 'easeInOut',
+          ease: "easeInOut",
         }}
-        style={{ width: '40%' }}
+        style={{ width: "40%" }}
       />
     </div>
   );
@@ -234,37 +234,51 @@ export function StepProgress({ steps, currentStep }) {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
                   index < currentStep
-                    ? 'bg-blue-500 border-blue-500 text-white'
+                    ? "bg-blue-500 border-blue-500 text-white"
                     : index === currentStep
-                    ? 'bg-white dark:bg-gray-800 border-blue-500 text-blue-500'
-                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400'
+                    ? "bg-white dark:bg-gray-800 border-blue-500 text-blue-500"
+                    : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400"
                 }`}
               >
                 {index < currentStep ? (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 ) : (
                   <span className="text-sm font-semibold">{index + 1}</span>
                 )}
               </div>
               {/* Label */}
-              <span className={`mt-2 text-xs font-medium ${
-                index <= currentStep
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-400 dark:text-gray-600'
-              }`}>
+              <span
+                className={`mt-2 text-xs font-medium ${
+                  index <= currentStep
+                    ? "text-gray-900 dark:text-white"
+                    : "text-gray-400 dark:text-gray-600"
+                }`}
+              >
                 {step}
               </span>
             </div>
             {/* Line */}
             {index < steps.length - 1 && (
               <div className="flex-1 h-0.5 mx-2">
-                <div className={`h-full transition-colors ${
-                  index < currentStep
-                    ? 'bg-blue-500'
-                    : 'bg-gray-300 dark:bg-gray-600'
-                }`} />
+                <div
+                  className={`h-full transition-colors ${
+                    index < currentStep
+                      ? "bg-blue-500"
+                      : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                />
               </div>
             )}
           </div>

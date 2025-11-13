@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   BoldIcon,
   ItalicIcon,
@@ -12,18 +12,18 @@ import {
   H1Icon,
   H2Icon,
   QuoteIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
-export default function RichTextEditor({ 
-  value, 
-  onChange, 
-  placeholder = 'Start typing...',
-  minHeight = '200px',
-  maxHeight = '500px',
+export default function RichTextEditor({
+  value,
+  onChange,
+  placeholder = "Start typing...",
+  minHeight = "200px",
+  maxHeight = "500px",
   showToolbar = true,
   enableImages = true,
   enableCode = true,
-  className = ''
+  className = "",
 }) {
   const editorRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -35,7 +35,7 @@ export default function RichTextEditor({
 
   useEffect(() => {
     if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || '';
+      editorRef.current.innerHTML = value || "";
     }
   }, [value]);
 
@@ -48,9 +48,9 @@ export default function RichTextEditor({
 
   const updateFormatState = () => {
     setSelectedFormat({
-      bold: document.queryCommandState('bold'),
-      italic: document.queryCommandState('italic'),
-      underline: document.queryCommandState('underline'),
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
     });
   };
 
@@ -62,54 +62,85 @@ export default function RichTextEditor({
   };
 
   const insertLink = () => {
-    const url = prompt('Enter URL:');
+    const url = prompt("Enter URL:");
     if (url) {
-      execCommand('createLink', url);
+      execCommand("createLink", url);
     }
   };
 
   const insertImage = () => {
-    const url = prompt('Enter image URL:');
+    const url = prompt("Enter image URL:");
     if (url) {
-      execCommand('insertImage', url);
+      execCommand("insertImage", url);
     }
   };
 
   const formatHeading = (level) => {
-    execCommand('formatBlock', `h${level}`);
+    execCommand("formatBlock", `h${level}`);
   };
 
   const toolbarButtons = [
-    { command: 'bold', icon: 'B', label: 'Bold', active: selectedFormat.bold },
-    { command: 'italic', icon: 'I', label: 'Italic', active: selectedFormat.italic },
-    { command: 'underline', icon: 'U', label: 'Underline', active: selectedFormat.underline },
-    { command: 'separator' },
-    { command: 'formatBlock', value: 'h2', icon: 'H1', label: 'Heading 1' },
-    { command: 'formatBlock', value: 'h3', icon: 'H2', label: 'Heading 2' },
-    { command: 'separator' },
-    { command: 'insertUnorderedList', icon: '•', label: 'Bullet List' },
-    { command: 'insertOrderedList', icon: '1.', label: 'Numbered List' },
-    { command: 'separator' },
-    { command: 'formatBlock', value: 'blockquote', icon: '"', label: 'Quote' },
+    { command: "bold", icon: "B", label: "Bold", active: selectedFormat.bold },
+    {
+      command: "italic",
+      icon: "I",
+      label: "Italic",
+      active: selectedFormat.italic,
+    },
+    {
+      command: "underline",
+      icon: "U",
+      label: "Underline",
+      active: selectedFormat.underline,
+    },
+    { command: "separator" },
+    { command: "formatBlock", value: "h2", icon: "H1", label: "Heading 1" },
+    { command: "formatBlock", value: "h3", icon: "H2", label: "Heading 2" },
+    { command: "separator" },
+    { command: "insertUnorderedList", icon: "•", label: "Bullet List" },
+    { command: "insertOrderedList", icon: "1.", label: "Numbered List" },
+    { command: "separator" },
+    { command: "formatBlock", value: "blockquote", icon: '"', label: "Quote" },
   ];
 
   if (enableCode) {
-    toolbarButtons.push({ command: 'formatBlock', value: 'pre', icon: '<>', label: 'Code' });
+    toolbarButtons.push({
+      command: "formatBlock",
+      value: "pre",
+      icon: "<>",
+      label: "Code",
+    });
   }
 
-  toolbarButtons.push({ command: 'separator' });
-  toolbarButtons.push({ command: 'createLink', icon: '🔗', label: 'Insert Link', onClick: insertLink });
-  
+  toolbarButtons.push({ command: "separator" });
+  toolbarButtons.push({
+    command: "createLink",
+    icon: "🔗",
+    label: "Insert Link",
+    onClick: insertLink,
+  });
+
   if (enableImages) {
-    toolbarButtons.push({ command: 'insertImage', icon: '🖼', label: 'Insert Image', onClick: insertImage });
+    toolbarButtons.push({
+      command: "insertImage",
+      icon: "🖼",
+      label: "Insert Image",
+      onClick: insertImage,
+    });
   }
 
   return (
-    <div className={`border rounded-lg ${isFocused ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-300 dark:border-gray-600'} ${className}`}>
+    <div
+      className={`border rounded-lg ${
+        isFocused
+          ? "ring-2 ring-blue-500 border-blue-500"
+          : "border-gray-300 dark:border-gray-600"
+      } ${className}`}
+    >
       {showToolbar && (
         <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg">
           {toolbarButtons.map((button, index) => {
-            if (button.command === 'separator') {
+            if (button.command === "separator") {
               return (
                 <div
                   key={`separator-${index}`}
@@ -133,8 +164,8 @@ export default function RichTextEditor({
                 }}
                 className={`px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold text-sm ${
                   button.active
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300'
+                    ? "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-300"
                 }`}
                 title={button.label}
               >
@@ -161,19 +192,19 @@ export default function RichTextEditor({
           content: attr(data-placeholder);
           color: #9ca3af;
         }
-        
+
         [contentEditable] h2 {
           font-size: 1.5em;
           font-weight: bold;
           margin: 0.5em 0;
         }
-        
+
         [contentEditable] h3 {
           font-size: 1.25em;
           font-weight: bold;
           margin: 0.5em 0;
         }
-        
+
         [contentEditable] blockquote {
           border-left: 4px solid #e5e7eb;
           padding-left: 1em;
@@ -181,26 +212,27 @@ export default function RichTextEditor({
           color: #6b7280;
           font-style: italic;
         }
-        
+
         [contentEditable] pre {
           background: #1f2937;
           color: #f9fafb;
           padding: 1em;
           border-radius: 0.5em;
           overflow-x: auto;
-          font-family: 'Courier New', monospace;
+          font-family: "Courier New", monospace;
         }
-        
-        [contentEditable] ul, [contentEditable] ol {
+
+        [contentEditable] ul,
+        [contentEditable] ol {
           padding-left: 2em;
           margin: 0.5em 0;
         }
-        
+
         [contentEditable] a {
           color: #3b82f6;
           text-decoration: underline;
         }
-        
+
         [contentEditable] img {
           max-width: 100%;
           height: auto;
@@ -213,12 +245,18 @@ export default function RichTextEditor({
 }
 
 // Markdown support version
-export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHeight }) {
+export function MarkdownEditor({
+  value,
+  onChange,
+  placeholder,
+  minHeight,
+  maxHeight,
+}) {
   const [preview, setPreview] = useState(false);
-  const [content, setContent] = useState(value || '');
+  const [content, setContent] = useState(value || "");
 
   useEffect(() => {
-    setContent(value || '');
+    setContent(value || "");
   }, [value]);
 
   const handleChange = (e) => {
@@ -227,24 +265,25 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
     onChange(newValue);
   };
 
-  const insertMarkdown = (syntax, placeholder = '') => {
-    const textarea = document.getElementById('markdown-editor');
+  const insertMarkdown = (syntax, placeholder = "") => {
+    const textarea = document.getElementById("markdown-editor");
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end) || placeholder;
-    
+
     let newText;
-    if (syntax === 'link') {
+    if (syntax === "link") {
       newText = `[${selectedText}](url)`;
-    } else if (syntax === 'image') {
+    } else if (syntax === "image") {
       newText = `![${selectedText}](image-url)`;
-    } else if (syntax === 'code-block') {
+    } else if (syntax === "code-block") {
       newText = `\`\`\`\n${selectedText}\n\`\`\``;
     } else {
       newText = `${syntax}${selectedText}${syntax}`;
     }
-    
-    const newContent = content.substring(0, start) + newText + content.substring(end);
+
+    const newContent =
+      content.substring(0, start) + newText + content.substring(end);
     setContent(newContent);
     onChange(newContent);
   };
@@ -255,7 +294,7 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => insertMarkdown('**', 'bold')}
+            onClick={() => insertMarkdown("**", "bold")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 font-bold"
             title="Bold"
           >
@@ -263,7 +302,7 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
           </button>
           <button
             type="button"
-            onClick={() => insertMarkdown('*', 'italic')}
+            onClick={() => insertMarkdown("*", "italic")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 italic"
             title="Italic"
           >
@@ -271,15 +310,15 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
           </button>
           <button
             type="button"
-            onClick={() => insertMarkdown('`', 'code')}
+            onClick={() => insertMarkdown("`", "code")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 font-mono"
             title="Code"
           >
-            {'<>'}
+            {"<>"}
           </button>
           <button
             type="button"
-            onClick={() => insertMarkdown('link')}
+            onClick={() => insertMarkdown("link")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
             title="Link"
           >
@@ -287,7 +326,7 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
           </button>
           <button
             type="button"
-            onClick={() => insertMarkdown('image')}
+            onClick={() => insertMarkdown("image")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
             title="Image"
           >
@@ -295,11 +334,11 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
           </button>
           <button
             type="button"
-            onClick={() => insertMarkdown('code-block')}
+            onClick={() => insertMarkdown("code-block")}
             className="px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
             title="Code Block"
           >
-            {'</>'}
+            {"</>"}
           </button>
         </div>
 
@@ -307,14 +346,22 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
           <button
             type="button"
             onClick={() => setPreview(false)}
-            className={`px-3 py-1.5 rounded text-sm ${!preview ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+            className={`px-3 py-1.5 rounded text-sm ${
+              !preview
+                ? "bg-blue-500 text-white"
+                : "hover:bg-gray-200 dark:hover:bg-gray-700"
+            }`}
           >
             Write
           </button>
           <button
             type="button"
             onClick={() => setPreview(true)}
-            className={`px-3 py-1.5 rounded text-sm ${preview ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+            className={`px-3 py-1.5 rounded text-sm ${
+              preview
+                ? "bg-blue-500 text-white"
+                : "hover:bg-gray-200 dark:hover:bg-gray-700"
+            }`}
           >
             Preview
           </button>
@@ -322,9 +369,9 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
       </div>
 
       {preview ? (
-        <div 
+        <div
           className="p-4 prose dark:prose-invert max-w-none"
-          style={{ minHeight, maxHeight, overflowY: 'auto' }}
+          style={{ minHeight, maxHeight, overflowY: "auto" }}
           dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(content) }}
         />
       ) : (
@@ -343,31 +390,38 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight, maxHei
 
 // Simple markdown to HTML converter (for preview)
 function convertMarkdownToHTML(markdown) {
-  if (!markdown) return '';
-  
+  if (!markdown) return "";
+
   let html = markdown
     // Headers
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+    .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+    .replace(/^# (.*$)/gim, "<h1>$1</h1>")
     // Bold
-    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
     // Italic
-    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    .replace(/\*(.*?)\*/gim, "<em>$1</em>")
     // Code
-    .replace(/`(.*?)`/gim, '<code>$1</code>')
+    .replace(/`(.*?)`/gim, "<code>$1</code>")
     // Links
     .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>')
     // Images
     .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" />')
     // Line breaks
-    .replace(/\n/gim, '<br />');
-  
+    .replace(/\n/gim, "<br />");
+
   return html;
 }
 
 // Simple text editor (fallback)
-export function SimpleTextEditor({ value, onChange, placeholder, minHeight = '150px', maxHeight = '400px', className = '' }) {
+export function SimpleTextEditor({
+  value,
+  onChange,
+  placeholder,
+  minHeight = "150px",
+  maxHeight = "400px",
+  className = "",
+}) {
   return (
     <textarea
       value={value}

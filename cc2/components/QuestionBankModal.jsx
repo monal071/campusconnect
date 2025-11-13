@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PlusIcon,
   TrashIcon,
@@ -8,15 +8,19 @@ import {
   FolderIcon,
   TagIcon,
   AcademicCapIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
-export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }) {
+export default function QuestionBankModal({
+  isOpen,
+  onClose,
+  onSelectQuestions,
+}) {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterDifficulty, setFilterDifficulty] = useState("all");
 
   useState(() => {
     if (isOpen) {
@@ -27,43 +31,47 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/quiz/question-bank');
+      const res = await fetch("/api/quiz/question-bank");
       if (res.ok) {
         const data = await res.json();
         setQuestions(data.questions || []);
       }
     } catch (error) {
-      console.error('Error fetching question bank:', error);
+      console.error("Error fetching question bank:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const toggleQuestion = (questionId) => {
-    setSelectedQuestions(prev => {
+    setSelectedQuestions((prev) => {
       if (prev.includes(questionId)) {
-        return prev.filter(id => id !== questionId);
+        return prev.filter((id) => id !== questionId);
       }
       return [...prev, questionId];
     });
   };
 
   const handleAdd = () => {
-    const selected = questions.filter(q => selectedQuestions.includes(q._id));
+    const selected = questions.filter((q) => selectedQuestions.includes(q._id));
     onSelectQuestions(selected);
     setSelectedQuestions([]);
     onClose();
   };
 
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch = q.question.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || q.category === filterCategory;
-    const matchesDifficulty = filterDifficulty === 'all' || q.difficulty === filterDifficulty;
+  const filteredQuestions = questions.filter((q) => {
+    const matchesSearch = q.question
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      filterCategory === "all" || q.category === filterCategory;
+    const matchesDifficulty =
+      filterDifficulty === "all" || q.difficulty === filterDifficulty;
     return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
-  const categories = [...new Set(questions.map(q => q.category))];
-  const difficulties = ['easy', 'medium', 'hard'];
+  const categories = [...new Set(questions.map((q) => q.category))];
+  const difficulties = ["easy", "medium", "hard"];
 
   if (!isOpen) return null;
 
@@ -121,8 +129,10 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
 
@@ -132,7 +142,7 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value="all">All Difficulties</option>
-                {difficulties.map(diff => (
+                {difficulties.map((diff) => (
                   <option key={diff} value={diff}>
                     {diff.charAt(0).toUpperCase() + diff.slice(1)}
                   </option>
@@ -151,9 +161,11 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
               <div className="text-center py-12">
                 <AcademicCapIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <p className="text-gray-600 dark:text-gray-400">
-                  {searchTerm || filterCategory !== 'all' || filterDifficulty !== 'all'
-                    ? 'No questions match your filters'
-                    : 'No questions in bank yet. Create some first!'}
+                  {searchTerm ||
+                  filterCategory !== "all" ||
+                  filterDifficulty !== "all"
+                    ? "No questions match your filters"
+                    : "No questions in bank yet. Create some first!"}
                 </p>
               </div>
             ) : (
@@ -167,8 +179,8 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                     onClick={() => toggleQuestion(question._id)}
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       selectedQuestions.includes(question._id)
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -188,8 +200,8 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                               key={idx}
                               className={`text-sm px-2 py-1 rounded ${
                                 idx === question.correctAnswer
-                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                               }`}
                             >
                               {String.fromCharCode(65 + idx)}. {option}
@@ -200,17 +212,20 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                           <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded">
                             {question.category}
                           </span>
-                          <span className={`px-2 py-1 rounded ${
-                            question.difficulty === 'easy'
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                              : question.difficulty === 'medium'
-                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              question.difficulty === "easy"
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                : question.difficulty === "medium"
+                                ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                                : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            }`}
+                          >
                             {question.difficulty}
                           </span>
                           <span className="text-gray-500 dark:text-gray-400">
-                            {question.points || 1} {question.points === 1 ? 'point' : 'points'}
+                            {question.points || 1}{" "}
+                            {question.points === 1 ? "point" : "points"}
                           </span>
                         </div>
                       </div>
@@ -224,7 +239,8 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
           {/* Footer */}
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {selectedQuestions.length} of {filteredQuestions.length} questions selected
+              {selectedQuestions.length} of {filteredQuestions.length} questions
+              selected
             </p>
             <div className="flex gap-3">
               <button
@@ -238,7 +254,8 @@ export default function QuestionBankModal({ isOpen, onClose, onSelectQuestions }
                 disabled={selectedQuestions.length === 0}
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Add {selectedQuestions.length} Question{selectedQuestions.length !== 1 ? 's' : ''}
+                Add {selectedQuestions.length} Question
+                {selectedQuestions.length !== 1 ? "s" : ""}
               </button>
             </div>
           </div>
@@ -255,9 +272,9 @@ export function SaveToQuestionBankButton({ question, onSaved }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/quiz/question-bank', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/quiz/question-bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(question),
       });
 
@@ -265,11 +282,11 @@ export function SaveToQuestionBankButton({ question, onSaved }) {
         onSaved?.();
         // Show toast notification
         if (window.customToast) {
-          window.customToast.success('Question saved to bank!');
+          window.customToast.success("Question saved to bank!");
         }
       }
     } catch (error) {
-      console.error('Error saving question:', error);
+      console.error("Error saving question:", error);
     } finally {
       setSaving(false);
     }
@@ -282,7 +299,7 @@ export function SaveToQuestionBankButton({ question, onSaved }) {
       className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 disabled:opacity-50 transition-colors"
     >
       <FolderIcon className="w-4 h-4" />
-      {saving ? 'Saving...' : 'Save to Bank'}
+      {saving ? "Saving..." : "Save to Bank"}
     </button>
   );
 }

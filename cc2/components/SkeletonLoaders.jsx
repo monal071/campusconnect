@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 // Post Skeleton
 export function PostSkeleton() {
@@ -140,7 +140,10 @@ export function QuizQuestionSkeleton() {
       <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6 mb-6"></div>
       <div className="space-y-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-12 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
+          <div
+            key={i}
+            className="h-12 bg-gray-300 dark:bg-gray-700 rounded-lg"
+          ></div>
         ))}
       </div>
     </div>
@@ -161,7 +164,9 @@ export function FeedSkeleton({ count = 3 }) {
 // Grid Skeleton (for cards)
 export function GridSkeleton({ count = 6, columns = 3 }) {
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns} gap-6`}>
+    <div
+      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns} gap-6`}
+    >
       {[...Array(count)].map((_, i) => (
         <CardSkeleton key={i} />
       ))}
@@ -170,7 +175,7 @@ export function GridSkeleton({ count = 6, columns = 3 }) {
 }
 
 // Loading Pulse (for inline loading)
-export function LoadingPulse({ className = '' }) {
+export function LoadingPulse({ className = "" }) {
   return (
     <motion.div
       animate={{
@@ -191,13 +196,15 @@ export function LoadingPulse({ className = '' }) {
 }
 
 // Shimmer Effect Component
-export function ShimmerEffect({ className = '' }) {
+export function ShimmerEffect({ className = "" }) {
   return (
-    <div className={`relative overflow-hidden bg-gray-300 dark:bg-gray-700 ${className}`}>
+    <div
+      className={`relative overflow-hidden bg-gray-300 dark:bg-gray-700 ${className}`}
+    >
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
         animate={{
-          x: ['-100%', '100%'],
+          x: ["-100%", "100%"],
         }}
         transition={{
           duration: 1.5,

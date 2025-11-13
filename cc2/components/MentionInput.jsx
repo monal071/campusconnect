@@ -1,13 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { UserIcon } from '@heroicons/react/24/outline';
-import Image from 'next/image';
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
-export default function MentionInput({ value, onChange, placeholder = 'Write something...' }) {
+export default function MentionInput({
+  value,
+  onChange,
+  placeholder = "Write something...",
+}) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -20,13 +24,15 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
     }
 
     try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=5`);
+      const response = await fetch(
+        `/api/users/search?q=${encodeURIComponent(query)}&limit=5`
+      );
       if (response.ok) {
         const data = await response.json();
         setSuggestions(data.users || []);
       }
     } catch (error) {
-      console.error('Error fetching user suggestions:', error);
+      console.error("Error fetching user suggestions:", error);
     }
   };
 
@@ -34,18 +40,18 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
   const handleChange = (e) => {
     const newValue = e.target.value;
     const position = e.target.selectionStart;
-    
+
     onChange(newValue);
     setCursorPosition(position);
 
     // Check if @ is typed
     const textBeforeCursor = newValue.substring(0, position);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
     if (lastAtIndex !== -1) {
       const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-      const hasSpace = textAfterAt.includes(' ');
-      
+      const hasSpace = textAfterAt.includes(" ");
+
       if (!hasSpace) {
         setMentionQuery(textAfterAt);
         setShowSuggestions(true);
@@ -63,16 +69,14 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
   const selectMention = (user) => {
     const textBeforeCursor = value.substring(0, cursorPosition);
     const textAfterCursor = value.substring(cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
-    const newValue = 
-      value.substring(0, lastAtIndex) + 
-      `@${user.name} ` + 
-      textAfterCursor;
-    
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+    const newValue =
+      value.substring(0, lastAtIndex) + `@${user.name} ` + textAfterCursor;
+
     onChange(newValue);
     setShowSuggestions(false);
-    
+
     // Focus back on input
     if (inputRef.current) {
       inputRef.current.focus();
@@ -88,25 +92,25 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
     if (!showSuggestions || suggestions.length === 0) return;
 
     switch (e.key) {
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
-        setSelectedIndex((prev) => 
+        setSelectedIndex((prev) =>
           prev < suggestions.length - 1 ? prev + 1 : 0
         );
         break;
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
-        setSelectedIndex((prev) => 
+        setSelectedIndex((prev) =>
           prev > 0 ? prev - 1 : suggestions.length - 1
         );
         break;
-      case 'Enter':
+      case "Enter":
         if (showSuggestions) {
           e.preventDefault();
           selectMention(suggestions[selectedIndex]);
         }
         break;
-      case 'Escape':
+      case "Escape":
         e.preventDefault();
         setShowSuggestions(false);
         break;
@@ -115,25 +119,25 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
 
   // Parse content to highlight mentions and hashtags
   const parseContent = (text) => {
-    if (!text) return '';
-    
+    if (!text) return "";
+
     // Mention regex: @Username
     const mentionRegex = /@(\w+)/g;
     // Hashtag regex: #tag
     const hashtagRegex = /#(\w+)/g;
-    
+
     let parsed = text;
-    
+
     // Replace mentions
     parsed = parsed.replace(mentionRegex, (match) => {
       return `<span class="text-blue-600 dark:text-blue-400 font-semibold cursor-pointer hover:underline">${match}</span>`;
     });
-    
+
     // Replace hashtags
     parsed = parsed.replace(hashtagRegex, (match) => {
       return `<span class="text-blue-500 dark:text-blue-300 font-medium cursor-pointer hover:underline">${match}</span>`;
     });
-    
+
     return parsed;
   };
 
@@ -165,7 +169,9 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
                   key={user._id || user.id}
                   onClick={() => selectMention(user)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                    index === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    index === selectedIndex
+                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      : ""
                   }`}
                 >
                   {user.image ? (
@@ -203,9 +209,17 @@ export default function MentionInput({ value, onChange, placeholder = 'Write som
 
       {/* Helper Text */}
       <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        Use <span className="font-semibold text-blue-600 dark:text-blue-400">@username</span> to mention someone
-        {' • '}
-        Use <span className="font-semibold text-blue-500 dark:text-blue-300">#tag</span> for hashtags
+        Use{" "}
+        <span className="font-semibold text-blue-600 dark:text-blue-400">
+          @username
+        </span>{" "}
+        to mention someone
+        {" • "}
+        Use{" "}
+        <span className="font-semibold text-blue-500 dark:text-blue-300">
+          #tag
+        </span>{" "}
+        for hashtags
       </p>
     </div>
   );
@@ -216,11 +230,11 @@ export function extractMentions(text) {
   const mentionRegex = /@(\w+)/g;
   const mentions = [];
   let match;
-  
+
   while ((match = mentionRegex.exec(text)) !== null) {
     mentions.push(match[1]);
   }
-  
+
   return [...new Set(mentions)]; // Remove duplicates
 }
 
@@ -229,16 +243,16 @@ export function extractHashtags(text) {
   const hashtagRegex = /#(\w+)/g;
   const hashtags = [];
   let match;
-  
+
   while ((match = hashtagRegex.exec(text)) !== null) {
     hashtags.push(match[1]);
   }
-  
+
   return [...new Set(hashtags)]; // Remove duplicates
 }
 
 // Component to render parsed content with clickable mentions and hashtags
-export function ParsedContent({ content, className = '' }) {
+export function ParsedContent({ content, className = "" }) {
   const handleMentionClick = (username) => {
     // Navigate to user profile
     window.location.href = `/profile/${username}`;
@@ -251,14 +265,14 @@ export function ParsedContent({ content, className = '' }) {
 
   const parseContent = () => {
     if (!content) return null;
-    
+
     const parts = [];
     let lastIndex = 0;
-    
+
     // Combined regex for mentions and hashtags
     const regex = /(@\w+)|(#\w+)/g;
     let match;
-    
+
     while ((match = regex.exec(content)) !== null) {
       // Add text before match
       if (match.index > lastIndex) {
@@ -268,10 +282,10 @@ export function ParsedContent({ content, className = '' }) {
           </span>
         );
       }
-      
+
       // Add matched mention or hashtag
       const fullMatch = match[0];
-      if (fullMatch.startsWith('@')) {
+      if (fullMatch.startsWith("@")) {
         const username = fullMatch.substring(1);
         parts.push(
           <button
@@ -282,7 +296,7 @@ export function ParsedContent({ content, className = '' }) {
             {fullMatch}
           </button>
         );
-      } else if (fullMatch.startsWith('#')) {
+      } else if (fullMatch.startsWith("#")) {
         const tag = fullMatch.substring(1);
         parts.push(
           <button
@@ -294,25 +308,21 @@ export function ParsedContent({ content, className = '' }) {
           </button>
         );
       }
-      
+
       lastIndex = match.index + fullMatch.length;
     }
-    
+
     // Add remaining text
     if (lastIndex < content.length) {
       parts.push(
-        <span key={`text-${lastIndex}`}>
-          {content.substring(lastIndex)}
-        </span>
+        <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>
       );
     }
-    
+
     return parts;
   };
 
   return (
-    <div className={`whitespace-pre-wrap ${className}`}>
-      {parseContent()}
-    </div>
+    <div className={`whitespace-pre-wrap ${className}`}>{parseContent()}</div>
   );
 }

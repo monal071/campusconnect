@@ -40,15 +40,16 @@ export default async function handler(req, res) {
       });
 
       // Update user stats
-      await db.collection("users").updateOne(
-        { email: session.user.email },
-        { $inc: { followingCount: 1 } }
-      );
+      await db
+        .collection("users")
+        .updateOne(
+          { email: session.user.email },
+          { $inc: { followingCount: 1 } }
+        );
 
-      await db.collection("users").updateOne(
-        { email: userId },
-        { $inc: { followersCount: 1 } }
-      );
+      await db
+        .collection("users")
+        .updateOne({ email: userId }, { $inc: { followersCount: 1 } });
 
       return res.status(200).json({ message: "Successfully followed user" });
     } catch (error) {
@@ -72,15 +73,16 @@ export default async function handler(req, res) {
       }
 
       // Update user stats
-      await db.collection("users").updateOne(
-        { email: session.user.email },
-        { $inc: { followingCount: -1 } }
-      );
+      await db
+        .collection("users")
+        .updateOne(
+          { email: session.user.email },
+          { $inc: { followingCount: -1 } }
+        );
 
-      await db.collection("users").updateOne(
-        { email: userId },
-        { $inc: { followersCount: -1 } }
-      );
+      await db
+        .collection("users")
+        .updateOne({ email: userId }, { $inc: { followersCount: -1 } });
 
       return res.status(200).json({ message: "Successfully unfollowed user" });
     } catch (error) {
@@ -102,7 +104,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ isFollowing: !!isFollowing });
     } catch (error) {
       console.error("Check following error:", error);
-      return res.status(500).json({ error: "Failed to check following status" });
+      return res
+        .status(500)
+        .json({ error: "Failed to check following status" });
     }
   }
 

@@ -1,11 +1,11 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  XMarkIcon, 
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  XMarkIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  InformationCircleIcon 
-} from '@heroicons/react/24/outline';
-import { useState } from 'react';
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
+import { useState } from "react";
 
 export default function ConfirmationDialog({
   isOpen,
@@ -13,15 +13,15 @@ export default function ConfirmationDialog({
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  type = 'default', // 'default', 'danger', 'warning', 'success'
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  type = "default", // 'default', 'danger', 'warning', 'success'
   requireReason = false,
-  reasonPlaceholder = 'Please provide a reason...',
+  reasonPlaceholder = "Please provide a reason...",
   showCheckbox = false,
-  checkboxLabel = 'I understand the consequences',
+  checkboxLabel = "I understand the consequences",
 }) {
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -38,49 +38,52 @@ export default function ConfirmationDialog({
       await onConfirm(requireReason ? reason : undefined);
       handleClose();
     } catch (error) {
-      console.error('Confirmation error:', error);
+      console.error("Confirmation error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setReason('');
+    setReason("");
     setIsChecked(false);
     onClose();
   };
 
   const getTypeStyles = () => {
     switch (type) {
-      case 'danger':
+      case "danger":
         return {
           icon: <ExclamationTriangleIcon className="h-12 w-12 text-red-500" />,
-          iconBg: 'bg-red-100 dark:bg-red-900/20',
-          buttonClass: 'bg-red-500 hover:bg-red-600',
+          iconBg: "bg-red-100 dark:bg-red-900/20",
+          buttonClass: "bg-red-500 hover:bg-red-600",
         };
-      case 'warning':
+      case "warning":
         return {
-          icon: <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500" />,
-          iconBg: 'bg-yellow-100 dark:bg-yellow-900/20',
-          buttonClass: 'bg-yellow-500 hover:bg-yellow-600',
+          icon: (
+            <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500" />
+          ),
+          iconBg: "bg-yellow-100 dark:bg-yellow-900/20",
+          buttonClass: "bg-yellow-500 hover:bg-yellow-600",
         };
-      case 'success':
+      case "success":
         return {
           icon: <CheckCircleIcon className="h-12 w-12 text-green-500" />,
-          iconBg: 'bg-green-100 dark:bg-green-900/20',
-          buttonClass: 'bg-green-500 hover:bg-green-600',
+          iconBg: "bg-green-100 dark:bg-green-900/20",
+          buttonClass: "bg-green-500 hover:bg-green-600",
         };
       default:
         return {
           icon: <InformationCircleIcon className="h-12 w-12 text-blue-500" />,
-          iconBg: 'bg-blue-100 dark:bg-blue-900/20',
-          buttonClass: 'bg-blue-500 hover:bg-blue-600',
+          iconBg: "bg-blue-100 dark:bg-blue-900/20",
+          buttonClass: "bg-blue-500 hover:bg-blue-600",
         };
     }
   };
 
   const styles = getTypeStyles();
-  const canConfirm = (!requireReason || reason.trim()) && (!showCheckbox || isChecked);
+  const canConfirm =
+    (!requireReason || reason.trim()) && (!showCheckbox || isChecked);
 
   return (
     <AnimatePresence>
@@ -104,7 +107,9 @@ export default function ConfirmationDialog({
           >
             <div className="p-6">
               {/* Icon */}
-              <div className={`flex items-center justify-center w-16 h-16 ${styles.iconBg} rounded-full mb-4 mx-auto`}>
+              <div
+                className={`flex items-center justify-center w-16 h-16 ${styles.iconBg} rounded-full mb-4 mx-auto`}
+              >
                 {styles.icon}
               </div>
 
@@ -167,7 +172,7 @@ export default function ConfirmationDialog({
                   disabled={loading || !canConfirm}
                   className={`flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${styles.buttonClass}`}
                 >
-                  {loading ? 'Processing...' : confirmText}
+                  {loading ? "Processing..." : confirmText}
                 </button>
               </div>
             </div>
@@ -179,35 +184,41 @@ export default function ConfirmationDialog({
 }
 
 // Quick confirmation helpers
-export const confirmDeletion = (onConfirm, itemName = 'this item') => {
+export const confirmDeletion = (onConfirm, itemName = "this item") => {
   return {
-    title: 'Delete Confirmation',
+    title: "Delete Confirmation",
     message: `Are you sure you want to delete ${itemName}? This action cannot be undone.`,
-    confirmText: 'Delete',
-    type: 'danger',
+    confirmText: "Delete",
+    type: "danger",
     onConfirm,
   };
 };
 
-export const confirmWithReason = (onConfirm, action = 'perform this action') => {
+export const confirmWithReason = (
+  onConfirm,
+  action = "perform this action"
+) => {
   return {
-    title: 'Confirmation Required',
+    title: "Confirmation Required",
     message: `Please provide a reason to ${action}.`,
-    confirmText: 'Confirm',
-    type: 'warning',
+    confirmText: "Confirm",
+    type: "warning",
     requireReason: true,
     onConfirm,
   };
 };
 
-export const confirmDangerousAction = (onConfirm, action = 'perform this action') => {
+export const confirmDangerousAction = (
+  onConfirm,
+  action = "perform this action"
+) => {
   return {
-    title: 'Warning',
+    title: "Warning",
     message: `This is a potentially dangerous action. ${action}`,
-    confirmText: 'I Understand, Proceed',
-    type: 'danger',
+    confirmText: "I Understand, Proceed",
+    type: "danger",
     showCheckbox: true,
-    checkboxLabel: 'I understand this action is irreversible',
+    checkboxLabel: "I understand this action is irreversible",
     onConfirm,
   };
 };

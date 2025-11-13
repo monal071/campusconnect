@@ -1,12 +1,12 @@
-import { connectToDatabase } from '../../../../utils/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]';
+import { connectToDatabase } from "../../../../utils/mongodb";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
   if (!resourceId) {
-    return res.status(400).json({ error: 'Resource ID is required' });
+    return res.status(400).json({ error: "Resource ID is required" });
   }
 
   const session = await getServerSession(req, res, authOptions);
@@ -14,9 +14,10 @@ export default async function handler(req, res) {
   try {
     const { db } = await connectToDatabase();
 
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       // Get version history
-      const versions = await db.collection('resourceVersions')
+      const versions = await db
+        .collection("resourceVersions")
         .find({ resourceId })
         .sort({ version: -1 })
         .toArray();
@@ -24,7 +25,8 @@ export default async function handler(req, res) {
       // Get author details for each version
       const versionsWithAuthors = await Promise.all(
         versions.map(async (version) => {
-          const author = await db.collection('users')
+          const author = await db
+            .collection("users")
             .findOne({ _id: version.userId })
             .project({ name: 1, email: 1, image: 1 });
 
@@ -41,27 +43,32 @@ export default async function handler(req, res) {
       });
     }
 
-    if (req.method === 'POST') {
+    if (req.method === "POST") {
       // Create new version
       if (!session?.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const { changeNote } = req.body;
 
       // Verify resource ownership
-      const resource = await db.collection('resources').findOne({ _id: resourceId });
-      
+      const resource = await db
+        .collection("resources")
+        .findOne({ _id: resourceId });
+
       if (!resource) {
-        return res.status(404).json({ error: 'Resource not found' });
+        return res.status(404).json({ error: "Resource not found" });
       }
 
       if (resource.createdBy !== session.user.id) {
-        return res.status(403).json({ error: 'Unauthorized - not resource owner' });
+        return res
+          .status(403)
+          .json({ error: "Unauthorized - not resource owner" });
       }
 
       // Get latest version number
-      const latestVersion = await db.collection('resourceVersions')
+      const latestVersion = await db
+        .collection("resourceVersions")
         .findOne({ resourceId }, { sort: { version: -1 } });
 
       const newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
@@ -75,7 +82,7 @@ export default async function handler(req, res) {
         title: resource.title,
         type: resource.type,
         url: resource.url,
-        changeNote: changeNote?.trim() || 'Updated resource',
+        changeNote: changeNote?.trim() || "Updated resource",
         size: JSON.stringify(resource).length,
         changes: {
           added: 0,
@@ -85,10 +92,12 @@ export default async function handler(req, res) {
         createdAt: new Date(),
       };
 
-      const result = await db.collection('resourceVersions').insertOne(newVersion);
+      const result = await db
+        .collection("resourceVersions")
+        .insertOne(newVersion);
 
       // Update resource with current version
-      await db.collection('resources').updateOne(
+      await db.collection("resources").updateOne(
         { _id: resourceId },
         {
           $set: {
@@ -107,9 +116,9 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error('Versions API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Versions API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

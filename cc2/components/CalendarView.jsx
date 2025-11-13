@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -7,17 +7,31 @@ import {
   ClockIcon,
   MapPinIcon,
   UserGroupIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
-export default function CalendarView({ events = [], onEventClick, onDateClick }) {
+export default function CalendarView({
+  events = [],
+  onEventClick,
+  onDateClick,
+}) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState('month'); // month, week, day
+  const [view, setView] = useState("month"); // month, week, day
   const [selectedDate, setSelectedDate] = useState(null);
 
   const year = currentDate.getFullYear();
@@ -29,7 +43,7 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
 
   // Generate calendar days
   const calendarDays = [];
-  
+
   // Previous month days
   const prevMonthDays = new Date(year, month, 0).getDate();
   for (let i = firstDayOfMonth - 1; i >= 0; i--) {
@@ -61,7 +75,7 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
 
   // Get events for a specific date
   const getEventsForDate = (date) => {
-    return events.filter(event => {
+    return events.filter((event) => {
       const eventDate = new Date(event.date);
       return (
         eventDate.getDate() === date.getDate() &&
@@ -127,14 +141,14 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
 
           {/* View Switcher */}
           <div className="flex gap-2">
-            {['month', 'week', 'day'].map(viewType => (
+            {["month", "week", "day"].map((viewType) => (
               <button
                 key={viewType}
                 onClick={() => setView(viewType)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   view === viewType
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                 }`}
               >
                 {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
@@ -145,11 +159,11 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
       </div>
 
       {/* Calendar Grid */}
-      {view === 'month' && (
+      {view === "month" && (
         <div className="p-6">
           {/* Days of Week Header */}
           <div className="grid grid-cols-7 gap-2 mb-2">
-            {DAYS_OF_WEEK.map(day => (
+            {DAYS_OF_WEEK.map((day) => (
               <div
                 key={day}
                 className="text-center text-sm font-semibold text-gray-600 dark:text-gray-400 py-2"
@@ -175,22 +189,20 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
                   }}
                   className={`relative min-h-[100px] p-2 border rounded-lg cursor-pointer transition-all ${
                     dayInfo.isCurrentMonth
-                      ? 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400'
-                      : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400'
-                  } ${
-                    isTodayDate
-                      ? 'ring-2 ring-blue-500'
-                      : ''
-                  }`}
+                      ? "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400"
+                      : "bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400"
+                  } ${isTodayDate ? "ring-2 ring-blue-500" : ""}`}
                 >
                   {/* Day Number */}
-                  <div className={`text-sm font-semibold mb-1 ${
-                    isTodayDate
-                      ? 'w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-white'
-                      : dayInfo.isCurrentMonth
-                      ? 'text-gray-900 dark:text-white'
-                      : 'text-gray-400'
-                  }`}>
+                  <div
+                    className={`text-sm font-semibold mb-1 ${
+                      isTodayDate
+                        ? "w-6 h-6 flex items-center justify-center rounded-full bg-blue-500 text-white"
+                        : dayInfo.isCurrentMonth
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-400"
+                    }`}
+                  >
                     {dayInfo.day}
                   </div>
 
@@ -222,7 +234,7 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
       )}
 
       {/* Week View */}
-      {view === 'week' && (
+      {view === "week" && (
         <WeekView
           currentDate={currentDate}
           events={events}
@@ -231,7 +243,7 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
       )}
 
       {/* Day View */}
-      {view === 'day' && (
+      {view === "day" && (
         <DayView
           currentDate={currentDate}
           events={events}
@@ -250,11 +262,11 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {selectedDate.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
+                {selectedDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
                 })}
               </h3>
               <button
@@ -266,8 +278,12 @@ export default function CalendarView({ events = [], onEventClick, onDateClick })
             </div>
 
             <div className="space-y-4">
-              {getEventsForDate(selectedDate).map(event => (
-                <EventCard key={event._id} event={event} onClick={onEventClick} />
+              {getEventsForDate(selectedDate).map((event) => (
+                <EventCard
+                  key={event._id}
+                  event={event}
+                  onClick={onEventClick}
+                />
               ))}
 
               {getEventsForDate(selectedDate).length === 0 && (
@@ -299,7 +315,7 @@ function WeekView({ currentDate, events, onEventClick }) {
     <div className="p-6">
       <div className="grid grid-cols-7 gap-4">
         {weekDays.map((day, index) => {
-          const dayEvents = events.filter(event => {
+          const dayEvents = events.filter((event) => {
             const eventDate = new Date(event.date);
             return (
               eventDate.getDate() === day.getDate() &&
@@ -312,19 +328,21 @@ function WeekView({ currentDate, events, onEventClick }) {
 
           return (
             <div key={index} className="space-y-2">
-              <div className={`text-center p-2 rounded-lg ${
-                isToday ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700'
-              }`}>
+              <div
+                className={`text-center p-2 rounded-lg ${
+                  isToday
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700"
+                }`}
+              >
                 <div className="text-xs font-medium">
-                  {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                  {day.toLocaleDateString("en-US", { weekday: "short" })}
                 </div>
-                <div className="text-lg font-bold">
-                  {day.getDate()}
-                </div>
+                <div className="text-lg font-bold">{day.getDate()}</div>
               </div>
 
               <div className="space-y-2 min-h-[400px]">
-                {dayEvents.map(event => (
+                {dayEvents.map((event) => (
                   <div
                     key={event._id}
                     onClick={() => onEventClick?.(event)}
@@ -334,9 +352,9 @@ function WeekView({ currentDate, events, onEventClick }) {
                       {event.title}
                     </div>
                     <div className="text-xs text-blue-700 dark:text-blue-400">
-                      {new Date(event.date).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
+                      {new Date(event.date).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
                       })}
                     </div>
                   </div>
@@ -351,14 +369,16 @@ function WeekView({ currentDate, events, onEventClick }) {
 }
 
 function DayView({ currentDate, events, onEventClick }) {
-  const dayEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
-    return (
-      eventDate.getDate() === currentDate.getDate() &&
-      eventDate.getMonth() === currentDate.getMonth() &&
-      eventDate.getFullYear() === currentDate.getFullYear()
-    );
-  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const dayEvents = events
+    .filter((event) => {
+      const eventDate = new Date(event.date);
+      return (
+        eventDate.getDate() === currentDate.getDate() &&
+        eventDate.getMonth() === currentDate.getMonth() &&
+        eventDate.getFullYear() === currentDate.getFullYear()
+      );
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // Generate time slots (24 hours)
   const timeSlots = Array.from({ length: 24 }, (_, i) => i);
@@ -366,8 +386,8 @@ function DayView({ currentDate, events, onEventClick }) {
   return (
     <div className="p-6">
       <div className="space-y-1">
-        {timeSlots.map(hour => {
-          const hourEvents = dayEvents.filter(event => {
+        {timeSlots.map((hour) => {
+          const hourEvents = dayEvents.filter((event) => {
             const eventHour = new Date(event.date).getHours();
             return eventHour === hour;
           });
@@ -375,10 +395,16 @@ function DayView({ currentDate, events, onEventClick }) {
           return (
             <div key={hour} className="flex gap-4 min-h-[60px]">
               <div className="w-20 text-right text-sm text-gray-600 dark:text-gray-400 pt-1">
-                {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
+                {hour === 0
+                  ? "12 AM"
+                  : hour < 12
+                  ? `${hour} AM`
+                  : hour === 12
+                  ? "12 PM"
+                  : `${hour - 12} PM`}
               </div>
               <div className="flex-1 border-t border-gray-200 dark:border-gray-700 pt-1">
-                {hourEvents.map(event => (
+                {hourEvents.map((event) => (
                   <EventCard
                     key={event._id}
                     event={event}
@@ -400,7 +426,7 @@ function EventCard({ event, onClick, compact = false }) {
     <div
       onClick={() => onClick?.(event)}
       className={`${
-        compact ? 'p-2 mb-1' : 'p-4'
+        compact ? "p-2 mb-1" : "p-4"
       } bg-blue-100 dark:bg-blue-900/30 rounded-lg cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors`}
     >
       <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
@@ -409,9 +435,9 @@ function EventCard({ event, onClick, compact = false }) {
       <div className="space-y-1 text-sm text-blue-700 dark:text-blue-400">
         <div className="flex items-center gap-2">
           <ClockIcon className="w-4 h-4" />
-          {new Date(event.date).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
+          {new Date(event.date).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
           })}
         </div>
         {event.location && (

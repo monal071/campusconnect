@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export default function useInfiniteScroll({
   fetchData,
@@ -10,19 +10,19 @@ export default function useInfiniteScroll({
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [error, setError] = useState(null);
-  
+
   const observer = useRef();
   const lastElementRef = useCallback(
     (node) => {
       if (loading) return;
       if (observer.current) observer.current.disconnect();
-      
+
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
           setPage((prevPage) => prevPage + 1);
         }
       });
-      
+
       if (node) observer.current.observe(node);
     },
     [loading, hasMore]
@@ -30,21 +30,21 @@ export default function useInfiniteScroll({
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const newData = await fetchData(page);
-      
+
       if (newData.length === 0) {
         setHasMore(false);
       } else {
         setData((prevData) => [...prevData, ...newData]);
       }
     } catch (err) {
-      setError(err.message || 'Failed to load more data');
-      console.error('Infinite scroll error:', err);
+      setError(err.message || "Failed to load more data");
+      console.error("Infinite scroll error:", err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function useInfiniteScroll({
     setPage(1);
     setHasMore(true);
     setError(null);
-    
+
     setLoading(true);
     try {
       const newData = await fetchData(1);
@@ -75,7 +75,7 @@ export default function useInfiniteScroll({
         setHasMore(false);
       }
     } catch (err) {
-      setError(err.message || 'Failed to refresh data');
+      setError(err.message || "Failed to refresh data");
     } finally {
       setLoading(false);
     }

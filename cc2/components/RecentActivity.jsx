@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { formatDistanceToNow } from 'date-fns';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
 import {
   ChatBubbleLeftIcon,
   HeartIcon,
@@ -12,7 +12,7 @@ import {
   AcademicCapIcon,
   BriefcaseIcon,
   UserGroupIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 const activityIcons = {
   post: ChatBubbleLeftIcon,
@@ -28,16 +28,16 @@ const activityIcons = {
 };
 
 const activityColors = {
-  post: 'text-blue-500 bg-blue-100 dark:bg-blue-900/20',
-  like: 'text-red-500 bg-red-100 dark:bg-red-900/20',
-  comment: 'text-green-500 bg-green-100 dark:bg-green-900/20',
-  connection: 'text-purple-500 bg-purple-100 dark:bg-purple-900/20',
-  resource: 'text-orange-500 bg-orange-100 dark:bg-orange-900/20',
-  event: 'text-pink-500 bg-pink-100 dark:bg-pink-900/20',
-  bookmark: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/20',
-  quiz: 'text-indigo-500 bg-indigo-100 dark:bg-indigo-900/20',
-  job: 'text-teal-500 bg-teal-100 dark:bg-teal-900/20',
-  follow: 'text-cyan-500 bg-cyan-100 dark:bg-cyan-900/20',
+  post: "text-blue-500 bg-blue-100 dark:bg-blue-900/20",
+  like: "text-red-500 bg-red-100 dark:bg-red-900/20",
+  comment: "text-green-500 bg-green-100 dark:bg-green-900/20",
+  connection: "text-purple-500 bg-purple-100 dark:bg-purple-900/20",
+  resource: "text-orange-500 bg-orange-100 dark:bg-orange-900/20",
+  event: "text-pink-500 bg-pink-100 dark:bg-pink-900/20",
+  bookmark: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/20",
+  quiz: "text-indigo-500 bg-indigo-100 dark:bg-indigo-900/20",
+  job: "text-teal-500 bg-teal-100 dark:bg-teal-900/20",
+  follow: "text-cyan-500 bg-cyan-100 dark:bg-cyan-900/20",
 };
 
 export default function RecentActivity({ userId, limit = 10 }) {
@@ -53,7 +53,7 @@ export default function RecentActivity({ userId, limit = 10 }) {
     try {
       setLoading(true);
       const res = await fetch(`/api/users/${userId}/activities?limit=${limit}`);
-      if (!res.ok) throw new Error('Failed to fetch activities');
+      if (!res.ok) throw new Error("Failed to fetch activities");
       const data = await res.json();
       setActivities(data.activities || []);
     } catch (err) {
@@ -101,7 +101,9 @@ export default function RecentActivity({ userId, limit = 10 }) {
       <div className="p-6">
         {activities.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              No recent activity
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -126,7 +128,9 @@ function ActivityItem({ activity }) {
       className="flex space-x-3 group"
     >
       {/* Icon */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}>
+      <div
+        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}
+      >
         <Icon className="w-5 h-5" />
       </div>
 
@@ -153,7 +157,9 @@ function ActivityItem({ activity }) {
             )}
           </div>
           <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
-            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+            {formatDistanceToNow(new Date(activity.timestamp), {
+              addSuffix: true,
+            })}
           </span>
         </div>
       </div>
@@ -178,7 +184,7 @@ export function RecentActivityCompact({ userId, limit = 5 }) {
         setActivities(data.activities || []);
       }
     } catch (err) {
-      console.error('Failed to fetch activities:', err);
+      console.error("Failed to fetch activities:", err);
     } finally {
       setLoading(false);
     }
@@ -193,8 +199,13 @@ export function RecentActivityCompact({ userId, limit = 5 }) {
         const colorClass = activityColors[activity.type] || activityColors.post;
 
         return (
-          <div key={activity._id || index} className="flex items-start space-x-2">
-            <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${colorClass}`}>
+          <div
+            key={activity._id || index}
+            className="flex items-start space-x-2"
+          >
+            <div
+              className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${colorClass}`}
+            >
               <Icon className="w-3 h-3" />
             </div>
             <div className="flex-1 min-w-0">
@@ -202,7 +213,9 @@ export function RecentActivityCompact({ userId, limit = 5 }) {
                 {activity.description}
               </p>
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                {formatDistanceToNow(new Date(activity.timestamp), {
+                  addSuffix: true,
+                })}
               </span>
             </div>
           </div>
@@ -213,7 +226,7 @@ export function RecentActivityCompact({ userId, limit = 5 }) {
 }
 
 // Activity feed for dashboard
-export function ActivityFeed({ limit = 20, filter = 'all' }) {
+export function ActivityFeed({ limit = 20, filter = "all" }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -226,7 +239,9 @@ export function ActivityFeed({ limit = 20, filter = 'all' }) {
   const fetchActivities = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/activities?limit=${limit}&page=${page}&filter=${filter}`);
+      const res = await fetch(
+        `/api/activities?limit=${limit}&page=${page}&filter=${filter}`
+      );
       if (res.ok) {
         const data = await res.json();
         if (page === 1) {
@@ -237,7 +252,7 @@ export function ActivityFeed({ limit = 20, filter = 'all' }) {
         setHasMore(data.hasMore);
       }
     } catch (err) {
-      console.error('Failed to fetch activities:', err);
+      console.error("Failed to fetch activities:", err);
     } finally {
       setLoading(false);
     }

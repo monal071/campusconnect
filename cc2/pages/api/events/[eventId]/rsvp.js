@@ -1,40 +1,43 @@
-import { connectToDatabase } from '../../../utils/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { connectToDatabase } from "../../../utils/mongodb";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { eventId } = req.query;
 
   if (!eventId) {
-    return res.status(400).json({ error: 'Event ID is required' });
+    return res.status(400).json({ error: "Event ID is required" });
   }
 
   const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
     const { db } = await connectToDatabase();
 
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       // Get user's RSVP status and attendee counts
-      const userRSVP = await db.collection('rsvps').findOne({
+      const userRSVP = await db.collection("rsvps").findOne({
         eventId,
         userId: session.user.id,
       });
 
       // Get counts for each status
-      const counts = await db.collection('rsvps').aggregate([
-        { $match: { eventId } },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
+      const counts = await db
+        .collection("rsvps")
+        .aggregate([
+          { $match: { eventId } },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]).toArray();
+        ])
+        .toArray();
 
       const countsObj = {
         going: 0,
@@ -42,7 +45,7 @@ export default async function handler(req, res) {
         not_going: 0,
       };
 
-      counts.forEach(item => {
+      counts.forEach((item) => {
         countsObj[item._id] = item.count;
       });
 
@@ -53,15 +56,15 @@ export default async function handler(req, res) {
       });
     }
 
-    if (req.method === 'POST') {
+    if (req.method === "POST") {
       // Update or create RSVP
       const { status } = req.body;
 
-      if (!['going', 'maybe', 'not_going'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid RSVP status' });
+      if (!["going", "maybe", "not_going"].includes(status)) {
+        return res.status(400).json({ error: "Invalid RSVP status" });
       }
 
-      const result = await db.collection('rsvps').updateOne(
+      const result = await db.collection("rsvps").updateOne(
         {
           eventId,
           userId: session.user.id,
@@ -82,15 +85,18 @@ export default async function handler(req, res) {
       );
 
       // Get updated counts
-      const counts = await db.collection('rsvps').aggregate([
-        { $match: { eventId } },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
+      const counts = await db
+        .collection("rsvps")
+        .aggregate([
+          { $match: { eventId } },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]).toArray();
+        ])
+        .toArray();
 
       const countsObj = {
         going: 0,
@@ -98,24 +104,26 @@ export default async function handler(req, res) {
         not_going: 0,
       };
 
-      counts.forEach(item => {
+      counts.forEach((item) => {
         countsObj[item._id] = item.count;
       });
 
       // Update event attendee count
-      if (status === 'going') {
-        await db.collection('events').updateOne(
-          { _id: eventId },
-          { $set: { attendees: countsObj.going } }
-        );
+      if (status === "going") {
+        await db
+          .collection("events")
+          .updateOne(
+            { _id: eventId },
+            { $set: { attendees: countsObj.going } }
+          );
       }
 
       // Create notification for event creator
-      const event = await db.collection('events').findOne({ _id: eventId });
-      if (event && event.createdBy !== session.user.id && status === 'going') {
-        await db.collection('notifications').insertOne({
+      const event = await db.collection("events").findOne({ _id: eventId });
+      if (event && event.createdBy !== session.user.id && status === "going") {
+        await db.collection("notifications").insertOne({
           userId: event.createdBy,
-          type: 'event_rsvp',
+          type: "event_rsvp",
           message: `${session.user.name} is attending your event "${event.title}"`,
           eventId,
           fromUser: session.user.id,
@@ -131,23 +139,26 @@ export default async function handler(req, res) {
       });
     }
 
-    if (req.method === 'DELETE') {
+    if (req.method === "DELETE") {
       // Remove RSVP
-      await db.collection('rsvps').deleteOne({
+      await db.collection("rsvps").deleteOne({
         eventId,
         userId: session.user.id,
       });
 
       // Get updated counts
-      const counts = await db.collection('rsvps').aggregate([
-        { $match: { eventId } },
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 },
+      const counts = await db
+        .collection("rsvps")
+        .aggregate([
+          { $match: { eventId } },
+          {
+            $group: {
+              _id: "$status",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]).toArray();
+        ])
+        .toArray();
 
       const countsObj = {
         going: 0,
@@ -155,15 +166,14 @@ export default async function handler(req, res) {
         not_going: 0,
       };
 
-      counts.forEach(item => {
+      counts.forEach((item) => {
         countsObj[item._id] = item.count;
       });
 
       // Update event attendee count
-      await db.collection('events').updateOne(
-        { _id: eventId },
-        { $set: { attendees: countsObj.going } }
-      );
+      await db
+        .collection("events")
+        .updateOne({ _id: eventId }, { $set: { attendees: countsObj.going } });
 
       return res.status(200).json({
         success: true,
@@ -171,9 +181,9 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error('RSVP API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("RSVP API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

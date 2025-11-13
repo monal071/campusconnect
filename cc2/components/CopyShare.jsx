@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ClipboardIcon,
   ClipboardDocumentCheckIcon,
   ShareIcon,
   LinkIcon,
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
 // Copy to Clipboard Button
-export function CopyButton({ text, label = 'Copy', className = '' }) {
+export function CopyButton({ text, label = "Copy", className = "" }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
     e.stopPropagation();
-    
+
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success('Copied to clipboard!');
-      
+      toast.success("Copied to clipboard!");
+
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
     }
   };
 
@@ -34,8 +34,8 @@ export function CopyButton({ text, label = 'Copy', className = '' }) {
       whileTap={{ scale: 0.95 }}
       className={`inline-flex items-center space-x-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
         copied
-          ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+          : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
       } ${className}`}
     >
       {copied ? (
@@ -54,37 +54,37 @@ export function CopyButton({ text, label = 'Copy', className = '' }) {
 }
 
 // Copy Icon Button (compact)
-export function CopyIconButton({ text, size = 'md' }) {
+export function CopyIconButton({ text, size = "md" }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
     e.stopPropagation();
-    
+
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success('Copied!');
-      
+      toast.success("Copied!");
+
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
     }
   };
 
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
   };
 
   return (
     <button
       onClick={handleCopy}
       className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors ${
-        copied ? 'text-green-500' : 'text-gray-500'
+        copied ? "text-green-500" : "text-gray-500"
       }`}
-      title={copied ? 'Copied!' : 'Copy to clipboard'}
+      title={copied ? "Copied!" : "Copy to clipboard"}
     >
       {copied ? (
         <ClipboardDocumentCheckIcon className={sizeClasses[size]} />
@@ -96,12 +96,12 @@ export function CopyIconButton({ text, size = 'md' }) {
 }
 
 // Share Button with Native Web Share API
-export function ShareButton({ 
-  url, 
-  title, 
+export function ShareButton({
+  url,
+  title,
   text,
-  className = '',
-  label = 'Share'
+  className = "",
+  label = "Share",
 }) {
   const [isSharing, setIsSharing] = useState(false);
 
@@ -110,8 +110,8 @@ export function ShareButton({
     setIsSharing(true);
 
     const shareData = {
-      title: title || 'CampusConnect',
-      text: text || 'Check this out!',
+      title: title || "CampusConnect",
+      text: text || "Check this out!",
       url: url || window.location.href,
     };
 
@@ -119,16 +119,16 @@ export function ShareButton({
       if (navigator.share) {
         // Use native share if available (mobile)
         await navigator.share(shareData);
-        toast.success('Shared successfully!');
+        toast.success("Shared successfully!");
       } else {
         // Fallback: copy link
         await navigator.clipboard.writeText(shareData.url);
-        toast.success('Link copied to clipboard!');
+        toast.success("Link copied to clipboard!");
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Share failed:', error);
-        toast.error('Failed to share');
+      if (error.name !== "AbortError") {
+        console.error("Share failed:", error);
+        toast.error("Failed to share");
       }
     } finally {
       setIsSharing(false);
@@ -144,13 +144,13 @@ export function ShareButton({
       className={`inline-flex items-center space-x-2 px-3 py-1.5 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       <ShareIcon className="h-4 w-4" />
-      <span>{isSharing ? 'Sharing...' : label}</span>
+      <span>{isSharing ? "Sharing..." : label}</span>
     </motion.button>
   );
 }
 
 // Share Icon Button (compact)
-export function ShareIconButton({ url, title, text, size = 'md' }) {
+export function ShareIconButton({ url, title, text, size = "md" }) {
   const [isSharing, setIsSharing] = useState(false);
 
   const handleShare = async (e) => {
@@ -158,23 +158,23 @@ export function ShareIconButton({ url, title, text, size = 'md' }) {
     setIsSharing(true);
 
     const shareData = {
-      title: title || 'CampusConnect',
-      text: text || 'Check this out!',
+      title: title || "CampusConnect",
+      text: text || "Check this out!",
       url: url || window.location.href,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        toast.success('Shared!');
+        toast.success("Shared!");
       } else {
         await navigator.clipboard.writeText(shareData.url);
-        toast.success('Link copied!');
+        toast.success("Link copied!");
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Share failed:', error);
-        toast.error('Failed to share');
+      if (error.name !== "AbortError") {
+        console.error("Share failed:", error);
+        toast.error("Failed to share");
       }
     } finally {
       setIsSharing(false);
@@ -182,9 +182,9 @@ export function ShareIconButton({ url, title, text, size = 'md' }) {
   };
 
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
   };
 
   return (
@@ -200,22 +200,22 @@ export function ShareIconButton({ url, title, text, size = 'md' }) {
 }
 
 // Copy Link Button (specifically for copying URLs)
-export function CopyLinkButton({ url, className = '' }) {
+export function CopyLinkButton({ url, className = "" }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
     e.stopPropagation();
-    
+
     try {
       const linkToCopy = url || window.location.href;
       await navigator.clipboard.writeText(linkToCopy);
       setCopied(true);
-      toast.success('Link copied to clipboard!');
-      
+      toast.success("Link copied to clipboard!");
+
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy link');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy link");
     }
   };
 
@@ -224,18 +224,18 @@ export function CopyLinkButton({ url, className = '' }) {
       onClick={handleCopy}
       className={`inline-flex items-center space-x-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
         copied
-          ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+          : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
       } ${className}`}
     >
       <LinkIcon className="h-4 w-4" />
-      <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+      <span>{copied ? "Copied!" : "Copy Link"}</span>
     </button>
   );
 }
 
 // Code Block with Copy Button
-export function CodeBlock({ code, language = 'javascript', className = '' }) {
+export function CodeBlock({ code, language = "javascript", className = "" }) {
   return (
     <div className={`relative group ${className}`}>
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -253,11 +253,11 @@ export const copyUtils = {
   copyText: async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard!');
+      toast.success("Copied to clipboard!");
       return true;
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
       return false;
     }
   },
@@ -266,11 +266,11 @@ export const copyUtils = {
     try {
       const json = JSON.stringify(obj, null, 2);
       await navigator.clipboard.writeText(json);
-      toast.success('JSON copied to clipboard!');
+      toast.success("JSON copied to clipboard!");
       return true;
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
       return false;
     }
   },
@@ -278,11 +278,11 @@ export const copyUtils = {
   copyEmail: async (email) => {
     try {
       await navigator.clipboard.writeText(email);
-      toast.success('Email copied!');
+      toast.success("Email copied!");
       return true;
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
       return false;
     }
   },
@@ -290,11 +290,11 @@ export const copyUtils = {
   copyPhoneNumber: async (phone) => {
     try {
       await navigator.clipboard.writeText(phone);
-      toast.success('Phone number copied!');
+      toast.success("Phone number copied!");
       return true;
     } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy');
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
       return false;
     }
   },

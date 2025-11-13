@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   FireIcon,
   EyeIcon,
   HeartIcon,
   UserGroupIcon,
-  TrendingUpIcon
-} from '@heroicons/react/24/outline';
-import { useRouter } from 'next/router';
-import toast from 'react-hot-toast';
+  TrendingUpIcon,
+} from "@heroicons/react/24/outline";
+import { useRouter } from "next/router";
+import toast from "react-hot-toast";
 
-export default function TrendingSection({ type = 'all', limit = 5 }) {
+export default function TrendingSection({ type = "all", limit = 5 }) {
   const [trending, setTrending] = useState({});
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -23,12 +23,12 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
     try {
       const response = await fetch(`/api/trending?type=${type}&limit=${limit}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setTrending(data);
       }
     } catch (error) {
-      console.error('Fetch trending error:', error);
+      console.error("Fetch trending error:", error);
     } finally {
       setLoading(false);
     }
@@ -36,20 +36,23 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
 
   const handleItemClick = (item, itemType) => {
     const routes = {
-      posts: '/posts',
-      resources: '/resources',
-      quizzes: '/quiz',
-      events: '/events',
-      communities: `/communities/${item._id}`
+      posts: "/posts",
+      resources: "/resources",
+      quizzes: "/quiz",
+      events: "/events",
+      communities: `/communities/${item._id}`,
     };
-    router.push(routes[itemType] || '/');
+    router.push(routes[itemType] || "/");
   };
 
   if (loading) {
     return (
       <div className="animate-pulse space-y-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          <div
+            key={i}
+            className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"
+          ></div>
         ))}
       </div>
     );
@@ -78,7 +81,7 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={() => handleItemClick(post, 'posts')}
+                  onClick={() => handleItemClick(post, "posts")}
                   className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-gray-100 dark:border-gray-600"
                 >
                   <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mb-2">
@@ -113,7 +116,7 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={() => handleItemClick(resource, 'resources')}
+                  onClick={() => handleItemClick(resource, "resources")}
                   className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-gray-100 dark:border-gray-600"
                 >
                   <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
@@ -148,7 +151,7 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={() => handleItemClick(quiz, 'quizzes')}
+                  onClick={() => handleItemClick(quiz, "quizzes")}
                   className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-gray-100 dark:border-gray-600"
                 >
                   <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
@@ -179,7 +182,7 @@ export default function TrendingSection({ type = 'all', limit = 5 }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={() => handleItemClick(community, 'communities')}
+                  onClick={() => handleItemClick(community, "communities")}
                   className="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-gray-100 dark:border-gray-600"
                 >
                   <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">

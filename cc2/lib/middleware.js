@@ -1,6 +1,6 @@
-import { withRateLimit } from './rateLimiter';
-import { withErrorTracking } from './sentry';
-import { cache, cacheKeys } from './redis';
+import { withRateLimit } from "./rateLimiter";
+import { withErrorTracking } from "./sentry";
+import { cache, cacheKeys } from "./redis";
 
 /**
  * Compose multiple middleware functions
@@ -20,20 +20,20 @@ export function compose(...middlewares) {
  */
 export function withCache(handler, options = {}) {
   const {
-    keyPrefix = 'api',
+    keyPrefix = "api",
     ttl = 300,
     getCacheKey = (req) => `${keyPrefix}:${req.url}`,
   } = options;
 
   return async (req, res) => {
     // Only cache GET requests
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       const cacheKey = getCacheKey(req);
-      
+
       // Try cache first
       const cached = await cache.get(cacheKey);
       if (cached) {
-        res.setHeader('X-Cache', 'HIT');
+        res.setHeader("X-Cache", "HIT");
         return res.json(cached);
       }
 
@@ -41,7 +41,7 @@ export function withCache(handler, options = {}) {
       const originalJson = res.json.bind(res);
       res.json = (data) => {
         cache.set(cacheKey, data, ttl);
-        res.setHeader('X-Cache', 'MISS');
+        res.setHeader("X-Cache", "MISS");
         return originalJson(data);
       };
     }
@@ -56,11 +56,11 @@ export function withCache(handler, options = {}) {
 export function withPerformanceMonitoring(handler) {
   return async (req, res) => {
     const startTime = Date.now();
-    
+
     // Intercept res.json to log performance
     const originalJson = res.json.bind(res);
     const originalStatus = res.status.bind(res);
-    
+
     let statusCode = 200;
     res.status = (code) => {
       statusCode = code;
@@ -69,15 +69,17 @@ export function withPerformanceMonitoring(handler) {
 
     res.json = (data) => {
       const duration = Date.now() - startTime;
-      
+
       // Log slow requests
       if (duration > 1000) {
-        console.warn(`Slow API request: ${req.method} ${req.url} - ${duration}ms`);
+        console.warn(
+          `Slow API request: ${req.method} ${req.url} - ${duration}ms`
+        );
       }
-      
+
       // Add performance headers
-      res.setHeader('X-Response-Time', `${duration}ms`);
-      
+      res.setHeader("X-Response-Time", `${duration}ms`);
+
       return originalJson(data);
     };
 
@@ -91,15 +93,17 @@ export function withPerformanceMonitoring(handler) {
 export function withLogging(handler) {
   return async (req, res) => {
     const startTime = Date.now();
-    
+
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    
+
     // Intercept response
     const originalJson = res.json.bind(res);
     res.json = (data) => {
       const duration = Date.now() - startTime;
       console.log(
-        `[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`
+        `[${new Date().toISOString()}] ${req.method} ${req.url} - ${
+          res.statusCode
+        } - ${duration}ms`
       );
       return originalJson(data);
     };
@@ -113,21 +117,24 @@ export function withLogging(handler) {
  */
 export function withCORS(handler, options = {}) {
   const {
-    origin = '*',
-    methods = 'GET,POST,PUT,DELETE,OPTIONS',
+    origin = "*",
+    methods = "GET,POST,PUT,DELETE,OPTIONS",
     credentials = true,
   } = options;
 
   return async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', methods);
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", methods);
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization"
+    );
     if (credentials) {
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader("Access-Control-Allow-Credentials", "true");
     }
 
     // Handle preflight
-    if (req.method === 'OPTIONS') {
+    if (req.method === "OPTIONS") {
       return res.status(200).end();
     }
 
@@ -146,17 +153,17 @@ export function withValidation(handler, schema) {
         const validated = await schema.body.validate(req.body);
         req.body = validated;
       }
-      
+
       // Validate query params
       if (schema.query && req.query) {
         const validated = await schema.query.validate(req.query);
         req.query = validated;
       }
-      
+
       return handler(req, res);
     } catch (error) {
       return res.status(400).json({
-        error: 'Validation error',
+        error: "Validation error",
         details: error.errors || [error.message],
       });
     }
@@ -172,12 +179,13 @@ export const standardMiddleware = compose(
   withPerformanceMonitoring
 );
 
-export const cachedMiddleware = (ttl = 300) => compose(
-  withErrorTracking,
-  withRateLimit,
-  withPerformanceMonitoring,
-  (handler) => withCache(handler, { ttl })
-);
+export const cachedMiddleware = (ttl = 300) =>
+  compose(
+    withErrorTracking,
+    withRateLimit,
+    withPerformanceMonitoring,
+    (handler) => withCache(handler, { ttl })
+  );
 
 export const protectedMiddleware = compose(
   withErrorTracking,
@@ -187,13 +195,13 @@ export const protectedMiddleware = compose(
 
 /**
  * Usage examples:
- * 
+ *
  * // Standard API endpoint
  * export default standardMiddleware(handler);
- * 
+ *
  * // Cached endpoint (5 minutes)
  * export default cachedMiddleware(300)(handler);
- * 
+ *
  * // Custom composition
  * export default compose(
  *   withErrorTracking,

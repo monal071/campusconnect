@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import { ChevronRightIcon, HomeIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import Link from "next/link";
+import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/router";
+import { useMemo } from "react";
 
 export default function Breadcrumbs({ customItems = null }) {
   const router = useRouter();
@@ -9,21 +9,21 @@ export default function Breadcrumbs({ customItems = null }) {
   const breadcrumbItems = useMemo(() => {
     if (customItems) return customItems;
 
-    const pathSegments = router.pathname.split('/').filter(Boolean);
-    const items = [{ label: 'Home', href: '/dashboard' }];
+    const pathSegments = router.pathname.split("/").filter(Boolean);
+    const items = [{ label: "Home", href: "/dashboard" }];
 
-    let currentPath = '';
+    let currentPath = "";
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      
+
       // Skip dynamic route segments
-      if (segment.startsWith('[')) return;
+      if (segment.startsWith("[")) return;
 
       // Convert segment to readable label
       const label = segment
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
 
       items.push({
         label,
@@ -77,7 +77,7 @@ export function BreadcrumbsWithDropdown({ items }) {
             {index > 0 && (
               <ChevronRightIcon className="h-4 w-4 text-gray-400 mx-2" />
             )}
-            
+
             {item.isLast ? (
               <span className="font-medium text-gray-900 dark:text-white">
                 {item.label}
@@ -179,21 +179,23 @@ export function BreadcrumbsWithIcons({ items }) {
 
 // Helper to generate breadcrumb items from path
 export const generateBreadcrumbs = (pathname, customLabels = {}) => {
-  const pathSegments = pathname.split('/').filter(Boolean);
-  const items = [{ label: 'Home', href: '/dashboard', icon: HomeIcon }];
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const items = [{ label: "Home", href: "/dashboard", icon: HomeIcon }];
 
-  let currentPath = '';
+  let currentPath = "";
   pathSegments.forEach((segment, index) => {
     currentPath += `/${segment}`;
-    
+
     // Skip dynamic route segments
-    if (segment.startsWith('[')) return;
+    if (segment.startsWith("[")) return;
 
     // Use custom label or generate from segment
-    const label = customLabels[segment] || segment
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    const label =
+      customLabels[segment] ||
+      segment
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
 
     items.push({
       label,

@@ -1,28 +1,28 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowPathIcon,
   CalendarDaysIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 const RECURRENCE_TYPES = {
-  NONE: 'none',
-  DAILY: 'daily',
-  WEEKLY: 'weekly',
-  MONTHLY: 'monthly',
-  YEARLY: 'yearly',
-  CUSTOM: 'custom',
+  NONE: "none",
+  DAILY: "daily",
+  WEEKLY: "weekly",
+  MONTHLY: "monthly",
+  YEARLY: "yearly",
+  CUSTOM: "custom",
 };
 
 const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sun' },
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
+  { value: 0, label: "Sun" },
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
 ];
 
 export default function RecurringEventForm({ value = {}, onChange }) {
@@ -45,32 +45,42 @@ export default function RecurringEventForm({ value = {}, onChange }) {
   const toggleDayOfWeek = (day) => {
     const days = recurrence.daysOfWeek || [];
     const newDays = days.includes(day)
-      ? days.filter(d => d !== day)
+      ? days.filter((d) => d !== day)
       : [...days, day].sort();
     handleUpdate({ daysOfWeek: newDays });
   };
 
   const getRecurrenceDescription = () => {
     if (recurrence.type === RECURRENCE_TYPES.NONE) {
-      return 'Does not repeat';
+      return "Does not repeat";
     }
 
-    let description = '';
+    let description = "";
 
     // Base frequency
     if (recurrence.interval === 1) {
-      description = recurrence.type.charAt(0).toUpperCase() + recurrence.type.slice(1);
+      description =
+        recurrence.type.charAt(0).toUpperCase() + recurrence.type.slice(1);
     } else {
-      description = `Every ${recurrence.interval} ${recurrence.type === 'daily' ? 'days' : 
-                     recurrence.type === 'weekly' ? 'weeks' : 
-                     recurrence.type === 'monthly' ? 'months' : 'years'}`;
+      description = `Every ${recurrence.interval} ${
+        recurrence.type === "daily"
+          ? "days"
+          : recurrence.type === "weekly"
+          ? "weeks"
+          : recurrence.type === "monthly"
+          ? "months"
+          : "years"
+      }`;
     }
 
     // Weekly specific days
-    if (recurrence.type === RECURRENCE_TYPES.WEEKLY && recurrence.daysOfWeek?.length > 0) {
-      const dayNames = recurrence.daysOfWeek.map(d => 
-        DAYS_OF_WEEK.find(day => day.value === d)?.label
-      ).join(', ');
+    if (
+      recurrence.type === RECURRENCE_TYPES.WEEKLY &&
+      recurrence.daysOfWeek?.length > 0
+    ) {
+      const dayNames = recurrence.daysOfWeek
+        .map((d) => DAYS_OF_WEEK.find((day) => day.value === d)?.label)
+        .join(", ");
       description += ` on ${dayNames}`;
     }
 
@@ -114,7 +124,7 @@ export default function RecurringEventForm({ value = {}, onChange }) {
       {recurrence.type !== RECURRENCE_TYPES.NONE && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
         >
@@ -129,13 +139,19 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                 min="1"
                 max="365"
                 value={recurrence.interval}
-                onChange={(e) => handleUpdate({ interval: parseInt(e.target.value) || 1 })}
+                onChange={(e) =>
+                  handleUpdate({ interval: parseInt(e.target.value) || 1 })
+                }
                 className="w-20 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
               <span className="text-gray-700 dark:text-gray-300">
-                {recurrence.type === 'daily' ? 'day(s)' : 
-                 recurrence.type === 'weekly' ? 'week(s)' : 
-                 recurrence.type === 'monthly' ? 'month(s)' : 'year(s)'}
+                {recurrence.type === "daily"
+                  ? "day(s)"
+                  : recurrence.type === "weekly"
+                  ? "week(s)"
+                  : recurrence.type === "monthly"
+                  ? "month(s)"
+                  : "year(s)"}
               </span>
             </div>
           </div>
@@ -147,15 +163,15 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                 Repeat on
               </label>
               <div className="flex gap-2">
-                {DAYS_OF_WEEK.map(day => (
+                {DAYS_OF_WEEK.map((day) => (
                   <button
                     key={day.value}
                     type="button"
                     onClick={() => toggleDayOfWeek(day.value)}
                     className={`flex-1 px-3 py-2 rounded-lg font-medium transition-colors ${
                       recurrence.daysOfWeek?.includes(day.value)
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+                        ? "bg-blue-500 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
                     }`}
                   >
                     {day.label}
@@ -176,7 +192,9 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                 min="1"
                 max="31"
                 value={recurrence.dayOfMonth}
-                onChange={(e) => handleUpdate({ dayOfMonth: parseInt(e.target.value) || 1 })}
+                onChange={(e) =>
+                  handleUpdate({ dayOfMonth: parseInt(e.target.value) || 1 })
+                }
                 className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
             </div>
@@ -193,8 +211,12 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                 <input
                   type="radio"
                   name="endCondition"
-                  checked={!recurrence.endDate && !recurrence.endAfterOccurrences}
-                  onChange={() => handleUpdate({ endDate: null, endAfterOccurrences: null })}
+                  checked={
+                    !recurrence.endDate && !recurrence.endAfterOccurrences
+                  }
+                  onChange={() =>
+                    handleUpdate({ endDate: null, endAfterOccurrences: null })
+                  }
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-gray-700 dark:text-gray-300">Never</span>
@@ -206,20 +228,24 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                   type="radio"
                   name="endCondition"
                   checked={!!recurrence.endDate}
-                  onChange={() => handleUpdate({ 
-                    endDate: new Date().toISOString().split('T')[0],
-                    endAfterOccurrences: null 
-                  })}
+                  onChange={() =>
+                    handleUpdate({
+                      endDate: new Date().toISOString().split("T")[0],
+                      endAfterOccurrences: null,
+                    })
+                  }
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-gray-700 dark:text-gray-300">On</span>
                 <input
                   type="date"
-                  value={recurrence.endDate || ''}
-                  onChange={(e) => handleUpdate({ 
-                    endDate: e.target.value,
-                    endAfterOccurrences: null 
-                  })}
+                  value={recurrence.endDate || ""}
+                  onChange={(e) =>
+                    handleUpdate({
+                      endDate: e.target.value,
+                      endAfterOccurrences: null,
+                    })
+                  }
                   disabled={!recurrence.endDate}
                   className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white disabled:opacity-50"
                 />
@@ -231,10 +257,12 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                   type="radio"
                   name="endCondition"
                   checked={!!recurrence.endAfterOccurrences}
-                  onChange={() => handleUpdate({ 
-                    endAfterOccurrences: 10,
-                    endDate: null 
-                  })}
+                  onChange={() =>
+                    handleUpdate({
+                      endAfterOccurrences: 10,
+                      endDate: null,
+                    })
+                  }
                   className="text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-gray-700 dark:text-gray-300">After</span>
@@ -242,15 +270,19 @@ export default function RecurringEventForm({ value = {}, onChange }) {
                   type="number"
                   min="1"
                   max="999"
-                  value={recurrence.endAfterOccurrences || ''}
-                  onChange={(e) => handleUpdate({ 
-                    endAfterOccurrences: parseInt(e.target.value) || null,
-                    endDate: null 
-                  })}
+                  value={recurrence.endAfterOccurrences || ""}
+                  onChange={(e) =>
+                    handleUpdate({
+                      endAfterOccurrences: parseInt(e.target.value) || null,
+                      endDate: null,
+                    })
+                  }
                   disabled={!recurrence.endAfterOccurrences}
                   className="w-20 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white disabled:opacity-50"
                 />
-                <span className="text-gray-700 dark:text-gray-300">occurrences</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  occurrences
+                </span>
               </label>
             </div>
           </div>
@@ -274,7 +306,12 @@ export default function RecurringEventForm({ value = {}, onChange }) {
 }
 
 // Generate recurring event instances
-export function generateRecurringInstances(baseEvent, recurrence, startDate, endDate) {
+export function generateRecurringInstances(
+  baseEvent,
+  recurrence,
+  startDate,
+  endDate
+) {
   if (!recurrence || recurrence.type === RECURRENCE_TYPES.NONE) {
     return [baseEvent];
   }
@@ -292,7 +329,10 @@ export function generateRecurringInstances(baseEvent, recurrence, startDate, end
     }
 
     // Check if we've reached max occurrences
-    if (recurrence.endAfterOccurrences && occurrenceCount >= recurrence.endAfterOccurrences) {
+    if (
+      recurrence.endAfterOccurrences &&
+      occurrenceCount >= recurrence.endAfterOccurrences
+    ) {
       break;
     }
 
@@ -318,7 +358,10 @@ export function generateRecurringInstances(baseEvent, recurrence, startDate, end
 function matchesRecurrencePattern(date, recurrence) {
   switch (recurrence.type) {
     case RECURRENCE_TYPES.WEEKLY:
-      return !recurrence.daysOfWeek?.length || recurrence.daysOfWeek.includes(date.getDay());
+      return (
+        !recurrence.daysOfWeek?.length ||
+        recurrence.daysOfWeek.includes(date.getDay())
+      );
     case RECURRENCE_TYPES.MONTHLY:
       return !recurrence.dayOfMonth || date.getDate() === recurrence.dayOfMonth;
     default:
@@ -335,7 +378,7 @@ function getNextDate(currentDate, recurrence) {
       next.setDate(next.getDate() + interval);
       break;
     case RECURRENCE_TYPES.WEEKLY:
-      next.setDate(next.getDate() + (7 * interval));
+      next.setDate(next.getDate() + 7 * interval);
       break;
     case RECURRENCE_TYPES.MONTHLY:
       next.setMonth(next.getMonth() + interval);

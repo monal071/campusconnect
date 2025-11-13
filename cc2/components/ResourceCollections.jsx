@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FolderIcon,
   PlusIcon,
@@ -8,8 +8,8 @@ import {
   DocumentTextIcon,
   PlayIcon,
   EyeIcon,
-} from '@heroicons/react/24/outline';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+} from "@heroicons/react/24/outline";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function ResourceCollections({ userId }) {
   const [collections, setCollections] = useState([]);
@@ -30,7 +30,7 @@ export default function ResourceCollections({ userId }) {
         setCollections(data.collections || []);
       }
     } catch (error) {
-      console.error('Error fetching collections:', error);
+      console.error("Error fetching collections:", error);
     } finally {
       setLoading(false);
     }
@@ -52,13 +52,16 @@ export default function ResourceCollections({ userId }) {
 
     // Update order on server
     try {
-      await fetch(`/api/resources/collections/${selectedCollection._id}/reorder`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resources: items.map(r => r._id) }),
-      });
+      await fetch(
+        `/api/resources/collections/${selectedCollection._id}/reorder`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resources: items.map((r) => r._id) }),
+        }
+      );
     } catch (error) {
-      console.error('Error reordering resources:', error);
+      console.error("Error reordering resources:", error);
     }
   };
 
@@ -95,7 +98,9 @@ export default function ResourceCollections({ userId }) {
             index={index}
             onClick={() => setSelectedCollection(collection)}
             onDelete={() => {
-              setCollections(collections.filter(c => c._id !== collection._id));
+              setCollections(
+                collections.filter((c) => c._id !== collection._id)
+              );
             }}
           />
         ))}
@@ -122,9 +127,9 @@ export default function ResourceCollections({ userId }) {
           collection={selectedCollection}
           onClose={() => setSelectedCollection(null)}
           onUpdate={(updated) => {
-            setCollections(collections.map(c => 
-              c._id === updated._id ? updated : c
-            ));
+            setCollections(
+              collections.map((c) => (c._id === updated._id ? updated : c))
+            );
             setSelectedCollection(updated);
           }}
           onDragEnd={handleDragEnd}
@@ -159,9 +164,11 @@ function CollectionCard({ collection, index, onClick, onDelete }) {
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-            collection.color || 'from-blue-500 to-purple-500'
-          } flex items-center justify-center`}>
+          <div
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
+              collection.color || "from-blue-500 to-purple-500"
+            } flex items-center justify-center`}
+          >
             <FolderIcon className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -202,7 +209,7 @@ function CollectionCard({ collection, index, onClick, onDelete }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm('Delete this collection?')) {
+                if (confirm("Delete this collection?")) {
                   onDelete();
                 }
                 setShowMenu(false);
@@ -269,9 +276,11 @@ function CollectionDetailModal({ collection, onClose, onUpdate, onDragEnd }) {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-                collection.color || 'from-blue-500 to-purple-500'
-              } flex items-center justify-center`}>
+              <div
+                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
+                  collection.color || "from-blue-500 to-purple-500"
+                } flex items-center justify-center`}
+              >
                 <FolderIcon className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -320,7 +329,7 @@ function CollectionDetailModal({ collection, onClose, onUpdate, onDragEnd }) {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           className={`p-4 bg-gray-50 dark:bg-gray-700 rounded-lg ${
-                            snapshot.isDragging ? 'shadow-lg' : ''
+                            snapshot.isDragging ? "shadow-lg" : ""
                           }`}
                         >
                           <div className="flex items-center gap-4">
@@ -337,7 +346,9 @@ function CollectionDetailModal({ collection, onClose, onUpdate, onDragEnd }) {
                               </p>
                             </div>
                             <button
-                              onClick={() => window.open(resource.url, '_blank')}
+                              onClick={() =>
+                                window.open(resource.url, "_blank")
+                              }
                               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                             >
                               View
@@ -368,9 +379,7 @@ function CollectionDetailModal({ collection, onClose, onUpdate, onDragEnd }) {
           >
             Close
           </button>
-          <button
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
+          <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
             Add Resources
           </button>
         </div>
@@ -380,8 +389,8 @@ function CollectionDetailModal({ collection, onClose, onUpdate, onDragEnd }) {
 }
 
 function CreateCollectionModal({ onClose, onCreate }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
   const [creating, setCreating] = useState(false);
 
@@ -390,9 +399,9 @@ function CreateCollectionModal({ onClose, onCreate }) {
 
     setCreating(true);
     try {
-      const res = await fetch('/api/resources/collections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/resources/collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description, tags }),
       });
 
@@ -401,7 +410,7 @@ function CreateCollectionModal({ onClose, onCreate }) {
         onCreate(data.collection);
       }
     } catch (error) {
-      console.error('Error creating collection:', error);
+      console.error("Error creating collection:", error);
     } finally {
       setCreating(false);
     }
@@ -458,7 +467,7 @@ function CreateCollectionModal({ onClose, onCreate }) {
             disabled={!name.trim() || creating}
             className="flex-1 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {creating ? 'Creating...' : 'Create'}
+            {creating ? "Creating..." : "Create"}
           </button>
         </div>
       </motion.div>

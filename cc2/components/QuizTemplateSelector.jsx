@@ -1,98 +1,98 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   AcademicCapIcon,
   ClockIcon,
   QuestionMarkCircleIcon,
   DocumentDuplicateIcon,
   CheckCircleIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 const QUIZ_TEMPLATES = [
   {
-    id: 'quick-assessment',
-    name: 'Quick Assessment',
-    description: '5-10 questions, 10 minutes',
+    id: "quick-assessment",
+    name: "Quick Assessment",
+    description: "5-10 questions, 10 minutes",
     icon: ClockIcon,
-    color: 'blue',
+    color: "blue",
     settings: {
       duration: 10,
       questionCount: 5,
-      difficulty: 'medium',
+      difficulty: "medium",
       randomize: true,
       showResults: true,
     },
-    categories: ['General', 'Review', 'Practice'],
+    categories: ["General", "Review", "Practice"],
   },
   {
-    id: 'midterm-exam',
-    name: 'Midterm Exam',
-    description: '20-30 questions, 60 minutes',
+    id: "midterm-exam",
+    name: "Midterm Exam",
+    description: "20-30 questions, 60 minutes",
     icon: AcademicCapIcon,
-    color: 'purple',
+    color: "purple",
     settings: {
       duration: 60,
       questionCount: 25,
-      difficulty: 'medium',
+      difficulty: "medium",
       randomize: true,
       showResults: false,
       partialCredit: true,
     },
-    categories: ['Exam', 'Assessment', 'Graded'],
+    categories: ["Exam", "Assessment", "Graded"],
   },
   {
-    id: 'final-exam',
-    name: 'Final Exam',
-    description: '40-50 questions, 120 minutes',
+    id: "final-exam",
+    name: "Final Exam",
+    description: "40-50 questions, 120 minutes",
     icon: DocumentDuplicateIcon,
-    color: 'red',
+    color: "red",
     settings: {
       duration: 120,
       questionCount: 45,
-      difficulty: 'hard',
+      difficulty: "hard",
       randomize: true,
       showResults: false,
       partialCredit: true,
     },
-    categories: ['Exam', 'Final', 'Comprehensive'],
+    categories: ["Exam", "Final", "Comprehensive"],
   },
   {
-    id: 'practice-quiz',
-    name: 'Practice Quiz',
-    description: '10-15 questions, unlimited time',
+    id: "practice-quiz",
+    name: "Practice Quiz",
+    description: "10-15 questions, unlimited time",
     icon: QuestionMarkCircleIcon,
-    color: 'green',
+    color: "green",
     settings: {
       duration: 0, // unlimited
       questionCount: 12,
-      difficulty: 'easy',
+      difficulty: "easy",
       randomize: false,
       showResults: true,
       showAnswers: true,
     },
-    categories: ['Practice', 'Study', 'Self-Paced'],
+    categories: ["Practice", "Study", "Self-Paced"],
   },
   {
-    id: 'pop-quiz',
-    name: 'Pop Quiz',
-    description: '3-5 questions, 5 minutes',
+    id: "pop-quiz",
+    name: "Pop Quiz",
+    description: "3-5 questions, 5 minutes",
     icon: ClockIcon,
-    color: 'yellow',
+    color: "yellow",
     settings: {
       duration: 5,
       questionCount: 3,
-      difficulty: 'easy',
+      difficulty: "easy",
       randomize: false,
       showResults: true,
     },
-    categories: ['Quick', 'Review'],
+    categories: ["Quick", "Review"],
   },
   {
-    id: 'survey',
-    name: 'Survey/Feedback',
-    description: 'No time limit, ungraded',
+    id: "survey",
+    name: "Survey/Feedback",
+    description: "No time limit, ungraded",
     icon: CheckCircleIcon,
-    color: 'indigo',
+    color: "indigo",
     settings: {
       duration: 0,
       questionCount: 10,
@@ -100,7 +100,7 @@ const QUIZ_TEMPLATES = [
       randomize: false,
       showResults: false,
     },
-    categories: ['Survey', 'Feedback'],
+    categories: ["Survey", "Feedback"],
   },
 ];
 
@@ -119,12 +119,12 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
   };
 
   const colorClasses = {
-    blue: 'from-blue-500 to-blue-600',
-    purple: 'from-purple-500 to-purple-600',
-    red: 'from-red-500 to-red-600',
-    green: 'from-green-500 to-green-600',
-    yellow: 'from-yellow-500 to-yellow-600',
-    indigo: 'from-indigo-500 to-indigo-600',
+    blue: "from-blue-500 to-blue-600",
+    purple: "from-purple-500 to-purple-600",
+    red: "from-red-500 to-red-600",
+    green: "from-green-500 to-green-600",
+    yellow: "from-yellow-500 to-yellow-600",
+    indigo: "from-indigo-500 to-indigo-600",
   };
 
   return (
@@ -169,8 +169,8 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
                   onClick={() => handleSelect(template)}
                   className={`relative p-6 rounded-xl cursor-pointer transition-all ${
                     isSelected
-                      ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      : "bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
                   }`}
                 >
                   {/* Selected Badge */}
@@ -181,7 +181,11 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
                   )}
 
                   {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorClasses[template.color]} flex items-center justify-center mb-4`}>
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
+                      colorClasses[template.color]
+                    } flex items-center justify-center mb-4`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
 
@@ -209,17 +213,23 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
                     <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                       <span>Questions:</span>
-                      <span className="font-medium">{template.settings.questionCount}</span>
+                      <span className="font-medium">
+                        {template.settings.questionCount}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                       <span>Duration:</span>
                       <span className="font-medium">
-                        {template.settings.duration === 0 ? 'Unlimited' : `${template.settings.duration} min`}
+                        {template.settings.duration === 0
+                          ? "Unlimited"
+                          : `${template.settings.duration} min`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                       <span>Difficulty:</span>
-                      <span className="font-medium capitalize">{template.settings.difficulty}</span>
+                      <span className="font-medium capitalize">
+                        {template.settings.difficulty}
+                      </span>
                     </div>
                   </div>
                 </motion.div>
@@ -254,7 +264,9 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {selectedTemplate ? `Selected: ${selectedTemplate.name}` : 'Select a template to continue'}
+            {selectedTemplate
+              ? `Selected: ${selectedTemplate.name}`
+              : "Select a template to continue"}
           </p>
           <div className="flex gap-3">
             <button
@@ -279,7 +291,7 @@ export default function QuizTemplateSelector({ onSelectTemplate, onClose }) {
 
 // Hook to use templates
 export function useQuizTemplate(templateId) {
-  const template = QUIZ_TEMPLATES.find(t => t.id === templateId);
+  const template = QUIZ_TEMPLATES.find((t) => t.id === templateId);
   return template || null;
 }
 

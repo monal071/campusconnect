@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ClockIcon,
   DocumentDuplicateIcon,
@@ -7,8 +7,8 @@ import {
   EyeIcon,
   CheckCircleIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
 export default function ResourceVersionControl({ resourceId, currentVersion }) {
   const [versions, setVersions] = useState([]);
@@ -33,78 +33,82 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
         setVersions(data.versions);
       }
     } catch (error) {
-      console.error('Failed to fetch versions:', error);
-      toast.error('Failed to load version history');
+      console.error("Failed to fetch versions:", error);
+      toast.error("Failed to load version history");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRestoreVersion = async (versionId) => {
-    if (!confirm('Restore this version? This will create a new version based on the selected one.')) {
+    if (
+      !confirm(
+        "Restore this version? This will create a new version based on the selected one."
+      )
+    ) {
       return;
     }
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/versions/restore`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ versionId }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        toast.success('Version restored successfully');
+        toast.success("Version restored successfully");
         fetchVersions();
         setShowVersionModal(false);
         window.location.reload(); // Reload to show restored content
       } else {
-        throw new Error('Failed to restore version');
+        throw new Error("Failed to restore version");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to restore version');
+      toast.error("Failed to restore version");
     }
   };
 
   const handleCreateVersion = async (changeNote) => {
     try {
       const res = await fetch(`/api/resources/${resourceId}/versions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ changeNote }),
       });
 
       if (res.ok) {
-        toast.success('New version created');
+        toast.success("New version created");
         fetchVersions();
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to create version');
+      toast.error("Failed to create version");
     }
   };
 
   const getChangeType = (changes) => {
-    if (!changes) return 'update';
-    if (changes.includes('created')) return 'created';
-    if (changes.includes('restored')) return 'restored';
-    if (changes.includes('major')) return 'major';
-    return 'minor';
+    if (!changes) return "update";
+    if (changes.includes("created")) return "created";
+    if (changes.includes("restored")) return "restored";
+    if (changes.includes("major")) return "major";
+    return "minor";
   };
 
   const getChangeColor = (type) => {
     switch (type) {
-      case 'created':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'restored':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'major':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-      case 'minor':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case "created":
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "restored":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case "major":
+        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+      case "minor":
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
+        return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400";
     }
   };
 
@@ -116,17 +120,17 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
           <ClockIcon className="w-5 h-5" />
           Version History
         </h3>
-        
+
         <div className="flex gap-2">
           <button
             onClick={() => setComparing(!comparing)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               comparing
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
-            {comparing ? 'Cancel Compare' : 'Compare Versions'}
+            {comparing ? "Cancel Compare" : "Compare Versions"}
           </button>
         </div>
       </div>
@@ -141,7 +145,8 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                 Current Version: {currentVersion.version}
               </div>
               <div className="text-sm text-blue-700 dark:text-blue-300">
-                Last updated {new Date(currentVersion.updatedAt).toLocaleString()}
+                Last updated{" "}
+                {new Date(currentVersion.updatedAt).toLocaleString()}
               </div>
             </div>
           </div>
@@ -150,7 +155,9 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
 
       {/* Version Timeline */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Loading versions...</div>
+        <div className="text-center py-8 text-gray-500">
+          Loading versions...
+        </div>
       ) : versions.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <ClockIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
@@ -161,7 +168,7 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
           {versions.map((version, index) => {
             const changeType = getChangeType(version.changeNote);
             const isLatest = index === 0;
-            
+
             return (
               <motion.div
                 key={version._id}
@@ -171,11 +178,13 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                 className="relative pl-8 pb-4 border-l-2 border-gray-200 dark:border-gray-700"
               >
                 {/* Timeline Dot */}
-                <div className={`absolute left-[-9px] top-0 w-4 h-4 rounded-full border-2 ${
-                  isLatest
-                    ? 'bg-blue-500 border-blue-500'
-                    : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
-                }`} />
+                <div
+                  className={`absolute left-[-9px] top-0 w-4 h-4 rounded-full border-2 ${
+                    isLatest
+                      ? "bg-blue-500 border-blue-500"
+                      : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                  }`}
+                />
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-2">
@@ -189,13 +198,17 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                             Latest
                           </span>
                         )}
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${getChangeColor(changeType)}`}>
+                        <span
+                          className={`px-2 py-0.5 text-xs rounded-full ${getChangeColor(
+                            changeType
+                          )}`}
+                        >
                           {changeType}
                         </span>
                       </div>
-                      
+
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {version.changeNote || 'No description'}
+                        {version.changeNote || "No description"}
                       </p>
 
                       <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -228,8 +241,8 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                           }}
                           className={`p-2 rounded-lg transition-colors ${
                             compareVersion === version._id
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                           }`}
                         >
                           {compareVersion === version._id ? (
@@ -250,7 +263,7 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
-                          
+
                           {!isLatest && (
                             <button
                               onClick={() => handleRestoreVersion(version._id)}
@@ -329,14 +342,18 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                 {/* Version metadata */}
                 <div className="mb-6 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Created:
+                    </span>
                     <span className="text-gray-900 dark:text-white">
                       {new Date(selectedVersion.createdAt).toLocaleString()}
                     </span>
                   </div>
                   {selectedVersion.author && (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Author:</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Author:
+                      </span>
                       <span className="text-gray-900 dark:text-white">
                         {selectedVersion.author.name}
                       </span>
@@ -344,7 +361,9 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                   )}
                   {selectedVersion.changeNote && (
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400 block mb-1">Changes:</span>
+                      <span className="text-gray-600 dark:text-gray-400 block mb-1">
+                        Changes:
+                      </span>
                       <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                         {selectedVersion.changeNote}
                       </p>
@@ -360,7 +379,7 @@ export default function ResourceVersionControl({ resourceId, currentVersion }) {
                     </h4>
                     <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg max-h-96 overflow-y-auto">
                       <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                        {typeof selectedVersion.content === 'string'
+                        {typeof selectedVersion.content === "string"
                           ? selectedVersion.content
                           : JSON.stringify(selectedVersion.content, null, 2)}
                       </pre>

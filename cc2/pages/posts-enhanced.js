@@ -1,21 +1,21 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import Post from '../components/Post';
-import PostForm from '../components/PostForm';
-import AdvancedFilters from '../components/AdvancedFilters';
-import { NoPosts } from '../components/EmptyStates';
-import { SkeletonPost } from '../components/SkeletonLoaders';
-import useInfiniteScroll from '../hooks/useInfiniteScroll';
-import FloatingActionButton from '../components/FloatingActionButton';
-import { 
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import Post from "../components/Post";
+import PostForm from "../components/PostForm";
+import AdvancedFilters from "../components/AdvancedFilters";
+import { NoPosts } from "../components/EmptyStates";
+import { SkeletonPost } from "../components/SkeletonLoaders";
+import useInfiniteScroll from "../hooks/useInfiniteScroll";
+import FloatingActionButton from "../components/FloatingActionButton";
+import {
   AdjustmentsHorizontalIcon,
   FireIcon,
   ClockIcon,
   HeartIcon,
-  EyeIcon 
-} from '@heroicons/react/24/outline';
+  EyeIcon,
+} from "@heroicons/react/24/outline";
 
 export default function Posts() {
   const { data: session, status } = useSession();
@@ -23,7 +23,7 @@ export default function Posts() {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('recent');
+  const [sortBy, setSortBy] = useState("recent");
   const [filters, setFilters] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -44,28 +44,28 @@ export default function Posts() {
 
   const loadPosts = async (pageNum) => {
     if (loading && pageNum > 1) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(`/api/posts?page=${pageNum}&limit=10`);
       const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.message || 'Failed to load posts');
-      
+
+      if (!res.ok) throw new Error(data.message || "Failed to load posts");
+
       const newPosts = data.data || [];
-      
+
       if (pageNum === 1) {
         setPosts(newPosts);
         setFilteredPosts(newPosts);
       } else {
-        setPosts(prev => [...prev, ...newPosts]);
-        setFilteredPosts(prev => [...prev, ...newPosts]);
+        setPosts((prev) => [...prev, ...newPosts]);
+        setFilteredPosts((prev) => [...prev, ...newPosts]);
       }
-      
+
       setPage(pageNum);
       setHasMore(newPosts.length === 10);
     } catch (e) {
-      console.error('Failed to load posts:', e);
+      console.error("Failed to load posts:", e);
     } finally {
       setLoading(false);
     }
@@ -73,61 +73,69 @@ export default function Posts() {
 
   const handleApplyFilters = (appliedFilters) => {
     setFilters(appliedFilters);
-    
+
     let filtered = [...posts];
-    
+
     // Apply date filter
-    if (appliedFilters.dateRange && appliedFilters.dateRange !== 'all') {
+    if (appliedFilters.dateRange && appliedFilters.dateRange !== "all") {
       const now = new Date();
       const dateLimit = new Date();
-      
+
       switch (appliedFilters.dateRange) {
-        case 'today':
+        case "today":
           dateLimit.setHours(0, 0, 0, 0);
           break;
-        case 'week':
+        case "week":
           dateLimit.setDate(now.getDate() - 7);
           break;
-        case 'month':
+        case "month":
           dateLimit.setMonth(now.getMonth() - 1);
           break;
       }
-      
-      filtered = filtered.filter(post => new Date(post.createdAt) >= dateLimit);
-    }
-    
-    // Apply tag filter
-    if (appliedFilters.tags && appliedFilters.tags.length > 0) {
-      filtered = filtered.filter(post => 
-        post.tags && post.tags.some(tag => appliedFilters.tags.includes(tag))
+
+      filtered = filtered.filter(
+        (post) => new Date(post.createdAt) >= dateLimit
       );
     }
-    
+
+    // Apply tag filter
+    if (appliedFilters.tags && appliedFilters.tags.length > 0) {
+      filtered = filtered.filter(
+        (post) =>
+          post.tags &&
+          post.tags.some((tag) => appliedFilters.tags.includes(tag))
+      );
+    }
+
     // Apply sort
     const sortOption = appliedFilters.sortBy || sortBy;
     setSortBy(sortOption);
-    
+
     filtered = sortPosts(filtered, sortOption);
-    
+
     setFilteredPosts(filtered);
     setShowFilters(false);
   };
 
   const sortPosts = (postsToSort, sortOption) => {
     const sorted = [...postsToSort];
-    
+
     switch (sortOption) {
-      case 'recent':
-        return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      case 'popular':
+      case "recent":
+        return sorted.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+      case "popular":
         return sorted.sort((a, b) => {
           const aScore = (a.likes?.length || 0) + (a.comments?.length || 0) * 2;
           const bScore = (b.likes?.length || 0) + (b.comments?.length || 0) * 2;
           return bScore - aScore;
         });
-      case 'most-liked':
-        return sorted.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
-      case 'most-viewed':
+      case "most-liked":
+        return sorted.sort(
+          (a, b) => (b.likes?.length || 0) - (a.likes?.length || 0)
+        );
+      case "most-viewed":
         return sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
       default:
         return sorted;
@@ -135,24 +143,27 @@ export default function Posts() {
   };
 
   const handlePostCreated = (newPost) => {
-    setPosts(prev => [newPost, ...prev]);
-    setFilteredPosts(prev => [newPost, ...prev]);
+    setPosts((prev) => [newPost, ...prev]);
+    setFilteredPosts((prev) => [newPost, ...prev]);
   };
 
   const handlePostDeleted = (postId) => {
-    setPosts(prev => prev.filter(p => p._id !== postId));
-    setFilteredPosts(prev => prev.filter(p => p._id !== postId));
+    setPosts((prev) => prev.filter((p) => p._id !== postId));
+    setFilteredPosts((prev) => prev.filter((p) => p._id !== postId));
   };
 
   const sortOptions = [
-    { value: 'recent', label: 'Most Recent', icon: ClockIcon },
-    { value: 'popular', label: 'Most Popular', icon: FireIcon },
-    { value: 'most-liked', label: 'Most Liked', icon: HeartIcon },
-    { value: 'most-viewed', label: 'Most Viewed', icon: EyeIcon },
+    { value: "recent", label: "Most Recent", icon: ClockIcon },
+    { value: "popular", label: "Most Popular", icon: FireIcon },
+    { value: "most-liked", label: "Most Liked", icon: HeartIcon },
+    { value: "most-viewed", label: "Most Viewed", icon: EyeIcon },
   ];
 
   return (
-    <div className="w-full min-h-screen py-8 px-4 sm:px-6 lg:px-8" data-tour="posts">
+    <div
+      className="w-full min-h-screen py-8 px-4 sm:px-6 lg:px-8"
+      data-tour="posts"
+    >
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -179,7 +190,7 @@ export default function Posts() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
           {/* Sort Options */}
           <div className="flex items-center gap-2 flex-wrap">
-            {sortOptions.map(option => {
+            {sortOptions.map((option) => {
               const Icon = option.icon;
               return (
                 <button
@@ -190,8 +201,8 @@ export default function Posts() {
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     sortBy === option.value
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -212,30 +223,36 @@ export default function Posts() {
         </div>
 
         {/* Active Filters Display */}
-        {filters && (filters.tags?.length > 0 || filters.dateRange !== 'all') && (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Active filters:</span>
-            {filters.dateRange && filters.dateRange !== 'all' && (
-              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                {filters.dateRange}
+        {filters &&
+          (filters.tags?.length > 0 || filters.dateRange !== "all") && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Active filters:
               </span>
-            )}
-            {filters.tags?.map(tag => (
-              <span key={tag} className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm">
-                #{tag}
-              </span>
-            ))}
-            <button
-              onClick={() => {
-                setFilters(null);
-                setFilteredPosts(posts);
-              }}
-              className="text-sm text-red-600 dark:text-red-400 hover:underline"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
+              {filters.dateRange && filters.dateRange !== "all" && (
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  {filters.dateRange}
+                </span>
+              )}
+              {filters.tags?.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm"
+                >
+                  #{tag}
+                </span>
+              ))}
+              <button
+                onClick={() => {
+                  setFilters(null);
+                  setFilteredPosts(posts);
+                }}
+                className="text-sm text-red-600 dark:text-red-400 hover:underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
 
         {/* Posts List */}
         {loading && page === 1 ? (
@@ -245,7 +262,11 @@ export default function Posts() {
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
-          <NoPosts onCreate={() => document.querySelector('[data-tour="create-post"]')?.focus()} />
+          <NoPosts
+            onCreate={() =>
+              document.querySelector('[data-tour="create-post"]')?.focus()
+            }
+          />
         ) : (
           <div className="space-y-6">
             {filteredPosts.map((post, index) => (

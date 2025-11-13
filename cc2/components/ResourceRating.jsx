@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   StarIcon,
   ChatBubbleLeftIcon,
   CheckCircleIcon,
-} from '@heroicons/react/24/outline';
-import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
-import { useSession } from 'next-auth/react';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 export default function ResourceRating({ resourceId, initialRating = null }) {
   const { data: session } = useSession();
@@ -15,7 +15,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
   const [userRating, setUserRating] = useState(null);
   const [hoverRating, setHoverRating] = useState(0);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [review, setReview] = useState('');
+  const [review, setReview] = useState("");
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
 
@@ -35,7 +35,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
         setUserRating(data.userRating);
       }
     } catch (error) {
-      console.error('Failed to fetch rating:', error);
+      console.error("Failed to fetch rating:", error);
     }
   };
 
@@ -48,7 +48,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
         setReviews(data.reviews);
       }
     } catch (error) {
-      console.error('Failed to fetch reviews:', error);
+      console.error("Failed to fetch reviews:", error);
     } finally {
       setLoadingReviews(false);
     }
@@ -56,14 +56,14 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
 
   const handleRating = async (value) => {
     if (!session?.user) {
-      toast.error('Please login to rate this resource');
+      toast.error("Please login to rate this resource");
       return;
     }
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/rating`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating: value }),
       });
 
@@ -71,18 +71,18 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
         const data = await res.json();
         setRating(data.rating);
         setUserRating(value);
-        toast.success('Rating submitted!');
-        
+        toast.success("Rating submitted!");
+
         // Show review modal if rating is 4 or 5 stars
         if (value >= 4 && !userRating) {
           setShowReviewModal(true);
         }
       } else {
-        throw new Error('Failed to submit rating');
+        throw new Error("Failed to submit rating");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to submit rating');
+      toast.error("Failed to submit rating");
     }
   };
 
@@ -90,15 +90,15 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
     e.preventDefault();
 
     if (!review.trim()) {
-      toast.error('Please write a review');
+      toast.error("Please write a review");
       return;
     }
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           review: review.trim(),
           rating: userRating,
         }),
@@ -107,15 +107,15 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
       if (res.ok) {
         const data = await res.json();
         setReviews([data.review, ...reviews]);
-        setReview('');
+        setReview("");
         setShowReviewModal(false);
-        toast.success('Review posted!');
+        toast.success("Review posted!");
       } else {
-        throw new Error('Failed to post review');
+        throw new Error("Failed to post review");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to post review');
+      toast.error("Failed to post review");
     }
   };
 
@@ -137,8 +137,8 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
               onClick={() => interactive && handleRating(star)}
               className={`transition-all ${
                 interactive && session?.user
-                  ? 'hover:scale-110 cursor-pointer'
-                  : 'cursor-default'
+                  ? "hover:scale-110 cursor-pointer"
+                  : "cursor-default"
               }`}
             >
               {filled ? (
@@ -170,7 +170,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
                 <div>
                   {renderStars(rating.average)}
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {rating.count} {rating.count === 1 ? 'rating' : 'ratings'}
+                    {rating.count} {rating.count === 1 ? "rating" : "ratings"}
                   </div>
                 </div>
               </div>
@@ -180,10 +180,11 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
           {/* Rating Breakdown */}
           {rating && rating.breakdown && (
             <div className="space-y-1 text-sm">
-              {[5, 4, 3, 2, 1].map(stars => {
+              {[5, 4, 3, 2, 1].map((stars) => {
                 const count = rating.breakdown[stars] || 0;
-                const percentage = rating.count > 0 ? (count / rating.count) * 100 : 0;
-                
+                const percentage =
+                  rating.count > 0 ? (count / rating.count) * 100 : 0;
+
                 return (
                   <div key={stars} className="flex items-center gap-2">
                     <span className="text-gray-600 dark:text-gray-400 w-3">
@@ -209,7 +210,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
         {/* User Rating */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {userRating ? 'Your rating:' : 'Rate this resource:'}
+            {userRating ? "Your rating:" : "Rate this resource:"}
           </div>
           {renderStars(userRating || 0, true)}
           {!session?.user && (
@@ -239,7 +240,9 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
         </div>
 
         {loadingReviews ? (
-          <div className="text-center py-8 text-gray-500">Loading reviews...</div>
+          <div className="text-center py-8 text-gray-500">
+            Loading reviews...
+          </div>
         ) : reviews.length === 0 ? (
           <div className="text-center py-12 text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
@@ -247,7 +250,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
           </div>
         ) : (
           <div className="space-y-4">
-            {reviews.map(reviewItem => (
+            {reviews.map((reviewItem) => (
               <ReviewCard key={reviewItem._id} review={reviewItem} />
             ))}
           </div>
@@ -269,7 +272,7 @@ export default function ResourceRating({ resourceId, initialRating = null }) {
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
               Write a Review
             </h3>
-            
+
             <form onSubmit={handleSubmitReview} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -322,18 +325,20 @@ function ReviewCard({ review }) {
   const handleMarkHelpful = async () => {
     try {
       const res = await fetch(`/api/resources/reviews/${review._id}/helpful`, {
-        method: 'POST',
+        method: "POST",
       });
 
       if (res.ok) {
         const data = await res.json();
         setHelpful(data.helpful);
         setUserMarkedHelpful(data.marked);
-        toast.success(data.marked ? 'Marked as helpful' : 'Removed helpful mark');
+        toast.success(
+          data.marked ? "Marked as helpful" : "Removed helpful mark"
+        );
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to mark as helpful');
+      toast.error("Failed to mark as helpful");
     }
   };
 
@@ -345,7 +350,7 @@ function ReviewCard({ review }) {
     >
       <div className="flex items-start gap-3">
         <img
-          src={review.author.image || '/default-avatar.png'}
+          src={review.author.image || "/default-avatar.png"}
           alt={review.author.name}
           className="w-10 h-10 rounded-full flex-shrink-0"
         />
@@ -358,13 +363,13 @@ function ReviewCard({ review }) {
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map(star => (
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <StarSolidIcon
                       key={star}
                       className={`w-4 h-4 ${
                         star <= review.rating
-                          ? 'text-yellow-400'
-                          : 'text-gray-300 dark:text-gray-600'
+                          ? "text-yellow-400"
+                          : "text-gray-300 dark:text-gray-600"
                       }`}
                     />
                   ))}
@@ -391,8 +396,8 @@ function ReviewCard({ review }) {
             onClick={handleMarkHelpful}
             className={`text-sm transition-colors ${
               userMarkedHelpful
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
             }`}
           >
             Helpful ({helpful})

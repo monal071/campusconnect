@@ -1,5 +1,5 @@
-import Image from 'next/image';
-import { useState } from 'react';
+import Image from "next/image";
+import { useState } from "react";
 
 /**
  * Optimized Image Component with fallback and blur placeholder
@@ -7,14 +7,14 @@ import { useState } from 'react';
  */
 export default function OptimizedImage({
   src,
-  alt = '',
+  alt = "",
   width,
   height,
-  className = '',
+  className = "",
   priority = false,
   quality = 75,
-  objectFit = 'cover',
-  fallbackSrc = '/default-avatar.png',
+  objectFit = "cover",
+  fallbackSrc = "/default-avatar.png",
   ...props
 }) {
   const [imgSrc, setImgSrc] = useState(src);
@@ -56,7 +56,7 @@ export default function OptimizedImage({
         onError={handleError}
         onLoadingComplete={handleLoad}
         className={`transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
+          isLoading ? "opacity-0" : "opacity-100"
         }`}
         style={{ objectFit }}
         placeholder="blur"
@@ -73,12 +73,12 @@ export default function OptimizedImage({
 /**
  * Avatar Image Component (circular, optimized)
  */
-export function AvatarImage({ 
-  src, 
-  alt, 
-  size = 40, 
-  className = '',
-  priority = false 
+export function AvatarImage({
+  src,
+  alt,
+  size = 40,
+  className = "",
+  priority = false,
 }) {
   return (
     <OptimizedImage
@@ -97,16 +97,11 @@ export function AvatarImage({
 /**
  * Post/Resource Image Component (responsive)
  */
-export function ContentImage({ 
-  src, 
-  alt, 
-  className = '',
-  priority = false 
-}) {
+export function ContentImage({ src, alt, className = "", priority = false }) {
   return (
     <div className={`relative w-full aspect-video ${className}`}>
       <Image
-        src={src || '/placeholder.png'}
+        src={src || "/placeholder.png"}
         alt={alt}
         fill
         priority={priority}
@@ -121,12 +116,7 @@ export function ContentImage({
 /**
  * Thumbnail Image Component (small, low quality)
  */
-export function ThumbnailImage({ 
-  src, 
-  alt, 
-  size = 64, 
-  className = '' 
-}) {
+export function ThumbnailImage({ src, alt, size = 64, className = "" }) {
   return (
     <OptimizedImage
       src={src}

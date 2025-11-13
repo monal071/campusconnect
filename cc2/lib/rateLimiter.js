@@ -1,4 +1,4 @@
-import { cache } from './redis';
+import { cache } from "./redis";
 
 /**
  * Rate limiter configuration
@@ -29,17 +29,21 @@ const rateLimitConfig = {
 /**
  * Rate limiter middleware for API routes
  */
-export async function rateLimit(req, identifier, limitType = 'api') {
+export async function rateLimit(req, identifier, limitType = "api") {
   const config = rateLimitConfig[limitType] || rateLimitConfig.api;
   const key = `ratelimit:${limitType}:${identifier}`;
-  
+
   try {
     // Get current count
     const current = await cache.get(key);
-    
+
     if (!current) {
       // First request in window
-      await cache.set(key, { count: 1, resetAt: Date.now() + config.windowMs }, config.windowMs / 1000);
+      await cache.set(
+        key,
+        { count: 1, resetAt: Date.now() + config.windowMs },
+        config.windowMs / 1000
+      );
       return {
         success: true,
         limit: config.maxRequests,
@@ -47,7 +51,7 @@ export async function rateLimit(req, identifier, limitType = 'api') {
         resetAt: Date.now() + config.windowMs,
       };
     }
-    
+
     // Check if limit exceeded
     if (current.count >= config.maxRequests) {
       const resetIn = Math.ceil((current.resetAt - Date.now()) / 1000);
@@ -59,11 +63,15 @@ export async function rateLimit(req, identifier, limitType = 'api') {
         retryAfter: resetIn,
       };
     }
-    
+
     // Increment counter
     current.count += 1;
-    await cache.set(key, current, Math.ceil((current.resetAt - Date.now()) / 1000));
-    
+    await cache.set(
+      key,
+      current,
+      Math.ceil((current.resetAt - Date.now()) / 1000)
+    );
+
     return {
       success: true,
       limit: config.maxRequests,
@@ -71,7 +79,7 @@ export async function rateLimit(req, identifier, limitType = 'api') {
       resetAt: current.resetAt,
     };
   } catch (error) {
-    console.error('Rate limit error:', error);
+    console.error("Rate limit error:", error);
     // Allow request if Redis fails (fail open)
     return {
       success: true,
@@ -84,32 +92,36 @@ export async function rateLimit(req, identifier, limitType = 'api') {
 /**
  * Middleware wrapper for Next.js API routes
  */
-export function withRateLimit(handler, limitType = 'api') {
+export function withRateLimit(handler, limitType = "api") {
   return async (req, res) => {
     // Get identifier (IP or user ID)
-    const identifier = req.headers['x-forwarded-for'] || 
-                      req.connection.remoteAddress || 
-                      req.session?.user?.id || 
-                      'anonymous';
-    
+    const identifier =
+      req.headers["x-forwarded-for"] ||
+      req.connection.remoteAddress ||
+      req.session?.user?.id ||
+      "anonymous";
+
     const result = await rateLimit(req, identifier, limitType);
-    
+
     // Set rate limit headers
-    res.setHeader('X-RateLimit-Limit', result.limit);
-    res.setHeader('X-RateLimit-Remaining', result.remaining);
+    res.setHeader("X-RateLimit-Limit", result.limit);
+    res.setHeader("X-RateLimit-Remaining", result.remaining);
     if (result.resetAt) {
-      res.setHeader('X-RateLimit-Reset', new Date(result.resetAt).toISOString());
+      res.setHeader(
+        "X-RateLimit-Reset",
+        new Date(result.resetAt).toISOString()
+      );
     }
-    
+
     if (!result.success) {
-      res.setHeader('Retry-After', result.retryAfter);
+      res.setHeader("Retry-After", result.retryAfter);
       return res.status(429).json({
-        error: 'Too many requests',
+        error: "Too many requests",
         message: `Rate limit exceeded. Try again in ${result.retryAfter} seconds.`,
         retryAfter: result.retryAfter,
       });
     }
-    
+
     return handler(req, res);
   };
 }
@@ -117,17 +129,16 @@ export function withRateLimit(handler, limitType = 'api') {
 /**
  * Rate limit by user ID
  */
-export async function rateLimitByUser(userId, limitType = 'api') {
+export async function rateLimitByUser(userId, limitType = "api") {
   return await rateLimit({}, userId, limitType);
 }
 
 /**
  * Rate limit by IP address
  */
-export async function rateLimitByIP(req, limitType = 'api') {
-  const ip = req.headers['x-forwarded-for'] || 
-             req.connection.remoteAddress || 
-             'unknown';
+export async function rateLimitByIP(req, limitType = "api") {
+  const ip =
+    req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
   return await rateLimit(req, ip, limitType);
 }
 
@@ -136,29 +147,37 @@ export async function rateLimitByIP(req, limitType = 'api') {
  */
 export async function customRateLimit(identifier, maxRequests, windowMs) {
   const key = `ratelimit:custom:${identifier}`;
-  
+
   try {
     const current = await cache.get(key);
-    
+
     if (!current) {
-      await cache.set(key, { count: 1, resetAt: Date.now() + windowMs }, windowMs / 1000);
+      await cache.set(
+        key,
+        { count: 1, resetAt: Date.now() + windowMs },
+        windowMs / 1000
+      );
       return { success: true, remaining: maxRequests - 1 };
     }
-    
+
     if (current.count >= maxRequests) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         remaining: 0,
         retryAfter: Math.ceil((current.resetAt - Date.now()) / 1000),
       };
     }
-    
+
     current.count += 1;
-    await cache.set(key, current, Math.ceil((current.resetAt - Date.now()) / 1000));
-    
+    await cache.set(
+      key,
+      current,
+      Math.ceil((current.resetAt - Date.now()) / 1000)
+    );
+
     return { success: true, remaining: maxRequests - current.count };
   } catch (error) {
-    console.error('Custom rate limit error:', error);
+    console.error("Custom rate limit error:", error);
     return { success: true };
   }
 }
@@ -166,7 +185,7 @@ export async function customRateLimit(identifier, maxRequests, windowMs) {
 /**
  * Reset rate limit for identifier
  */
-export async function resetRateLimit(identifier, limitType = 'api') {
+export async function resetRateLimit(identifier, limitType = "api") {
   const key = `ratelimit:${limitType}:${identifier}`;
   await cache.del(key);
 }

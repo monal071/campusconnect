@@ -1,4 +1,4 @@
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 export default function ImprovedToaster() {
   return (
@@ -8,49 +8,49 @@ export default function ImprovedToaster() {
         // Default options
         duration: 4000,
         style: {
-          background: 'var(--toast-bg)',
-          color: 'var(--toast-color)',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-          maxWidth: '500px',
+          background: "var(--toast-bg)",
+          color: "var(--toast-color)",
+          borderRadius: "12px",
+          padding: "16px",
+          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+          maxWidth: "500px",
         },
         // Success
         success: {
           duration: 3000,
           iconTheme: {
-            primary: '#10b981',
-            secondary: '#fff',
+            primary: "#10b981",
+            secondary: "#fff",
           },
           style: {
-            background: '#ecfdf5',
-            color: '#065f46',
-            border: '1px solid #10b981',
+            background: "#ecfdf5",
+            color: "#065f46",
+            border: "1px solid #10b981",
           },
         },
         // Error
         error: {
           duration: 5000,
           iconTheme: {
-            primary: '#ef4444',
-            secondary: '#fff',
+            primary: "#ef4444",
+            secondary: "#fff",
           },
           style: {
-            background: '#fef2f2',
-            color: '#991b1b',
-            border: '1px solid #ef4444',
+            background: "#fef2f2",
+            color: "#991b1b",
+            border: "1px solid #ef4444",
           },
         },
         // Loading
         loading: {
           iconTheme: {
-            primary: '#3b82f6',
-            secondary: '#fff',
+            primary: "#3b82f6",
+            secondary: "#fff",
           },
           style: {
-            background: '#eff6ff',
-            color: '#1e40af',
-            border: '1px solid #3b82f6',
+            background: "#eff6ff",
+            color: "#1e40af",
+            border: "1px solid #3b82f6",
           },
         },
       }}
@@ -62,40 +62,40 @@ export default function ImprovedToaster() {
 export const customToast = {
   promise: (promise, messages) => {
     return toast.promise(promise, {
-      loading: messages.loading || 'Loading...',
-      success: messages.success || 'Success!',
-      error: messages.error || 'Error occurred',
+      loading: messages.loading || "Loading...",
+      success: messages.success || "Success!",
+      error: messages.error || "Error occurred",
     });
   },
-  
+
   info: (message) => {
     return toast(message, {
-      icon: 'ℹ️',
+      icon: "ℹ️",
       style: {
-        background: '#eff6ff',
-        color: '#1e40af',
-        border: '1px solid #3b82f6',
+        background: "#eff6ff",
+        color: "#1e40af",
+        border: "1px solid #3b82f6",
       },
     });
   },
-  
+
   warning: (message) => {
     return toast(message, {
-      icon: '⚠️',
+      icon: "⚠️",
       style: {
-        background: '#fffbeb',
-        color: '#92400e',
-        border: '1px solid #f59e0b',
+        background: "#fffbeb",
+        color: "#92400e",
+        border: "1px solid #f59e0b",
       },
     });
   },
-  
+
   custom: (message, options = {}) => {
     return toast.custom(
       (t) => (
         <div
           className={`${
-            t.visible ? 'animate-enter' : 'animate-leave'
+            t.visible ? "animate-enter" : "animate-leave"
           } max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
         >
           <div className="flex-1 w-0 p-4">
@@ -132,12 +132,12 @@ export const customToast = {
 
 // Progress toast
 export const progressToast = {
-  start: (message = 'Uploading...') => {
+  start: (message = "Uploading...") => {
     return toast.loading(message, {
-      id: 'progress-toast',
+      id: "progress-toast",
     });
   },
-  
+
   update: (progress, message) => {
     toast.loading(
       <div className="flex items-center space-x-3">
@@ -153,20 +153,20 @@ export const progressToast = {
         <span className="text-sm font-semibold">{progress}%</span>
       </div>,
       {
-        id: 'progress-toast',
+        id: "progress-toast",
       }
     );
   },
-  
-  success: (message = 'Upload complete!') => {
+
+  success: (message = "Upload complete!") => {
     toast.success(message, {
-      id: 'progress-toast',
+      id: "progress-toast",
     });
   },
-  
-  error: (message = 'Upload failed') => {
+
+  error: (message = "Upload failed") => {
     toast.error(message, {
-      id: 'progress-toast',
+      id: "progress-toast",
     });
   },
 };

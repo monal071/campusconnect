@@ -1,97 +1,109 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  XMarkIcon, 
-  ChevronLeftIcon, 
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  XMarkIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   CheckCircleIcon,
-  RocketLaunchIcon
-} from '@heroicons/react/24/outline';
+  RocketLaunchIcon,
+} from "@heroicons/react/24/outline";
 
 const TOUR_STEPS = [
   {
-    id: 'welcome',
-    title: 'Welcome to CampusConnect! 🎉',
-    description: 'Let\'s take a quick tour to help you get started with all the amazing features.',
+    id: "welcome",
+    title: "Welcome to CampusConnect! 🎉",
+    description:
+      "Let's take a quick tour to help you get started with all the amazing features.",
     target: null,
-    position: 'center',
+    position: "center",
   },
   {
-    id: 'search',
-    title: 'Global Search',
-    description: 'Press ⌘K (or Ctrl+K) to search across posts, resources, quizzes, events, and more!',
+    id: "search",
+    title: "Global Search",
+    description:
+      "Press ⌘K (or Ctrl+K) to search across posts, resources, quizzes, events, and more!",
     target: '[data-tour="search"]',
-    position: 'bottom',
+    position: "bottom",
   },
   {
-    id: 'notifications',
-    title: 'Stay Updated',
-    description: 'Get notified about new connections, comments, quiz results, and event reminders.',
+    id: "notifications",
+    title: "Stay Updated",
+    description:
+      "Get notified about new connections, comments, quiz results, and event reminders.",
     target: '[data-tour="notifications"]',
-    position: 'bottom',
+    position: "bottom",
   },
   {
-    id: 'navigation',
-    title: 'Quick Navigation',
-    description: 'Access all sections quickly: Posts, Resources, Quizzes, Events, Jobs, and Communities.',
+    id: "navigation",
+    title: "Quick Navigation",
+    description:
+      "Access all sections quickly: Posts, Resources, Quizzes, Events, Jobs, and Communities.",
     target: '[data-tour="navigation"]',
-    position: 'bottom',
+    position: "bottom",
   },
   {
-    id: 'posts',
-    title: 'Share Your Thoughts',
-    description: 'Create posts with @mentions, #hashtags, and emoji reactions. Your content, your way!',
+    id: "posts",
+    title: "Share Your Thoughts",
+    description:
+      "Create posts with @mentions, #hashtags, and emoji reactions. Your content, your way!",
     target: '[data-tour="posts"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'resources',
-    title: 'Share Knowledge',
-    description: 'Upload and discover study materials, notes, and resources. Faculty-verified content gets a special badge!',
+    id: "resources",
+    title: "Share Knowledge",
+    description:
+      "Upload and discover study materials, notes, and resources. Faculty-verified content gets a special badge!",
     target: '[data-tour="resources"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'quizzes',
-    title: 'Test Your Knowledge',
-    description: 'Take quizzes, track your progress, and see instant results. Faculty can create quizzes with various question types.',
+    id: "quizzes",
+    title: "Test Your Knowledge",
+    description:
+      "Take quizzes, track your progress, and see instant results. Faculty can create quizzes with various question types.",
     target: '[data-tour="quizzes"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'events',
-    title: 'Never Miss an Event',
-    description: 'Discover campus events, workshops, and activities. RSVP and get reminders!',
+    id: "events",
+    title: "Never Miss an Event",
+    description:
+      "Discover campus events, workshops, and activities. RSVP and get reminders!",
     target: '[data-tour="events"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'connections',
-    title: 'Build Your Network',
-    description: 'Connect with fellow students, faculty, and alumni. Follow users to personalize your feed.',
+    id: "connections",
+    title: "Build Your Network",
+    description:
+      "Connect with fellow students, faculty, and alumni. Follow users to personalize your feed.",
     target: '[data-tour="connections"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'bookmarks',
-    title: 'Save for Later',
-    description: 'Bookmark important posts, resources, and events to access them anytime.',
+    id: "bookmarks",
+    title: "Save for Later",
+    description:
+      "Bookmark important posts, resources, and events to access them anytime.",
     target: '[data-tour="bookmarks"]',
-    position: 'right',
+    position: "right",
   },
   {
-    id: 'theme',
-    title: 'Choose Your Style',
-    description: 'Toggle between light and dark mode for comfortable viewing any time of day.',
+    id: "theme",
+    title: "Choose Your Style",
+    description:
+      "Toggle between light and dark mode for comfortable viewing any time of day.",
     target: '[data-tour="theme"]',
-    position: 'bottom',
+    position: "bottom",
   },
   {
-    id: 'complete',
-    title: 'You\'re All Set! 🚀',
-    description: 'You\'ve completed the tour! Remember, press ? anytime to see keyboard shortcuts. Enjoy CampusConnect!',
+    id: "complete",
+    title: "You're All Set! 🚀",
+    description:
+      "You've completed the tour! Remember, press ? anytime to see keyboard shortcuts. Enjoy CampusConnect!",
     target: null,
-    position: 'center',
+    position: "center",
   },
 ];
 
@@ -102,7 +114,7 @@ export default function OnboardingTour({ onComplete }) {
 
   useEffect(() => {
     // Check if user has completed tour
-    const completed = localStorage.getItem('onboarding-completed');
+    const completed = localStorage.getItem("onboarding-completed");
     if (!completed) {
       // Start tour after a brief delay
       setTimeout(() => setIsActive(true), 1000);
@@ -130,7 +142,7 @@ export default function OnboardingTour({ onComplete }) {
   };
 
   const completeTour = () => {
-    localStorage.setItem('onboarding-completed', 'true');
+    localStorage.setItem("onboarding-completed", "true");
     setIsActive(false);
     setHasCompletedTour(true);
     if (onComplete) onComplete();
@@ -143,15 +155,17 @@ export default function OnboardingTour({ onComplete }) {
   };
 
   const step = TOUR_STEPS[currentStep];
-  const targetElement = step.target ? document.querySelector(step.target) : null;
+  const targetElement = step.target
+    ? document.querySelector(step.target)
+    : null;
   const targetRect = targetElement?.getBoundingClientRect();
 
   const getTooltipPosition = () => {
-    if (!targetRect || step.position === 'center') {
+    if (!targetRect || step.position === "center") {
       return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
       };
     }
 
@@ -159,32 +173,32 @@ export default function OnboardingTour({ onComplete }) {
     let style = {};
 
     switch (step.position) {
-      case 'bottom':
+      case "bottom":
         style = {
           top: `${targetRect.bottom + padding}px`,
           left: `${targetRect.left + targetRect.width / 2}px`,
-          transform: 'translateX(-50%)',
+          transform: "translateX(-50%)",
         };
         break;
-      case 'top':
+      case "top":
         style = {
           bottom: `${window.innerHeight - targetRect.top + padding}px`,
           left: `${targetRect.left + targetRect.width / 2}px`,
-          transform: 'translateX(-50%)',
+          transform: "translateX(-50%)",
         };
         break;
-      case 'right':
+      case "right":
         style = {
           top: `${targetRect.top + targetRect.height / 2}px`,
           left: `${targetRect.right + padding}px`,
-          transform: 'translateY(-50%)',
+          transform: "translateY(-50%)",
         };
         break;
-      case 'left':
+      case "left":
         style = {
           top: `${targetRect.top + targetRect.height / 2}px`,
           right: `${window.innerWidth - targetRect.left + padding}px`,
-          transform: 'translateY(-50%)',
+          transform: "translateY(-50%)",
         };
         break;
     }
@@ -218,7 +232,7 @@ export default function OnboardingTour({ onComplete }) {
           >
             {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/50" />
-            
+
             {/* Spotlight on target element */}
             {targetElement && targetRect && (
               <div
@@ -228,7 +242,7 @@ export default function OnboardingTour({ onComplete }) {
                   left: `${targetRect.left - 4}px`,
                   width: `${targetRect.width + 8}px`,
                   height: `${targetRect.height + 8}px`,
-                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',
+                  boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
                 }}
               />
             )}
@@ -269,10 +283,10 @@ export default function OnboardingTour({ onComplete }) {
                       key={index}
                       className={`h-2 w-2 rounded-full transition-colors ${
                         index === currentStep
-                          ? 'bg-blue-500'
+                          ? "bg-blue-500"
                           : index < currentStep
-                          ? 'bg-blue-300 dark:bg-blue-700'
-                          : 'bg-gray-300 dark:bg-gray-600'
+                          ? "bg-blue-300 dark:bg-blue-700"
+                          : "bg-gray-300 dark:bg-gray-600"
                       }`}
                     />
                   ))}
@@ -288,7 +302,7 @@ export default function OnboardingTour({ onComplete }) {
                       Back
                     </button>
                   )}
-                  
+
                   {currentStep < TOUR_STEPS.length - 1 ? (
                     <button
                       onClick={handleNext}

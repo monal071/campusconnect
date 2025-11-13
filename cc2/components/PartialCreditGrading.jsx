@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { 
-  AcademicCapIcon, 
-  CheckCircleIcon, 
+import { useState } from "react";
+import {
+  AcademicCapIcon,
+  CheckCircleIcon,
   XCircleIcon,
   MinusCircleIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
 
 /**
  * Calculate partial credit for a question
@@ -18,18 +18,18 @@ export function calculatePartialCredit(question, studentAnswer) {
     return {
       points: points,
       percentage: 100,
-      feedback: 'Correct!',
-      status: 'correct',
+      feedback: "Correct!",
+      status: "correct",
     };
   }
 
   // No partial credit for some question types
-  if (type === 'true-false' || type === 'essay') {
+  if (type === "true-false" || type === "essay") {
     return {
       points: 0,
       percentage: 0,
-      feedback: type === 'essay' ? 'Requires manual grading' : 'Incorrect',
-      status: type === 'essay' ? 'pending' : 'incorrect',
+      feedback: type === "essay" ? "Requires manual grading" : "Incorrect",
+      status: type === "essay" ? "pending" : "incorrect",
     };
   }
 
@@ -38,37 +38,37 @@ export function calculatePartialCredit(question, studentAnswer) {
     return {
       points: 0,
       percentage: 0,
-      feedback: 'Incorrect',
-      status: 'incorrect',
+      feedback: "Incorrect",
+      status: "incorrect",
     };
   }
 
   // Apply partial credit rules
   for (const rule of partialCreditRules) {
-    if (rule.condition === 'contains' && type === 'short-answer') {
+    if (rule.condition === "contains" && type === "short-answer") {
       const answer = String(studentAnswer).toLowerCase();
       const keywords = rule.keywords?.map((k) => k.toLowerCase()) || [];
       const matchedKeywords = keywords.filter((k) => answer.includes(k));
-      
+
       if (matchedKeywords.length >= (rule.minimumKeywords || 1)) {
         const earnedPoints = points * rule.creditPercentage;
         return {
           points: earnedPoints,
           percentage: rule.creditPercentage * 100,
           feedback: `Partial credit: ${matchedKeywords.length} key concepts identified`,
-          status: 'partial',
+          status: "partial",
         };
       }
     }
 
-    if (rule.condition === 'close' && type === 'multiple-choice') {
+    if (rule.condition === "close" && type === "multiple-choice") {
       if (rule.options?.includes(studentAnswer)) {
         const earnedPoints = points * rule.creditPercentage;
         return {
           points: earnedPoints,
           percentage: rule.creditPercentage * 100,
-          feedback: `Partial credit: ${rule.feedback || 'Close answer'}`,
-          status: 'partial',
+          feedback: `Partial credit: ${rule.feedback || "Close answer"}`,
+          status: "partial",
         };
       }
     }
@@ -78,8 +78,8 @@ export function calculatePartialCredit(question, studentAnswer) {
   return {
     points: 0,
     percentage: 0,
-    feedback: 'Incorrect',
-    status: 'incorrect',
+    feedback: "Incorrect",
+    status: "incorrect",
   };
 }
 
@@ -87,12 +87,14 @@ export function calculatePartialCredit(question, studentAnswer) {
  * Check if answer is correct
  */
 function isAnswerCorrect(type, studentAnswer, correctAnswer) {
-  if (type === 'multiple-choice' || type === 'true-false') {
+  if (type === "multiple-choice" || type === "true-false") {
     return studentAnswer === correctAnswer;
   }
-  if (type === 'short-answer') {
-    return String(studentAnswer).toLowerCase().trim() === 
-           String(correctAnswer).toLowerCase().trim();
+  if (type === "short-answer") {
+    return (
+      String(studentAnswer).toLowerCase().trim() ===
+      String(correctAnswer).toLowerCase().trim()
+    );
   }
   return false;
 }
@@ -106,12 +108,12 @@ export default function PartialCreditSettings({ question, onChange }) {
   const addRule = () => {
     const newRule = {
       id: Date.now(),
-      condition: question.type === 'short-answer' ? 'contains' : 'close',
+      condition: question.type === "short-answer" ? "contains" : "close",
       creditPercentage: 0.5,
       keywords: [],
       options: [],
       minimumKeywords: 1,
-      feedback: '',
+      feedback: "",
     };
     const newRules = [...rules, newRule];
     setRules(newRules);
@@ -131,12 +133,14 @@ export default function PartialCreditSettings({ question, onChange }) {
     onChange?.({ ...question, partialCreditRules: newRules });
   };
 
-  if (question.type === 'true-false' || question.type === 'essay') {
+  if (question.type === "true-false" || question.type === "essay") {
     return (
       <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <InformationCircleIcon className="w-5 h-5" />
-          <span>Partial credit not available for {question.type} questions</span>
+          <span>
+            Partial credit not available for {question.type} questions
+          </span>
         </div>
       </div>
     );
@@ -161,7 +165,8 @@ export default function PartialCreditSettings({ question, onChange }) {
 
       {rules.length === 0 && (
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center text-gray-600 dark:text-gray-400">
-          No partial credit rules. Answers will be marked as fully correct or incorrect.
+          No partial credit rules. Answers will be marked as fully correct or
+          incorrect.
         </div>
       )}
 
@@ -196,16 +201,21 @@ export default function PartialCreditSettings({ question, onChange }) {
                 max="1"
                 step="0.05"
                 value={rule.creditPercentage}
-                onChange={(e) => updateRule(index, { creditPercentage: parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  updateRule(index, {
+                    creditPercentage: parseFloat(e.target.value),
+                  })
+                }
                 className="w-full"
               />
             </div>
 
             {/* Short Answer Rules */}
-            {question.type === 'short-answer' && (
+            {question.type === "short-answer" && (
               <>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Keywords (student must include at least {rule.minimumKeywords})
+                  Keywords (student must include at least {rule.minimumKeywords}
+                  )
                 </label>
                 <div className="space-y-2">
                   {rule.keywords?.map((keyword, kIndex) => (
@@ -223,7 +233,9 @@ export default function PartialCreditSettings({ question, onChange }) {
                       />
                       <button
                         onClick={() => {
-                          const newKeywords = rule.keywords.filter((_, i) => i !== kIndex);
+                          const newKeywords = rule.keywords.filter(
+                            (_, i) => i !== kIndex
+                          );
                           updateRule(index, { keywords: newKeywords });
                         }}
                         className="text-red-600 hover:text-red-700"
@@ -234,7 +246,9 @@ export default function PartialCreditSettings({ question, onChange }) {
                   ))}
                   <button
                     onClick={() => {
-                      updateRule(index, { keywords: [...(rule.keywords || []), ''] });
+                      updateRule(index, {
+                        keywords: [...(rule.keywords || []), ""],
+                      });
                     }}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                   >
@@ -251,7 +265,11 @@ export default function PartialCreditSettings({ question, onChange }) {
                     min="1"
                     max={rule.keywords?.length || 1}
                     value={rule.minimumKeywords}
-                    onChange={(e) => updateRule(index, { minimumKeywords: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      updateRule(index, {
+                        minimumKeywords: parseInt(e.target.value),
+                      })
+                    }
                     className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
                   />
                 </div>
@@ -259,28 +277,32 @@ export default function PartialCreditSettings({ question, onChange }) {
             )}
 
             {/* Multiple Choice Rules */}
-            {question.type === 'multiple-choice' && (
+            {question.type === "multiple-choice" && (
               <>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   "Close" Answer Options (partially correct)
                 </label>
                 <div className="space-y-2">
-                  {question.options?.filter((opt) => opt !== question.correctAnswer).map((option) => (
-                    <label key={option} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={rule.options?.includes(option)}
-                        onChange={(e) => {
-                          const newOptions = e.target.checked
-                            ? [...(rule.options || []), option]
-                            : rule.options.filter((o) => o !== option);
-                          updateRule(index, { options: newOptions });
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <span className="text-gray-900 dark:text-white">{option}</span>
-                    </label>
-                  ))}
+                  {question.options
+                    ?.filter((opt) => opt !== question.correctAnswer)
+                    .map((option) => (
+                      <label key={option} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={rule.options?.includes(option)}
+                          onChange={(e) => {
+                            const newOptions = e.target.checked
+                              ? [...(rule.options || []), option]
+                              : rule.options.filter((o) => o !== option);
+                            updateRule(index, { options: newOptions });
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="text-gray-900 dark:text-white">
+                          {option}
+                        </span>
+                      </label>
+                    ))}
                 </div>
               </>
             )}
@@ -293,7 +315,9 @@ export default function PartialCreditSettings({ question, onChange }) {
               <input
                 type="text"
                 value={rule.feedback}
-                onChange={(e) => updateRule(index, { feedback: e.target.value })}
+                onChange={(e) =>
+                  updateRule(index, { feedback: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
                 placeholder="e.g., 'Close, but consider...'"
               />
@@ -315,12 +339,14 @@ export function PartialCreditResult({ result }) {
     incorrect: XCircleIcon,
     pending: InformationCircleIcon,
   };
-  
+
   const colors = {
-    correct: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20',
-    partial: 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20',
-    incorrect: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
-    pending: 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800',
+    correct:
+      "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20",
+    partial:
+      "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
+    incorrect: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20",
+    pending: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800",
   };
 
   const Icon = icons[result.status] || InformationCircleIcon;

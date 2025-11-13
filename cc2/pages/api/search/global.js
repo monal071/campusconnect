@@ -1,134 +1,144 @@
-import clientPromise from '../../../utils/mongodb';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import clientPromise from "../../../utils/mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const session = await getServerSession(req, res, authOptions);
     if (!session) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { q: query, type = 'all' } = req.query;
+    const { q: query, type = "all" } = req.query;
 
     if (!query || query.length < 3) {
-      return res.status(400).json({ error: 'Search query must be at least 3 characters' });
+      return res
+        .status(400)
+        .json({ error: "Search query must be at least 3 characters" });
     }
 
     const client = await clientPromise;
     const db = client.db();
 
-    const searchRegex = new RegExp(query, 'i');
+    const searchRegex = new RegExp(query, "i");
     let results = [];
 
     // Search in different collections based on type
-    if (type === 'all' || type === 'posts') {
-      const posts = await db.collection('posts')
+    if (type === "all" || type === "posts") {
+      const posts = await db
+        .collection("posts")
         .find({
-          $or: [
-            { content: searchRegex },
-            { tags: searchRegex }
-          ]
+          $or: [{ content: searchRegex }, { tags: searchRegex }],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...posts.map(post => ({
-        ...post,
-        type: 'posts',
-        title: post.content.substring(0, 100) + (post.content.length > 100 ? '...' : '')
-      })));
+
+      results.push(
+        ...posts.map((post) => ({
+          ...post,
+          type: "posts",
+          title:
+            post.content.substring(0, 100) +
+            (post.content.length > 100 ? "..." : ""),
+        }))
+      );
     }
 
-    if (type === 'all' || type === 'resources') {
-      const resources = await db.collection('resources')
+    if (type === "all" || type === "resources") {
+      const resources = await db
+        .collection("resources")
         .find({
           $or: [
             { title: searchRegex },
             { description: searchRegex },
-            { tags: searchRegex }
-          ]
+            { tags: searchRegex },
+          ],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...resources.map(resource => ({
-        ...resource,
-        type: 'resources'
-      })));
+
+      results.push(
+        ...resources.map((resource) => ({
+          ...resource,
+          type: "resources",
+        }))
+      );
     }
 
-    if (type === 'all' || type === 'quizzes') {
-      const quizzes = await db.collection('quizzes')
+    if (type === "all" || type === "quizzes") {
+      const quizzes = await db
+        .collection("quizzes")
         .find({
-          $or: [
-            { quizName: searchRegex },
-            { description: searchRegex }
-          ]
+          $or: [{ quizName: searchRegex }, { description: searchRegex }],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...quizzes.map(quiz => ({
-        ...quiz,
-        type: 'quizzes'
-      })));
+
+      results.push(
+        ...quizzes.map((quiz) => ({
+          ...quiz,
+          type: "quizzes",
+        }))
+      );
     }
 
-    if (type === 'all' || type === 'events') {
-      const events = await db.collection('events')
+    if (type === "all" || type === "events") {
+      const events = await db
+        .collection("events")
         .find({
-          $or: [
-            { title: searchRegex },
-            { description: searchRegex }
-          ]
+          $or: [{ title: searchRegex }, { description: searchRegex }],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...events.map(event => ({
-        ...event,
-        type: 'events'
-      })));
+
+      results.push(
+        ...events.map((event) => ({
+          ...event,
+          type: "events",
+        }))
+      );
     }
 
-    if (type === 'all' || type === 'jobs') {
-      const jobs = await db.collection('jobs')
+    if (type === "all" || type === "jobs") {
+      const jobs = await db
+        .collection("jobs")
         .find({
           $or: [
             { title: searchRegex },
             { description: searchRegex },
-            { company: searchRegex }
-          ]
+            { company: searchRegex },
+          ],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...jobs.map(job => ({
-        ...job,
-        type: 'jobs'
-      })));
+
+      results.push(
+        ...jobs.map((job) => ({
+          ...job,
+          type: "jobs",
+        }))
+      );
     }
 
-    if (type === 'all' || type === 'communities') {
-      const communities = await db.collection('communities')
+    if (type === "all" || type === "communities") {
+      const communities = await db
+        .collection("communities")
         .find({
-          $or: [
-            { name: searchRegex },
-            { description: searchRegex }
-          ]
+          $or: [{ name: searchRegex }, { description: searchRegex }],
         })
         .limit(5)
         .toArray();
-      
-      results.push(...communities.map(community => ({
-        ...community,
-        type: 'communities'
-      })));
+
+      results.push(
+        ...communities.map((community) => ({
+          ...community,
+          type: "communities",
+        }))
+      );
     }
 
     // Sort by relevance (you can implement better scoring)
@@ -136,7 +146,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ results });
   } catch (error) {
-    console.error('Global search error:', error);
-    res.status(500).json({ error: 'Search failed' });
+    console.error("Global search error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
 }

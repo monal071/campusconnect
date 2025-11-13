@@ -1,13 +1,13 @@
-import { motion } from 'framer-motion';
-import Image from 'next/image';
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 // Empty States for different scenarios
-export function EmptyState({ 
-  icon, 
-  title, 
-  description, 
+export function EmptyState({
+  icon,
+  title,
+  description,
   action,
-  illustration = '/empty-state.svg' 
+  illustration = "/empty-state.svg",
 }) {
   return (
     <motion.div
@@ -29,20 +29,17 @@ export function EmptyState({
           {icon}
         </div>
       ) : null}
-      
+
       <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
         {title}
       </h3>
-      
+
       <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
         {description}
       </p>
-      
+
       {action && (
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           {action}
         </motion.div>
       )}
@@ -116,12 +113,12 @@ export function NoQuizzes({ onCreateQuiz, userRole }) {
     <EmptyState
       title="No quizzes available"
       description={
-        userRole === 'faculty' || userRole === 'admin'
+        userRole === "faculty" || userRole === "admin"
           ? "Create engaging quizzes to test your students' knowledge and track their progress."
           : "No quizzes have been created yet. Check back later for new assessments!"
       }
       action={
-        (userRole === 'faculty' || userRole === 'admin') && onCreateQuiz ? (
+        (userRole === "faculty" || userRole === "admin") && onCreateQuiz ? (
           <button
             onClick={onCreateQuiz}
             className="px-6 py-3 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium"
@@ -206,8 +203,11 @@ export function NoNotifications() {
 export function ErrorState({ title, description, onRetry }) {
   return (
     <EmptyState
-      title={title || 'Something went wrong'}
-      description={description || 'We encountered an error while loading this content. Please try again.'}
+      title={title || "Something went wrong"}
+      description={
+        description ||
+        "We encountered an error while loading this content. Please try again."
+      }
       action={
         onRetry ? (
           <button

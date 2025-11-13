@@ -1,12 +1,12 @@
-import { connectToDatabase } from '../../../../utils/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]';
+import { connectToDatabase } from "../../../../utils/mongodb";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
   if (!resourceId) {
-    return res.status(400).json({ error: 'Resource ID is required' });
+    return res.status(400).json({ error: "Resource ID is required" });
   }
 
   const session = await getServerSession(req, res, authOptions);
@@ -14,9 +14,10 @@ export default async function handler(req, res) {
   try {
     const { db } = await connectToDatabase();
 
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       // Get overall rating and user's rating
-      const ratings = await db.collection('resourceRatings')
+      const ratings = await db
+        .collection("resourceRatings")
         .find({ resourceId })
         .toArray();
 
@@ -37,13 +38,13 @@ export default async function handler(req, res) {
 
       // Calculate breakdown
       const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      ratings.forEach(r => {
+      ratings.forEach((r) => {
         breakdown[r.rating]++;
       });
 
       // Get user's rating
       const userRating = session?.user
-        ? ratings.find(r => r.userId === session.user.id)?.rating || null
+        ? ratings.find((r) => r.userId === session.user.id)?.rating || null
         : null;
 
       return res.status(200).json({
@@ -56,20 +57,22 @@ export default async function handler(req, res) {
       });
     }
 
-    if (req.method === 'POST') {
+    if (req.method === "POST") {
       // Submit or update rating
       if (!session?.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const { rating } = req.body;
 
       if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+        return res
+          .status(400)
+          .json({ error: "Rating must be between 1 and 5" });
       }
 
       // Update or insert rating
-      await db.collection('resourceRatings').updateOne(
+      await db.collection("resourceRatings").updateOne(
         {
           resourceId,
           userId: session.user.id,
@@ -89,7 +92,8 @@ export default async function handler(req, res) {
       );
 
       // Recalculate average rating
-      const allRatings = await db.collection('resourceRatings')
+      const allRatings = await db
+        .collection("resourceRatings")
         .find({ resourceId })
         .toArray();
 
@@ -97,12 +101,12 @@ export default async function handler(req, res) {
       const average = sum / allRatings.length;
 
       const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      allRatings.forEach(r => {
+      allRatings.forEach((r) => {
         breakdown[r.rating]++;
       });
 
       // Update resource with average rating
-      await db.collection('resources').updateOne(
+      await db.collection("resources").updateOne(
         { _id: resourceId },
         {
           $set: {
@@ -122,9 +126,9 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error('Rating API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Rating API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

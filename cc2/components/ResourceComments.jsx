@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import {
   ChatBubbleLeftIcon,
   HeartIcon,
   TrashIcon,
   PencilIcon,
   FlagIcon,
-} from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
+import toast from "react-hot-toast";
 
 export default function ResourceComments({ resourceId }) {
   const { data: session } = useSession();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
-  const [sortBy, setSortBy] = useState('recent'); // recent, popular
+  const [sortBy, setSortBy] = useState("recent"); // recent, popular
 
   useEffect(() => {
     if (resourceId) {
@@ -29,14 +29,16 @@ export default function ResourceComments({ resourceId }) {
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/resources/${resourceId}/comments?sortBy=${sortBy}`);
+      const res = await fetch(
+        `/api/resources/${resourceId}/comments?sortBy=${sortBy}`
+      );
       if (res.ok) {
         const data = await res.json();
         setComments(data.comments);
       }
     } catch (error) {
-      console.error('Failed to fetch comments:', error);
-      toast.error('Failed to load comments');
+      console.error("Failed to fetch comments:", error);
+      toast.error("Failed to load comments");
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export default function ResourceComments({ resourceId }) {
     e.preventDefault();
 
     if (!session?.user) {
-      toast.error('Please login to comment');
+      toast.error("Please login to comment");
       return;
     }
 
@@ -56,8 +58,8 @@ export default function ResourceComments({ resourceId }) {
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: newComment.trim(),
           parentId: replyTo?._id || null,
@@ -66,36 +68,41 @@ export default function ResourceComments({ resourceId }) {
 
       if (res.ok) {
         const data = await res.json();
-        
+
         if (replyTo) {
           // Add reply to parent comment
-          setComments(comments.map(comment => 
-            comment._id === replyTo._id
-              ? { ...comment, replies: [...(comment.replies || []), data.comment] }
-              : comment
-          ));
+          setComments(
+            comments.map((comment) =>
+              comment._id === replyTo._id
+                ? {
+                    ...comment,
+                    replies: [...(comment.replies || []), data.comment],
+                  }
+                : comment
+            )
+          );
         } else {
           // Add new top-level comment
           setComments([data.comment, ...comments]);
         }
 
-        setNewComment('');
+        setNewComment("");
         setReplyTo(null);
-        toast.success('Comment posted!');
+        toast.success("Comment posted!");
       } else {
-        throw new Error('Failed to post comment');
+        throw new Error("Failed to post comment");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to post comment');
+      toast.error("Failed to post comment");
     }
   };
 
   const handleEditComment = async (commentId, newContent) => {
     try {
       const res = await fetch(`/api/resources/${resourceId}/comments`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           commentId,
           content: newContent.trim(),
@@ -104,110 +111,126 @@ export default function ResourceComments({ resourceId }) {
 
       if (res.ok) {
         const data = await res.json();
-        setComments(comments.map(comment =>
-          comment._id === commentId
-            ? { ...comment, content: data.comment.content, edited: true }
-            : {
-                ...comment,
-                replies: comment.replies?.map(reply =>
-                  reply._id === commentId
-                    ? { ...reply, content: data.comment.content, edited: true }
-                    : reply
-                ),
-              }
-        ));
+        setComments(
+          comments.map((comment) =>
+            comment._id === commentId
+              ? { ...comment, content: data.comment.content, edited: true }
+              : {
+                  ...comment,
+                  replies: comment.replies?.map((reply) =>
+                    reply._id === commentId
+                      ? {
+                          ...reply,
+                          content: data.comment.content,
+                          edited: true,
+                        }
+                      : reply
+                  ),
+                }
+          )
+        );
         setEditingComment(null);
-        toast.success('Comment updated');
+        toast.success("Comment updated");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to update comment');
+      toast.error("Failed to update comment");
     }
   };
 
-  const handleDeleteComment = async (commentId, isReply = false, parentId = null) => {
-    if (!confirm('Delete this comment?')) return;
+  const handleDeleteComment = async (
+    commentId,
+    isReply = false,
+    parentId = null
+  ) => {
+    if (!confirm("Delete this comment?")) return;
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/comments`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId }),
       });
 
       if (res.ok) {
         if (isReply && parentId) {
-          setComments(comments.map(comment =>
-            comment._id === parentId
-              ? {
-                  ...comment,
-                  replies: comment.replies.filter(reply => reply._id !== commentId),
-                }
-              : comment
-          ));
+          setComments(
+            comments.map((comment) =>
+              comment._id === parentId
+                ? {
+                    ...comment,
+                    replies: comment.replies.filter(
+                      (reply) => reply._id !== commentId
+                    ),
+                  }
+                : comment
+            )
+          );
         } else {
-          setComments(comments.filter(comment => comment._id !== commentId));
+          setComments(comments.filter((comment) => comment._id !== commentId));
         }
-        toast.success('Comment deleted');
+        toast.success("Comment deleted");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to delete comment');
+      toast.error("Failed to delete comment");
     }
   };
 
   const handleLikeComment = async (commentId) => {
     if (!session?.user) {
-      toast.error('Please login to like comments');
+      toast.error("Please login to like comments");
       return;
     }
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/comments/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        
-        setComments(comments.map(comment =>
-          comment._id === commentId
-            ? { ...comment, likes: data.likes, isLiked: data.isLiked }
-            : {
-                ...comment,
-                replies: comment.replies?.map(reply =>
-                  reply._id === commentId
-                    ? { ...reply, likes: data.likes, isLiked: data.isLiked }
-                    : reply
-                ),
-              }
-        ));
+
+        setComments(
+          comments.map((comment) =>
+            comment._id === commentId
+              ? { ...comment, likes: data.likes, isLiked: data.isLiked }
+              : {
+                  ...comment,
+                  replies: comment.replies?.map((reply) =>
+                    reply._id === commentId
+                      ? { ...reply, likes: data.likes, isLiked: data.isLiked }
+                      : reply
+                  ),
+                }
+          )
+        );
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to like comment');
+      toast.error("Failed to like comment");
     }
   };
 
   const handleReportComment = async (commentId) => {
-    const reason = prompt('Why are you reporting this comment?');
+    const reason = prompt("Why are you reporting this comment?");
     if (!reason) return;
 
     try {
       const res = await fetch(`/api/resources/${resourceId}/comments/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId, reason }),
       });
 
       if (res.ok) {
-        toast.success('Comment reported');
+        toast.success("Comment reported");
       }
     } catch (error) {
       console.error(error);
-      toast.error('Failed to report comment');
+      toast.error("Failed to report comment");
     }
   };
 
@@ -249,7 +272,7 @@ export default function ResourceComments({ resourceId }) {
 
           <div className="flex gap-3">
             <img
-              src={session.user.image || '/default-avatar.png'}
+              src={session.user.image || "/default-avatar.png"}
               alt={session.user.name}
               className="w-10 h-10 rounded-full flex-shrink-0"
             />
@@ -257,7 +280,7 @@ export default function ResourceComments({ resourceId }) {
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder={replyTo ? 'Write a reply...' : 'Add a comment...'}
+                placeholder={replyTo ? "Write a reply..." : "Add a comment..."}
                 rows="3"
                 className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white resize-none"
               />
@@ -276,7 +299,7 @@ export default function ResourceComments({ resourceId }) {
                   disabled={!newComment.trim()}
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {replyTo ? 'Reply' : 'Comment'}
+                  {replyTo ? "Reply" : "Comment"}
                 </button>
               </div>
             </div>
@@ -286,7 +309,9 @@ export default function ResourceComments({ resourceId }) {
 
       {/* Comments List */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Loading comments...</div>
+        <div className="text-center py-8 text-gray-500">
+          Loading comments...
+        </div>
       ) : comments.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-3 text-gray-400" />
@@ -294,7 +319,7 @@ export default function ResourceComments({ resourceId }) {
         </div>
       ) : (
         <div className="space-y-4">
-          {comments.map(comment => (
+          {comments.map((comment) => (
             <CommentItem
               key={comment._id}
               comment={comment}
@@ -336,11 +361,11 @@ function CommentItem({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`${isReply ? 'ml-12' : ''}`}
+      className={`${isReply ? "ml-12" : ""}`}
     >
       <div className="flex gap-3">
         <img
-          src={comment.author.image || '/default-avatar.png'}
+          src={comment.author.image || "/default-avatar.png"}
           alt={comment.author.name}
           className="w-10 h-10 rounded-full flex-shrink-0"
         />
@@ -353,7 +378,7 @@ function CommentItem({
             </span>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {new Date(comment.createdAt).toLocaleDateString()}
-              {comment.edited && ' (edited)'}
+              {comment.edited && " (edited)"}
             </span>
           </div>
 
@@ -398,8 +423,8 @@ function CommentItem({
               onClick={() => onLike(comment._id)}
               className={`flex items-center gap-1 transition-colors ${
                 comment.isLiked
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
               }`}
             >
               {comment.isLiked ? (
@@ -456,19 +481,19 @@ function CommentItem({
                 onClick={() => setShowReplies(!showReplies)}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                {showReplies ? 'Hide' : 'Show'} {comment.replies.length}{' '}
-                {comment.replies.length === 1 ? 'reply' : 'replies'}
+                {showReplies ? "Hide" : "Show"} {comment.replies.length}{" "}
+                {comment.replies.length === 1 ? "reply" : "replies"}
               </button>
 
               <AnimatePresence>
                 {showReplies && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
+                    animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-4"
                   >
-                    {comment.replies.map(reply => (
+                    {comment.replies.map((reply) => (
                       <CommentItem
                         key={reply._id}
                         comment={reply}

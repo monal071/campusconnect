@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, CommandLineIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
+import { XMarkIcon, CommandLineIcon } from "@heroicons/react/24/outline";
 
 const SHORTCUTS = [
-  { key: '⌘K or Ctrl+K', description: 'Open global search', action: 'search' },
-  { key: 'N', description: 'Create new post', action: 'newPost' },
-  { key: 'Shift+N', description: 'Create new resource', action: 'newResource' },
-  { key: 'Shift+E', description: 'Create new event', action: 'newEvent' },
-  { key: 'Shift+Q', description: 'Create new quiz', action: 'newQuiz' },
-  { key: 'H', description: 'Go to home/dashboard', action: 'home' },
-  { key: 'P', description: 'Go to posts', action: 'posts' },
-  { key: 'R', description: 'Go to resources', action: 'resources' },
-  { key: 'E', description: 'Go to events', action: 'events' },
-  { key: 'Q', description: 'Go to quizzes', action: 'quizzes' },
-  { key: 'C', description: 'Open connections', action: 'connections' },
-  { key: 'B', description: 'Open bookmarks', action: 'bookmarks' },
-  { key: '?', description: 'Show this help', action: 'help' },
-  { key: 'Esc', description: 'Close modals/dialogs', action: 'close' },
+  { key: "⌘K or Ctrl+K", description: "Open global search", action: "search" },
+  { key: "N", description: "Create new post", action: "newPost" },
+  { key: "Shift+N", description: "Create new resource", action: "newResource" },
+  { key: "Shift+E", description: "Create new event", action: "newEvent" },
+  { key: "Shift+Q", description: "Create new quiz", action: "newQuiz" },
+  { key: "H", description: "Go to home/dashboard", action: "home" },
+  { key: "P", description: "Go to posts", action: "posts" },
+  { key: "R", description: "Go to resources", action: "resources" },
+  { key: "E", description: "Go to events", action: "events" },
+  { key: "Q", description: "Go to quizzes", action: "quizzes" },
+  { key: "C", description: "Open connections", action: "connections" },
+  { key: "B", description: "Open bookmarks", action: "bookmarks" },
+  { key: "?", description: "Show this help", action: "help" },
+  { key: "Esc", description: "Close modals/dialogs", action: "close" },
 ];
 
 export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
@@ -28,12 +28,12 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
     const handleKeyPress = (e) => {
       // Ignore if user is typing in an input/textarea
       if (
-        e.target.tagName === 'INPUT' ||
-        e.target.tagName === 'TEXTAREA' ||
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
         e.target.isContentEditable
       ) {
         // Allow Ctrl+K / Cmd+K even in inputs
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        if ((e.ctrlKey || e.metaKey) && e.key === "k") {
           e.preventDefault();
           if (onSearchOpen) onSearchOpen();
         }
@@ -42,71 +42,71 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
 
       // Global shortcuts
       switch (e.key.toLowerCase()) {
-        case 'k':
+        case "k":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             if (onSearchOpen) onSearchOpen();
           }
           break;
-        case 'n':
+        case "n":
           if (e.shiftKey) {
             e.preventDefault();
-            router.push('/resources');
+            router.push("/resources");
           } else {
             e.preventDefault();
             if (onNewPostOpen) onNewPostOpen();
           }
           break;
-        case 'e':
+        case "e":
           if (e.shiftKey) {
             e.preventDefault();
-            router.push('/events');
+            router.push("/events");
           } else {
             e.preventDefault();
-            router.push('/events');
+            router.push("/events");
           }
           break;
-        case 'q':
+        case "q":
           if (e.shiftKey) {
             e.preventDefault();
-            router.push('/quiz');
+            router.push("/quiz");
           } else {
             e.preventDefault();
-            router.push('/quiz');
+            router.push("/quiz");
           }
           break;
-        case 'h':
+        case "h":
           e.preventDefault();
-          router.push('/dashboard');
+          router.push("/dashboard");
           break;
-        case 'p':
+        case "p":
           e.preventDefault();
-          router.push('/posts');
+          router.push("/posts");
           break;
-        case 'r':
+        case "r":
           e.preventDefault();
-          router.push('/resources');
+          router.push("/resources");
           break;
-        case 'c':
+        case "c":
           e.preventDefault();
-          router.push('/connections');
+          router.push("/connections");
           break;
-        case 'b':
+        case "b":
           e.preventDefault();
-          router.push('/bookmarks');
+          router.push("/bookmarks");
           break;
-        case '?':
+        case "?":
           e.preventDefault();
           setShowHelp(true);
           break;
-        case 'escape':
+        case "escape":
           setShowHelp(false);
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
   }, [router, onSearchOpen, onNewPostOpen]);
 
   return (
@@ -176,7 +176,11 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
 
                 <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-900 dark:text-blue-200">
-                    <strong>Tip:</strong> Press <kbd className="px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded">?</kbd> anytime to see this help
+                    <strong>Tip:</strong> Press{" "}
+                    <kbd className="px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded">
+                      ?
+                    </kbd>{" "}
+                    anytime to see this help
                   </p>
                 </div>
               </div>

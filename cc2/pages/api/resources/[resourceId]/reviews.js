@@ -1,12 +1,12 @@
-import { connectToDatabase } from '../../../../utils/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]';
+import { connectToDatabase } from "../../../../utils/mongodb";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
   if (!resourceId) {
-    return res.status(400).json({ error: 'Resource ID is required' });
+    return res.status(400).json({ error: "Resource ID is required" });
   }
 
   const session = await getServerSession(req, res, authOptions);
@@ -14,9 +14,10 @@ export default async function handler(req, res) {
   try {
     const { db } = await connectToDatabase();
 
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       // Get all reviews for the resource
-      const reviews = await db.collection('resourceReviews')
+      const reviews = await db
+        .collection("resourceReviews")
         .find({ resourceId })
         .sort({ createdAt: -1 })
         .toArray();
@@ -24,7 +25,8 @@ export default async function handler(req, res) {
       // Get author details for each review
       const reviewsWithAuthors = await Promise.all(
         reviews.map(async (review) => {
-          const author = await db.collection('users')
+          const author = await db
+            .collection("users")
             .findOne({ _id: review.userId })
             .project({ name: 1, email: 1, image: 1 });
 
@@ -41,27 +43,27 @@ export default async function handler(req, res) {
       });
     }
 
-    if (req.method === 'POST') {
+    if (req.method === "POST") {
       // Create new review
       if (!session?.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const { review, rating } = req.body;
 
       if (!review?.trim()) {
-        return res.status(400).json({ error: 'Review content is required' });
+        return res.status(400).json({ error: "Review content is required" });
       }
 
       // Check if user already reviewed
-      const existingReview = await db.collection('resourceReviews').findOne({
+      const existingReview = await db.collection("resourceReviews").findOne({
         resourceId,
         userId: session.user.id,
       });
 
       if (existingReview) {
         // Update existing review
-        await db.collection('resourceReviews').updateOne(
+        await db.collection("resourceReviews").updateOne(
           {
             resourceId,
             userId: session.user.id,
@@ -75,7 +77,8 @@ export default async function handler(req, res) {
           }
         );
 
-        const author = await db.collection('users')
+        const author = await db
+          .collection("users")
           .findOne({ _id: session.user.id })
           .project({ name: 1, email: 1, image: 1 });
 
@@ -102,19 +105,24 @@ export default async function handler(req, res) {
         updatedAt: new Date(),
       };
 
-      const result = await db.collection('resourceReviews').insertOne(newReview);
+      const result = await db
+        .collection("resourceReviews")
+        .insertOne(newReview);
 
       // Get author details
-      const author = await db.collection('users')
+      const author = await db
+        .collection("users")
         .findOne({ _id: session.user.id })
         .project({ name: 1, email: 1, image: 1 });
 
       // Create notification for resource owner
-      const resource = await db.collection('resources').findOne({ _id: resourceId });
+      const resource = await db
+        .collection("resources")
+        .findOne({ _id: resourceId });
       if (resource && resource.createdBy !== session.user.id) {
-        await db.collection('notifications').insertOne({
+        await db.collection("notifications").insertOne({
           userId: resource.createdBy,
-          type: 'resource_review',
+          type: "resource_review",
           message: `${session.user.name} reviewed your resource`,
           resourceId,
           reviewId: result.insertedId,
@@ -134,9 +142,9 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error('Reviews API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Reviews API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

@@ -1,22 +1,22 @@
-import { connectToDatabase } from '../../../../../utils/mongodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]';
+import { connectToDatabase } from "../../../../../utils/mongodb";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
   if (!resourceId) {
-    return res.status(400).json({ error: 'Resource ID is required' });
+    return res.status(400).json({ error: "Resource ID is required" });
   }
 
   const session = await getServerSession(req, res, authOptions);
 
   if (!session?.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
@@ -24,34 +24,41 @@ export default async function handler(req, res) {
     const { versionId } = req.body;
 
     if (!versionId) {
-      return res.status(400).json({ error: 'Version ID is required' });
+      return res.status(400).json({ error: "Version ID is required" });
     }
 
     // Verify resource ownership
-    const resource = await db.collection('resources').findOne({ _id: resourceId });
-    
+    const resource = await db
+      .collection("resources")
+      .findOne({ _id: resourceId });
+
     if (!resource) {
-      return res.status(404).json({ error: 'Resource not found' });
+      return res.status(404).json({ error: "Resource not found" });
     }
 
     if (resource.createdBy !== session.user.id) {
-      return res.status(403).json({ error: 'Unauthorized - not resource owner' });
+      return res
+        .status(403)
+        .json({ error: "Unauthorized - not resource owner" });
     }
 
     // Get the version to restore
-    const versionToRestore = await db.collection('resourceVersions').findOne({ _id: versionId });
+    const versionToRestore = await db
+      .collection("resourceVersions")
+      .findOne({ _id: versionId });
 
     if (!versionToRestore) {
-      return res.status(404).json({ error: 'Version not found' });
+      return res.status(404).json({ error: "Version not found" });
     }
 
     // Create a new version from current state (before restoring)
-    const latestVersion = await db.collection('resourceVersions')
+    const latestVersion = await db
+      .collection("resourceVersions")
       .findOne({ resourceId }, { sort: { version: -1 } });
 
     const backupVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
 
-    await db.collection('resourceVersions').insertOne({
+    await db.collection("resourceVersions").insertOne({
       resourceId,
       userId: session.user.id,
       version: backupVersionNumber,
@@ -70,7 +77,7 @@ export default async function handler(req, res) {
     });
 
     // Restore the resource to the selected version
-    await db.collection('resources').updateOne(
+    await db.collection("resources").updateOne(
       { _id: resourceId },
       {
         $set: {
@@ -87,7 +94,7 @@ export default async function handler(req, res) {
     );
 
     // Create a new version entry for the restore
-    await db.collection('resourceVersions').insertOne({
+    await db.collection("resourceVersions").insertOne({
       resourceId,
       userId: session.user.id,
       version: backupVersionNumber + 1,
@@ -111,7 +118,7 @@ export default async function handler(req, res) {
       newVersion: backupVersionNumber + 1,
     });
   } catch (error) {
-    console.error('Restore version API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Restore version API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

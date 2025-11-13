@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { useEffect, useRef, useCallback } from "react";
+import toast from "react-hot-toast";
 
 export default function useAutoSave({
   data,
@@ -13,23 +13,29 @@ export default function useAutoSave({
   const isInitialMount = useRef(true);
 
   // Save to localStorage
-  const saveToStorage = useCallback((dataToSave) => {
-    if (!storageKey) return;
-    
-    try {
-      localStorage.setItem(storageKey, JSON.stringify({
-        data: dataToSave,
-        timestamp: new Date().toISOString(),
-      }));
-    } catch (error) {
-      console.error('Failed to save to localStorage:', error);
-    }
-  }, [storageKey]);
+  const saveToStorage = useCallback(
+    (dataToSave) => {
+      if (!storageKey) return;
+
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            data: dataToSave,
+            timestamp: new Date().toISOString(),
+          })
+        );
+      } catch (error) {
+        console.error("Failed to save to localStorage:", error);
+      }
+    },
+    [storageKey]
+  );
 
   // Load from localStorage
   const loadFromStorage = useCallback(() => {
     if (!storageKey) return null;
-    
+
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
@@ -37,7 +43,7 @@ export default function useAutoSave({
         return parsed.data;
       }
     } catch (error) {
-      console.error('Failed to load from localStorage:', error);
+      console.error("Failed to load from localStorage:", error);
     }
     return null;
   }, [storageKey]);
@@ -45,11 +51,11 @@ export default function useAutoSave({
   // Clear storage
   const clearStorage = useCallback(() => {
     if (!storageKey) return;
-    
+
     try {
       localStorage.removeItem(storageKey);
     } catch (error) {
-      console.error('Failed to clear localStorage:', error);
+      console.error("Failed to clear localStorage:", error);
     }
   }, [storageKey]);
 
@@ -61,15 +67,15 @@ export default function useAutoSave({
       await onSave(data);
       lastSavedRef.current = JSON.stringify(data);
       saveToStorage(data);
-      
+
       // Show subtle notification
-      toast.success('Draft saved', {
+      toast.success("Draft saved", {
         duration: 1500,
-        icon: '💾',
+        icon: "💾",
       });
     } catch (error) {
-      console.error('Auto-save failed:', error);
-      toast.error('Failed to save draft');
+      console.error("Auto-save failed:", error);
+      toast.error("Failed to save draft");
     }
   }, [data, enabled, onSave, saveToStorage]);
 
@@ -132,8 +138,19 @@ export function AutoSaveIndicator({ isSaving, lastSaved }) {
     return (
       <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
         <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
         <span>Saving...</span>
       </div>
@@ -143,8 +160,18 @@ export function AutoSaveIndicator({ isSaving, lastSaved }) {
   if (lastSaved) {
     return (
       <div className="flex items-center space-x-2 text-sm text-green-600 dark:text-green-400">
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 13l4 4L19 7"
+          />
         </svg>
         <span>Saved {getTimeAgo(lastSaved)}</span>
       </div>
@@ -156,8 +183,8 @@ export function AutoSaveIndicator({ isSaving, lastSaved }) {
 
 function getTimeAgo(timestamp) {
   const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
-  
-  if (seconds < 60) return 'just now';
+
+  if (seconds < 60) return "just now";
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
@@ -169,15 +196,15 @@ export function useUnsavedChangesWarning(hasUnsavedChanges) {
     const handleBeforeUnload = (e) => {
       if (hasUnsavedChanges) {
         e.preventDefault();
-        e.returnValue = '';
-        return '';
+        e.returnValue = "";
+        return "";
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [hasUnsavedChanges]);
 }

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,7 +12,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+} from "chart.js";
 import {
   ChartBarIcon,
   ClockIcon,
@@ -22,7 +22,7 @@ import {
   TrophyIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 
 ChartJS.register(
   CategoryScale,
@@ -39,7 +39,7 @@ ChartJS.register(
 export default function QuizAnalytics({ quizId }) {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('all'); // all, week, month
+  const [timeRange, setTimeRange] = useState("all"); // all, week, month
 
   useEffect(() => {
     fetchAnalytics();
@@ -48,13 +48,15 @@ export default function QuizAnalytics({ quizId }) {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/quiz/${quizId}/analytics?range=${timeRange}`);
+      const res = await fetch(
+        `/api/quiz/${quizId}/analytics?range=${timeRange}`
+      );
       if (res.ok) {
         const data = await res.json();
         setAnalytics(data);
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
     } finally {
       setLoading(false);
     }
@@ -78,48 +80,48 @@ export default function QuizAnalytics({ quizId }) {
 
   const stats = [
     {
-      label: 'Total Attempts',
+      label: "Total Attempts",
       value: analytics.totalAttempts,
       icon: UserGroupIcon,
-      color: 'blue',
+      color: "blue",
       change: analytics.attemptsChange,
     },
     {
-      label: 'Average Score',
+      label: "Average Score",
       value: `${analytics.averageScore}%`,
       icon: TrophyIcon,
-      color: 'green',
+      color: "green",
       change: analytics.scoreChange,
     },
     {
-      label: 'Pass Rate',
+      label: "Pass Rate",
       value: `${analytics.passRate}%`,
       icon: CheckCircleIcon,
-      color: 'purple',
+      color: "purple",
       change: analytics.passRateChange,
     },
     {
-      label: 'Avg. Time',
+      label: "Avg. Time",
       value: `${Math.round(analytics.averageTime)} min`,
       icon: ClockIcon,
-      color: 'orange',
+      color: "orange",
       change: analytics.timeChange,
     },
   ];
 
   // Score distribution chart data
   const scoreDistributionData = {
-    labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+    labels: ["0-20%", "21-40%", "41-60%", "61-80%", "81-100%"],
     datasets: [
       {
-        label: 'Students',
+        label: "Students",
         data: analytics.scoreDistribution,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(251, 146, 60, 0.8)',
-          'rgba(250, 204, 21, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
+          "rgba(239, 68, 68, 0.8)",
+          "rgba(251, 146, 60, 0.8)",
+          "rgba(250, 204, 21, 0.8)",
+          "rgba(34, 197, 94, 0.8)",
+          "rgba(59, 130, 246, 0.8)",
         ],
       },
     ],
@@ -130,10 +132,10 @@ export default function QuizAnalytics({ quizId }) {
     labels: analytics.trendDates,
     datasets: [
       {
-        label: 'Average Score',
+        label: "Average Score",
         data: analytics.trendScores,
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
         tension: 0.4,
       },
     ],
@@ -144,22 +146,27 @@ export default function QuizAnalytics({ quizId }) {
     labels: analytics.questions.map((q, i) => `Q${i + 1}`),
     datasets: [
       {
-        label: 'Success Rate (%)',
-        data: analytics.questions.map(q => q.successRate),
-        backgroundColor: analytics.questions.map(q => 
-          q.successRate >= 70 ? 'rgba(34, 197, 94, 0.8)' :
-          q.successRate >= 40 ? 'rgba(250, 204, 21, 0.8)' :
-          'rgba(239, 68, 68, 0.8)'
+        label: "Success Rate (%)",
+        data: analytics.questions.map((q) => q.successRate),
+        backgroundColor: analytics.questions.map((q) =>
+          q.successRate >= 70
+            ? "rgba(34, 197, 94, 0.8)"
+            : q.successRate >= 40
+            ? "rgba(250, 204, 21, 0.8)"
+            : "rgba(239, 68, 68, 0.8)"
         ),
       },
     ],
   };
 
   const colorClasses = {
-    blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-    green: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-    purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-    orange: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+    blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    green:
+      "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+    purple:
+      "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+    orange:
+      "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
   };
 
   return (
@@ -170,17 +177,21 @@ export default function QuizAnalytics({ quizId }) {
           Quiz Analytics
         </h2>
         <div className="flex gap-2">
-          {['all', 'week', 'month'].map(range => (
+          {["all", "week", "month"].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 timeRange === range
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
             >
-              {range === 'all' ? 'All Time' : range === 'week' ? 'This Week' : 'This Month'}
+              {range === "all"
+                ? "All Time"
+                : range === "week"
+                ? "This Week"
+                : "This Month"}
             </button>
           ))}
         </div>
@@ -191,7 +202,9 @@ export default function QuizAnalytics({ quizId }) {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           const isPositive = stat.change >= 0;
-          const TrendIcon = isPositive ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
+          const TrendIcon = isPositive
+            ? ArrowTrendingUpIcon
+            : ArrowTrendingDownIcon;
 
           return (
             <motion.div
@@ -202,13 +215,21 @@ export default function QuizAnalytics({ quizId }) {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl ${colorClasses[stat.color]} flex items-center justify-center`}>
+                <div
+                  className={`w-12 h-12 rounded-xl ${
+                    colorClasses[stat.color]
+                  } flex items-center justify-center`}
+                >
                   <Icon className="w-6 h-6" />
                 </div>
                 {stat.change !== undefined && (
-                  <div className={`flex items-center gap-1 text-sm font-medium ${
-                    isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                  }`}>
+                  <div
+                    className={`flex items-center gap-1 text-sm font-medium ${
+                      isPositive
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
                     <TrendIcon className="w-4 h-4" />
                     {Math.abs(stat.change)}%
                   </div>
@@ -242,10 +263,10 @@ export default function QuizAnalytics({ quizId }) {
               scales: {
                 y: {
                   beginAtZero: true,
-                  ticks: { color: '#9ca3af' },
+                  ticks: { color: "#9ca3af" },
                 },
                 x: {
-                  ticks: { color: '#9ca3af' },
+                  ticks: { color: "#9ca3af" },
                 },
               },
             }}
@@ -268,10 +289,10 @@ export default function QuizAnalytics({ quizId }) {
                 y: {
                   beginAtZero: true,
                   max: 100,
-                  ticks: { color: '#9ca3af' },
+                  ticks: { color: "#9ca3af" },
                 },
                 x: {
-                  ticks: { color: '#9ca3af' },
+                  ticks: { color: "#9ca3af" },
                 },
               },
             }}
@@ -295,10 +316,10 @@ export default function QuizAnalytics({ quizId }) {
               y: {
                 beginAtZero: true,
                 max: 100,
-                ticks: { color: '#9ca3af' },
+                ticks: { color: "#9ca3af" },
               },
               x: {
-                ticks: { color: '#9ca3af' },
+                ticks: { color: "#9ca3af" },
               },
             },
           }}
@@ -306,15 +327,21 @@ export default function QuizAnalytics({ quizId }) {
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-4 h-4 bg-green-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Easy (≥70% success)</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              Easy (≥70% success)
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Medium (40-69% success)</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              Medium (40-69% success)
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="w-4 h-4 bg-red-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Hard (&lt;40% success)</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              Hard (&lt;40% success)
+            </span>
           </div>
         </div>
       </div>
@@ -339,13 +366,15 @@ export default function QuizAnalytics({ quizId }) {
                     {question.text}
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  question.successRate >= 70
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                    : question.successRate >= 40
-                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                }`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    question.successRate >= 70
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                      : question.successRate >= 40
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                  }`}
+                >
                   {question.successRate}% success
                 </span>
               </div>
@@ -421,13 +450,17 @@ export function QuizAnalyticsSummary({ quizId }) {
         <div className="text-2xl font-bold text-green-600 dark:text-green-400">
           {summary.avgScore}%
         </div>
-        <div className="text-xs text-gray-600 dark:text-gray-400">Avg Score</div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">
+          Avg Score
+        </div>
       </div>
       <div className="text-center">
         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
           {summary.passRate}%
         </div>
-        <div className="text-xs text-gray-600 dark:text-gray-400">Pass Rate</div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">
+          Pass Rate
+        </div>
       </div>
     </div>
   );

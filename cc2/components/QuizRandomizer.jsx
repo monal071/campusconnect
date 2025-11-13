@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
-import { ArrowsRightLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from "react";
+import {
+  ArrowsRightLeftIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
 
 /**
  * Shuffle array using Fisher-Yates algorithm
@@ -7,7 +10,7 @@ import { ArrowsRightLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outlin
 function shuffleArray(array, seed = null) {
   const arr = [...array];
   const random = seed ? seededRandom(seed) : Math.random;
-  
+
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -20,7 +23,7 @@ function shuffleArray(array, seed = null) {
  */
 function seededRandom(seed) {
   let value = seed;
-  return function() {
+  return function () {
     value = (value * 9301 + 49297) % 233280;
     return value / 233280;
   };
@@ -31,11 +34,12 @@ function seededRandom(seed) {
  */
 export function randomizeQuizForStudent(quiz, studentId) {
   // Create a seed from studentId and quizId
-  const seed = parseInt(studentId.replace(/\D/g, '').slice(0, 8)) + 
-                parseInt(quiz._id.replace(/\D/g, '').slice(0, 8));
+  const seed =
+    parseInt(studentId.replace(/\D/g, "").slice(0, 8)) +
+    parseInt(quiz._id.replace(/\D/g, "").slice(0, 8));
 
   // Shuffle questions if enabled
-  const questions = quiz.settings?.randomizeQuestions 
+  const questions = quiz.settings?.randomizeQuestions
     ? shuffleArray(quiz.questions, seed)
     : [...quiz.questions];
 
@@ -44,17 +48,18 @@ export function randomizeQuizForStudent(quiz, studentId) {
     if (quiz.settings?.randomizeOptions && question.options) {
       // Create question-specific seed
       const questionSeed = seed + index;
-      
+
       // Keep track of correct answer before shuffling
       const correctAnswer = question.correctAnswer;
       const correctIndex = question.options.indexOf(correctAnswer);
-      
+
       // Shuffle options
       const shuffledOptions = shuffleArray(question.options, questionSeed);
-      
+
       // Update correct answer to new position
-      const newCorrectAnswer = shuffledOptions[shuffledOptions.indexOf(correctAnswer)];
-      
+      const newCorrectAnswer =
+        shuffledOptions[shuffledOptions.indexOf(correctAnswer)];
+
       return {
         ...question,
         options: shuffledOptions,
@@ -151,8 +156,8 @@ export default function QuizRandomizerSettings({ settings = {}, onChange }) {
         <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <CheckCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-900 dark:text-blue-200">
-            <strong>Anti-cheating enabled:</strong> Each student will see a unique
-            question/option order, but grading remains consistent.
+            <strong>Anti-cheating enabled:</strong> Each student will see a
+            unique question/option order, but grading remains consistent.
           </div>
         </div>
       )}
@@ -197,8 +202,8 @@ export function RandomizedQuizPreview({ quiz, studentId }) {
                   key={optIndex}
                   className={`p-2 rounded ${
                     option === question.correctAnswer
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-200'
-                      : 'bg-gray-50 dark:bg-gray-700'
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-200"
+                      : "bg-gray-50 dark:bg-gray-700"
                   }`}
                 >
                   {String.fromCharCode(65 + optIndex)}. {option}

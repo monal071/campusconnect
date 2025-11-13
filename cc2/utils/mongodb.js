@@ -20,7 +20,7 @@ const mongoOptions = {
   // bufferMaxEntries is deprecated in newer MongoDB drivers
   // Using newer connection options instead
   retryWrites: true,
-  retryReads: true
+  retryReads: true,
 };
 
 if (process.env.NODE_ENV === "development") {

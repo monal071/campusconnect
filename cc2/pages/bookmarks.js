@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
-import Layout from '../components/Layout';
-import LoadingSpinner from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import Layout from "../components/Layout";
+import LoadingSpinner from "../components/LoadingSpinner";
+import toast from "react-hot-toast";
 import {
   BookmarkIcon,
   DocumentTextIcon,
@@ -11,16 +11,38 @@ import {
   AcademicCapIcon,
   CalendarIcon,
   BriefcaseIcon,
-  TrashIcon
-} from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
 
 const BOOKMARK_TYPES = {
-  post: { icon: DocumentTextIcon, label: 'Posts', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-  resource: { icon: FolderIcon, label: 'Resources', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-  quiz: { icon: AcademicCapIcon, label: 'Quizzes', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
-  event: { icon: CalendarIcon, label: 'Events', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' },
-  job: { icon: BriefcaseIcon, label: 'Jobs', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300' }
+  post: {
+    icon: DocumentTextIcon,
+    label: "Posts",
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+  },
+  resource: {
+    icon: FolderIcon,
+    label: "Resources",
+    color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  },
+  quiz: {
+    icon: AcademicCapIcon,
+    label: "Quizzes",
+    color:
+      "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+  },
+  event: {
+    icon: CalendarIcon,
+    label: "Events",
+    color:
+      "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+  },
+  job: {
+    icon: BriefcaseIcon,
+    label: "Jobs",
+    color: "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300",
+  },
 };
 
 export default function Bookmarks() {
@@ -28,12 +50,12 @@ export default function Bookmarks() {
   const router = useRouter();
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated') {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated") {
       fetchBookmarks();
     }
   }, [status, filterType]);
@@ -43,15 +65,15 @@ export default function Bookmarks() {
     try {
       const response = await fetch(`/api/bookmarks?type=${filterType}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setBookmarks(data.bookmarks || []);
       } else {
-        toast.error(data.error || 'Failed to fetch bookmarks');
+        toast.error(data.error || "Failed to fetch bookmarks");
       }
     } catch (error) {
-      console.error('Fetch bookmarks error:', error);
-      toast.error('Failed to load bookmarks');
+      console.error("Fetch bookmarks error:", error);
+      toast.error("Failed to load bookmarks");
     } finally {
       setLoading(false);
     }
@@ -59,35 +81,40 @@ export default function Bookmarks() {
 
   const handleRemoveBookmark = async (itemId, type) => {
     try {
-      const response = await fetch(`/api/bookmarks?itemId=${itemId}&type=${type}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/bookmarks?itemId=${itemId}&type=${type}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
-        setBookmarks(prev => prev.filter(b => !(b.itemId === itemId && b.type === type)));
-        toast.success('Bookmark removed');
+        setBookmarks((prev) =>
+          prev.filter((b) => !(b.itemId === itemId && b.type === type))
+        );
+        toast.success("Bookmark removed");
       } else {
-        toast.error('Failed to remove bookmark');
+        toast.error("Failed to remove bookmark");
       }
     } catch (error) {
-      console.error('Remove bookmark error:', error);
-      toast.error('Failed to remove bookmark');
+      console.error("Remove bookmark error:", error);
+      toast.error("Failed to remove bookmark");
     }
   };
 
   const handleBookmarkClick = (bookmark) => {
     const routes = {
-      post: '/posts',
-      resource: '/resources',
-      quiz: '/quiz',
-      event: '/events',
-      job: '/jobs'
+      post: "/posts",
+      resource: "/resources",
+      quiz: "/quiz",
+      event: "/events",
+      job: "/jobs",
     };
-    
-    router.push(routes[bookmark.type] || '/');
+
+    router.push(routes[bookmark.type] || "/");
   };
 
-  if (status === 'loading' || loading) {
+  if (status === "loading" || loading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
@@ -116,11 +143,11 @@ export default function Bookmarks() {
         {/* Filter Tabs */}
         <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
           <button
-            onClick={() => setFilterType('all')}
+            onClick={() => setFilterType("all")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-              filterType === 'all'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              filterType === "all"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
             }`}
           >
             All ({bookmarks.length})
@@ -131,8 +158,8 @@ export default function Bookmarks() {
               onClick={() => setFilterType(key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 filterType === key
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
               }`}
             >
               {label}
@@ -156,7 +183,7 @@ export default function Bookmarks() {
             {bookmarks.map((bookmark, index) => {
               const { icon: Icon, color } = BOOKMARK_TYPES[bookmark.type];
               const item = bookmark.item;
-              
+
               if (!item) return null;
 
               return (
@@ -184,7 +211,11 @@ export default function Bookmarks() {
                     </div>
 
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                      {item.title || item.quizName || item.content?.substring(0, 100) || item.name || 'Untitled'}
+                      {item.title ||
+                        item.quizName ||
+                        item.content?.substring(0, 100) ||
+                        item.name ||
+                        "Untitled"}
                     </h3>
 
                     {item.description && (

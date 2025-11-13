@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * Sentry error reporting utilities
@@ -8,20 +8,20 @@ import * as Sentry from '@sentry/nextjs';
  * Capture exception with context
  */
 export function captureException(error, context = {}) {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     Sentry.captureException(error, {
       contexts: { custom: context },
     });
   } else {
-    console.error('Error:', error, 'Context:', context);
+    console.error("Error:", error, "Context:", context);
   }
 }
 
 /**
  * Capture message
  */
-export function captureMessage(message, level = 'info', context = {}) {
-  if (process.env.NODE_ENV === 'production') {
+export function captureMessage(message, level = "info", context = {}) {
+  if (process.env.NODE_ENV === "production") {
     Sentry.captureMessage(message, {
       level,
       contexts: { custom: context },
@@ -49,12 +49,12 @@ export function setUser(user) {
 /**
  * Add breadcrumb
  */
-export function addBreadcrumb(message, category = 'custom', data = {}) {
+export function addBreadcrumb(message, category = "custom", data = {}) {
   Sentry.addBreadcrumb({
     message,
     category,
     data,
-    level: 'info',
+    level: "info",
   });
 }
 
@@ -71,10 +71,11 @@ export function withErrorTracking(handler) {
         method: req.method,
         body: req.body,
       });
-      
+
       res.status(500).json({
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        error: "Internal server error",
+        message:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
   };
@@ -83,7 +84,7 @@ export function withErrorTracking(handler) {
 /**
  * Start transaction for performance monitoring
  */
-export function startTransaction(name, op = 'http.server') {
+export function startTransaction(name, op = "http.server") {
   return Sentry.startTransaction({ name, op });
 }
 

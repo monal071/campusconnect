@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
-      const { tag, type = 'all', limit = 20 } = req.query;
+      const { tag, type = "all", limit = 20 } = req.query;
 
       if (!tag) {
         return res.status(400).json({ error: "Tag is required" });
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       const results = {};
 
       // Search in posts
-      if (type === 'all' || type === 'posts') {
+      if (type === "all" || type === "posts") {
         const posts = await db
           .collection("posts")
           .find({
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       }
 
       // Search in resources
-      if (type === 'all' || type === 'resources') {
+      if (type === "all" || type === "resources") {
         const resources = await db
           .collection("resources")
           .find({
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       }
 
       // Search in communities
-      if (type === 'all' || type === 'communities') {
+      if (type === "all" || type === "communities") {
         const communities = await db
           .collection("communities")
           .find({

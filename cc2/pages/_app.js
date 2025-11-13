@@ -21,15 +21,15 @@ export default function App({
     setMounted(true);
 
     // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
         navigator.serviceWorker
-          .register('/sw.js')
+          .register("/sw.js")
           .then((registration) => {
-            console.log('Service Worker registered:', registration);
+            console.log("Service Worker registered:", registration);
           })
           .catch((error) => {
-            console.log('Service Worker registration failed:', error);
+            console.log("Service Worker registration failed:", error);
           });
       });
     }
@@ -42,19 +42,19 @@ export default function App({
           <ThemeProvider defaultTheme="dark" attribute="class">
             {/* Route Progress Bar */}
             <ProgressBar />
-            
+
             <Layout>
               <Component {...pageProps} />
-              
+
               {/* Enhanced Toast Notifications (top-right) */}
               <ImprovedToaster />
-              
+
               {/* Keyboard Shortcuts */}
               {mounted && <KeyboardShortcuts />}
-              
+
               {/* PWA Install Prompt */}
               {mounted && <PWAInstallPrompt />}
-              
+
               {/* Onboarding Tour (shows for new users) */}
               {mounted && <OnboardingTour />}
             </Layout>
