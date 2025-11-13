@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - CampusConnect</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 60px 40px;
+      text-align: center;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 30px;
+      background: #f3f4f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-center;
+      font-size: 60px;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #1f2937;
+      margin-bottom: 15px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .features {
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .features h2 {
+      font-size: 18px;
+      color: #374151;
+      margin-bottom: 20px;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 15px;
+      text-align: left;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .feature-icon {
+      width: 24px;
+      height: 24px;
+      background: #e0e7ff;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .feature-text {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+      }
+
+      .container {
+        background: #1f2937;
+      }
+
+      .icon {
+        background: #374151;
+      }
+
+      h1 {
+        color: #f9fafb;
+      }
+
+      p {
+        color: #d1d5db;
+      }
+
+      .features h2 {
+        color: #f3f4f6;
+      }
+
+      .feature-text {
+        color: #d1d5db;
+      }
+
+      .feature-icon {
+        background: #4b5563;
+      }
+
+      .features {
+        border-top-color: #374151;
+      }
+    }
+
+    .animation {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon animation">
+      📡
+    </div>
+    
+    <h1>You're Offline</h1>
+    
+    <p>
+      It looks like you've lost your internet connection. Don't worry, you can still browse cached content, and we'll sync your data when you're back online.
+    </p>
+
+    <a href="/" class="button" onclick="window.location.reload(); return false;">
+      Try Again
+    </a>
+
+    <div class="features">
+      <h2>Available Offline Features</h2>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">📄</div>
+          <div class="feature-text">Browse previously loaded pages and content</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">✍️</div>
+          <div class="feature-text">Draft posts that will sync when online</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📚</div>
+          <div class="feature-text">View downloaded resources and materials</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔔</div>
+          <div class="feature-text">Access cached notifications and updates</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Automatically retry when connection is restored
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+
+    // Check connection status periodically
+    setInterval(() => {
+      if (navigator.onLine) {
+        window.location.reload();
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

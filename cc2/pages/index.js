@@ -2,10 +2,10 @@ import Head from "next/head";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedBackground from "../components/AnimatedBackground";
-import { 
-  AcademicCapIcon, 
-  UsersIcon, 
-  CalendarDaysIcon, 
+import {
+  AcademicCapIcon,
+  UsersIcon,
+  CalendarDaysIcon,
   BriefcaseIcon,
   ChatBubbleBottomCenterTextIcon,
   BookOpenIcon,
@@ -14,7 +14,7 @@ import {
   CheckCircleIcon,
   GlobeAltIcon,
   HeartIcon,
-  LightBulbIcon
+  LightBulbIcon,
 } from "@heroicons/react/24/outline";
 
 export default function Home() {
@@ -22,46 +22,52 @@ export default function Home() {
     {
       icon: UsersIcon,
       title: "Connect & Network",
-      description: "Build meaningful relationships with peers, mentors, and alumni in your field.",
-      color: "from-blue-500 to-cyan-500"
+      description:
+        "Build meaningful relationships with peers, mentors, and alumni in your field.",
+      color: "from-blue-500 to-cyan-500",
     },
     {
       icon: CalendarDaysIcon,
       title: "Campus Events",
-      description: "Discover and attend events, workshops, and activities happening on campus.",
-      color: "from-purple-500 to-pink-500"
+      description:
+        "Discover and attend events, workshops, and activities happening on campus.",
+      color: "from-purple-500 to-pink-500",
     },
     {
       icon: BriefcaseIcon,
       title: "Career Opportunities",
-      description: "Find internships, jobs, and career development resources tailored for students.",
-      color: "from-green-500 to-emerald-500"
+      description:
+        "Find internships, jobs, and career development resources tailored for students.",
+      color: "from-green-500 to-emerald-500",
     },
     {
       icon: BookOpenIcon,
       title: "Academic Resources",
-      description: "Access study materials, tutoring services, and academic support resources.",
-      color: "from-orange-500 to-red-500"
+      description:
+        "Access study materials, tutoring services, and academic support resources.",
+      color: "from-orange-500 to-red-500",
     },
     {
       icon: ChatBubbleBottomCenterTextIcon,
       title: "Community Groups",
-      description: "Join communities, share experiences, and engage with your campus community.",
-      color: "from-indigo-500 to-purple-500"
+      description:
+        "Join communities, share experiences, and engage with your campus community.",
+      color: "from-indigo-500 to-purple-500",
     },
     {
       icon: SparklesIcon,
       title: "Personal Growth",
-      description: "Track your progress, set goals, and develop skills for your future career.",
-      color: "from-pink-500 to-rose-500"
-    }
+      description:
+        "Track your progress, set goals, and develop skills for your future career.",
+      color: "from-pink-500 to-rose-500",
+    },
   ];
 
   const stats = [
     { number: "10K+", label: "Active Students" },
     { number: "500+", label: "Campus Events" },
     { number: "1K+", label: "Job Opportunities" },
-    { number: "50+", label: "Universities" }
+    { number: "50+", label: "Universities" },
   ];
 
   const benefits = [
@@ -69,16 +75,19 @@ export default function Home() {
     "Access exclusive campus events",
     "Find internships and job opportunities",
     "Get academic support and resources",
-    "Build your professional network"
+    "Build your professional network",
   ];
 
   return (
     <div className="min-h-screen w-full hero-gradient">
       <Head>
         <title>CampusConnect - Your Campus Community Hub</title>
-        <meta name="description" content="Connect with your campus community. Discover events, resources, job opportunities, and build valuable connections." />
+        <meta
+          name="description"
+          content="Connect with your campus community. Discover events, resources, job opportunities, and build valuable connections."
+        />
       </Head>
-      
+
       {/* Background Effects */}
       <AnimatedBackground />
 
@@ -92,10 +101,16 @@ export default function Home() {
           Campus<span className="text-cyan-400">Connect</span>
         </motion.div>
         <div className="flex gap-4">
-          <Link href="/login" className="px-4 py-2 text-white hover:text-cyan-300 transition-colors">
+          <Link
+            href="/login"
+            className="px-4 py-2 text-white hover:text-cyan-300 transition-colors"
+          >
             Sign In
           </Link>
-          <Link href="/signup" className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full hover:from-cyan-600 hover:to-blue-600 transition-all transform hover:scale-105">
+          <Link
+            href="/signup"
+            className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full hover:from-cyan-600 hover:to-blue-600 transition-all transform hover:scale-105"
+          >
             Sign Up
           </Link>
         </div>
@@ -112,22 +127,21 @@ export default function Home() {
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white mb-6 leading-tight">
               Your Campus
               <br />
-              <span className="gradient-text">
-                Community Hub
-              </span>
+              <span className="gradient-text">Community Hub</span>
             </h1>
           </motion.div>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            Connect with peers, discover opportunities, and thrive in your academic journey. 
-            Join thousands of students building their future together.
+            Connect with peers, discover opportunities, and thrive in your
+            academic journey. Join thousands of students building their future
+            together.
           </motion.p>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -143,10 +157,10 @@ export default function Home() {
             </Link>
             <button
               onClick={() => {
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('guest', 'true');
-                  document.cookie = 'guest=true; path=/; max-age=86400'; // 1 day
-                  window.location.href = '/dashboard';
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("guest", "true");
+                  document.cookie = "guest=true; path=/; max-age=86400"; // 1 day
+                  window.location.href = "/dashboard";
                 }
               }}
               className="px-8 py-4 border-2 border-white/20 text-white text-lg font-semibold rounded-full hover:bg-white/10 transition-all backdrop-blur-sm"
@@ -164,7 +178,9 @@ export default function Home() {
           >
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.number}</div>
+                <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                  {stat.number}
+                </div>
                 <div className="text-slate-400 font-medium">{stat.label}</div>
               </div>
             ))}
@@ -183,10 +199,15 @@ export default function Home() {
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Everything You Need to
-              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"> Succeed</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                {" "}
+                Succeed
+              </span>
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Discover all the tools and resources designed to enhance your campus experience and accelerate your academic and professional growth.
+              Discover all the tools and resources designed to enhance your
+              campus experience and accelerate your academic and professional
+              growth.
             </p>
           </motion.div>
 
@@ -201,11 +222,17 @@ export default function Home() {
                 whileHover={{ y: -5 }}
                 className="group p-8 glass-effect rounded-2xl hover:bg-white/10 transition-all duration-300 feature-card hover-lift"
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                <div
+                  className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                >
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  {feature.title}
+                </h3>
+                <p className="text-slate-400 leading-relaxed">
+                  {feature.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -223,7 +250,10 @@ export default function Home() {
             >
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
                 Why Choose
-                <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"> CampusConnect?</span>
+                <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  {" "}
+                  CampusConnect?
+                </span>
               </h2>
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
@@ -251,25 +281,41 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="p-6 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl border border-blue-500/20">
                   <GlobeAltIcon className="w-8 h-8 text-blue-400 mb-4" />
-                  <h4 className="text-white font-semibold mb-2">Global Network</h4>
-                  <p className="text-slate-400 text-sm">Connect with students worldwide</p>
+                  <h4 className="text-white font-semibold mb-2">
+                    Global Network
+                  </h4>
+                  <p className="text-slate-400 text-sm">
+                    Connect with students worldwide
+                  </p>
                 </div>
                 <div className="p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl border border-purple-500/20">
                   <HeartIcon className="w-8 h-8 text-purple-400 mb-4" />
-                  <h4 className="text-white font-semibold mb-2">Community First</h4>
-                  <p className="text-slate-400 text-sm">Built by students, for students</p>
+                  <h4 className="text-white font-semibold mb-2">
+                    Community First
+                  </h4>
+                  <p className="text-slate-400 text-sm">
+                    Built by students, for students
+                  </p>
                 </div>
               </div>
               <div className="space-y-6 mt-8">
                 <div className="p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/20">
                   <LightBulbIcon className="w-8 h-8 text-green-400 mb-4" />
-                  <h4 className="text-white font-semibold mb-2">Smart Matching</h4>
-                  <p className="text-slate-400 text-sm">AI-powered connections</p>
+                  <h4 className="text-white font-semibold mb-2">
+                    Smart Matching
+                  </h4>
+                  <p className="text-slate-400 text-sm">
+                    AI-powered connections
+                  </p>
                 </div>
                 <div className="p-6 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl border border-orange-500/20">
                   <AcademicCapIcon className="w-8 h-8 text-orange-400 mb-4" />
-                  <h4 className="text-white font-semibold mb-2">Academic Excellence</h4>
-                  <p className="text-slate-400 text-sm">Resources for success</p>
+                  <h4 className="text-white font-semibold mb-2">
+                    Academic Excellence
+                  </h4>
+                  <p className="text-slate-400 text-sm">
+                    Resources for success
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -286,8 +332,12 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Explore CampusConnect</h2>
-            <p className="text-lg text-slate-300">Get started with these popular features</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Explore CampusConnect
+            </h2>
+            <p className="text-lg text-slate-300">
+              Get started with these popular features
+            </p>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
@@ -299,7 +349,7 @@ export default function Home() {
               { href: "/communities", label: "Communities", icon: "�" },
               { href: "/connections", label: "Network", icon: "🤝" },
               { href: "/quiz", label: "Quizzes", icon: "🧠" },
-              { href: "/login", label: "Sign In", icon: "👤" }
+              { href: "/login", label: "Sign In", icon: "👤" },
             ].map((link, index) => (
               <motion.div
                 key={link.href}
@@ -311,17 +361,19 @@ export default function Home() {
               >
                 <button
                   onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      if (link.href !== '/login' && link.href !== '/signup') {
-                        localStorage.setItem('guest', 'true');
-                        document.cookie = 'guest=true; path=/; max-age=86400'; // 1 day
+                    if (typeof window !== "undefined") {
+                      if (link.href !== "/login" && link.href !== "/signup") {
+                        localStorage.setItem("guest", "true");
+                        document.cookie = "guest=true; path=/; max-age=86400"; // 1 day
                       }
                       window.location.href = link.href;
                     }
                   }}
                   className="block w-full p-6 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 text-center group"
                 >
-                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">{link.icon}</div>
+                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">
+                    {link.icon}
+                  </div>
                   <div className="text-white font-medium">{link.label}</div>
                 </button>
               </motion.div>
@@ -344,7 +396,8 @@ export default function Home() {
                 Ready to Get Started?
               </h2>
               <p className="text-xl text-slate-300 mb-10 leading-relaxed">
-                Connect with your campus community and discover new opportunities.
+                Connect with your campus community and discover new
+                opportunities.
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Link
@@ -356,10 +409,10 @@ export default function Home() {
                 </Link>
                 <button
                   onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('guest', 'true');
-                      document.cookie = 'guest=true; path=/; max-age=86400'; // 1 day
-                      window.location.href = '/dashboard';
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("guest", "true");
+                      document.cookie = "guest=true; path=/; max-age=86400"; // 1 day
+                      window.location.href = "/dashboard";
                     }
                   }}
                   className="px-10 py-4 border-2 border-white/20 text-white text-lg font-semibold rounded-full hover:bg-white/10 transition-all backdrop-blur-sm"
@@ -376,7 +429,10 @@ export default function Home() {
       <footer className="relative z-10 border-t border-white/10 py-8">
         <div className="container mx-auto px-6">
           <div className="text-center text-slate-400">
-            <p>&copy; 2024 CampusConnect. Building stronger campus communities, one connection at a time.</p>
+            <p>
+              &copy; 2024 CampusConnect. Building stronger campus communities,
+              one connection at a time.
+            </p>
           </div>
         </div>
       </footer>

@@ -106,7 +106,7 @@ async function handlePost(req, res, db, communityId, user) {
       const community = await db
         .collection("communities")
         .findOne({ _id: new ObjectId(communityId) });
-      
+
       if (!community) {
         return res.status(404).json({ message: "Community not found" });
       }

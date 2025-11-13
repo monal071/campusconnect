@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Notification from "./Notification";
+import GlobalSearch from "./GlobalSearch";
 
 // Import icons from Material-UI
 import HomeIcon from "@mui/icons-material/Home";
@@ -20,10 +21,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import SearchIcon from "@mui/icons-material/Search";
 
 const Header = () => {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const { data: session } = useSession();
@@ -31,6 +34,19 @@ const Header = () => {
     session?.user?.role || localStorage.getItem("role") || "user";
 
   useEffect(() => setMounted(true), []);
+
+  // Keyboard shortcut for search (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navigationItems = [
     { href: "/", Icon: HomeIcon, text: "Home" },
@@ -112,6 +128,30 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center space-x-4">
+            {/* Search Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSearchOpen(true)}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors"
+            >
+              <SearchIcon className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-400">Search...</span>
+              <kbd className="hidden sm:inline-block px-2 py-1 text-xs bg-gray-900 border border-gray-600 rounded">
+                ⌘K
+              </kbd>
+            </motion.button>
+
+            {/* Mobile Search Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setSearchOpen(true)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-700/50 transition-colors"
+            >
+              <SearchIcon className="h-5 w-5" />
+            </motion.button>
+
             {/* Notification Component */}
             <Notification />
 
@@ -163,6 +203,9 @@ const Header = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </motion.header>
   );
 };
