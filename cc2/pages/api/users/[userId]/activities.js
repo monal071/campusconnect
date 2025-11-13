@@ -1,5 +1,5 @@
 import { getSession } from 'next-auth/react';
-import clientPromise from '../../../utils/mongodb';
+import { connectToDatabase } from '../../../../utils/mongodb';
 import { ObjectId } from 'mongodb';
 
 export default async function handler(req, res) {
@@ -12,8 +12,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const client = await clientPromise;
-      const db = client.db();
+      const { db } = await connectToDatabase();
 
       const limit = parseInt(req.query.limit) || 10;
       const page = parseInt(req.query.page) || 1;
