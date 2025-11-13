@@ -35,3 +35,10 @@ if (process.env.NODE_ENV === "development") {
 }
 
 export default clientPromise;
+
+// Helper function for new API routes
+export async function connectToDatabase() {
+  const client = await clientPromise;
+  const db = client.db();
+  return { client, db };
+}
