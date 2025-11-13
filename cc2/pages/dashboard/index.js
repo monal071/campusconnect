@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import UserNotifications from "../../components/UserNotifications";
+import TrendingSection from "../../components/TrendingSection";
+import FloatingActionButton from "../../components/FloatingActionButton";
+import RecentActivity from "../../components/RecentActivity";
 
 // Heroicons
 import {
@@ -19,6 +22,8 @@ import {
   PlayIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
+  BookmarkIcon,
+  FireIcon,
 } from "@heroicons/react/24/outline";
 
 export default function Dashboard() {
@@ -669,6 +674,24 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Trending Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6" data-tour="trending">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <FireIcon className="h-6 w-6 text-orange-500" />
+                  Trending Now
+                </h2>
+              </div>
+              <TrendingSection type="all" limit={5} />
+            </div>
+
+            {/* Recent Activity */}
+            {session?.user?.id && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md" data-tour="activity">
+                <RecentActivity userId={session.user.id} limit={10} />
+              </div>
+            )}
+
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -678,8 +701,20 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Link
+                  href="/bookmarks"
+                  className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all"
+                  data-tour="bookmarks"
+                >
+                  <BookmarkIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    Bookmarks
+                  </span>
+                </Link>
+
+                <Link
                   href="/events"
                   className="flex flex-col items-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all"
+                  data-tour="events"
                 >
                   <CalendarIcon className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -690,6 +725,7 @@ export default function Dashboard() {
                 <Link
                   href="/connections"
                   className="flex flex-col items-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all"
+                  data-tour="connections"
                 >
                   <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -711,6 +747,9 @@ export default function Dashboard() {
           </motion.section>
         </div>
       </div>
+      
+      {/* Floating Action Button */}
+      <FloatingActionButton position="bottom-right" />
     </div>
   );
 }

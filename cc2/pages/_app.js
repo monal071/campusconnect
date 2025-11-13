@@ -1,45 +1,62 @@
 import "../styles/globals.css";
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
 import { RecoilRoot } from "recoil";
+import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import ErrorBoundary from "../components/ErrorBoundary";
+import ImprovedToaster from "../components/ImprovedToaster";
+import ProgressBar from "../components/ProgressBar";
+import KeyboardShortcuts from "../components/KeyboardShortcuts";
+import PWAInstallPrompt from "../components/PWAInstallPrompt";
+import OnboardingTour from "../components/OnboardingTour";
 
 export default function App({
   Component,
   pageProps: { session, ...pageProps },
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered:', registration);
+          })
+          .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <SessionProvider session={session}>
         <RecoilRoot>
           <ThemeProvider defaultTheme="dark" attribute="class">
+            {/* Route Progress Bar */}
+            <ProgressBar />
+            
             <Layout>
               <Component {...pageProps} />
-              <Toaster
-                position="bottom-center"
-                toastOptions={{
-                  duration: 3000,
-                  style: {
-                    background: '#1f2937',
-                    color: '#fff',
-                    border: '1px solid #374151',
-                  },
-                  success: {
-                    style: {
-                      background: '#065f46',
-                      color: '#fff',
-                    },
-                  },
-                  error: {
-                    style: {
-                      background: '#7f1d1d',
-                      color: '#fff',
-                    },
-                  },
-                }}
-              />
+              
+              {/* Enhanced Toast Notifications (top-right) */}
+              <ImprovedToaster />
+              
+              {/* Keyboard Shortcuts */}
+              {mounted && <KeyboardShortcuts />}
+              
+              {/* PWA Install Prompt */}
+              {mounted && <PWAInstallPrompt />}
+              
+              {/* Onboarding Tour (shows for new users) */}
+              {mounted && <OnboardingTour />}
             </Layout>
           </ThemeProvider>
         </RecoilRoot>
