@@ -130,14 +130,31 @@ export default async function handler(req, res) {
       const client = await clientPromise;
       const db = client.db();
 
-      // Get user details
-      const user = await db.collection("users").findOne({
+      // Get user details - try multiple methods to find user
+      let user = await db.collection("users").findOne({
         email: session.user.email.toLowerCase(),
       });
 
+      // If not found by email, try by ID
+      if (!user && session.user.id) {
+        user = await db.collection("users").findOne({
+          _id: new ObjectId(session.user.id),
+        });
+      }
+
+      // If still not found, try by email without lowercase
       if (!user) {
+        user = await db.collection("users").findOne({
+          email: session.user.email,
+        });
+      }
+
+      if (!user) {
+        console.error("User not found:", session.user.email);
         return res.status(404).json({ error: "User not found" });
       }
+
+      console.log("Found user for resource creation:", user.name, user.email);
 
       const {
         title,
@@ -199,13 +216,16 @@ export default async function handler(req, res) {
         likedBy: [],
         downloads: 0,
         views: 0,
-        userId: user._id,
-        author: user.name,
+        userId: new ObjectId(user._id), // Ensure ObjectId
+        author: user.name || user.email?.split("@")[0] || "Unknown User",
         authorEmail: user.email,
+        authorImage: user.image || null,
         authorRole: user.role || "student",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+
+      console.log("Creating resource with author:", resource.author, "userId:", resource.userId);
 
       const result = await db.collection("resources").insertOne(resource);
 
