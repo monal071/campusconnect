@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import UserNotifications from "../../components/UserNotifications";
 import TrendingSection from "../../components/TrendingSection";
 import FloatingActionButton from "../../components/FloatingActionButton";
-import RecentActivity from "../../components/RecentActivity";
 
 // Heroicons
 import {
@@ -683,66 +682,6 @@ export default function Dashboard() {
                 </h2>
               </div>
               <TrendingSection type="all" limit={5} />
-            </div>
-
-            {/* Recent Activity */}
-            {session?.user?.id && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md" data-tour="activity">
-                <RecentActivity userId={session.user.id} limit={10} />
-              </div>
-            )}
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Quick Actions
-                </h2>
-                <span className="text-indigo-500">⚡</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/bookmarks"
-                  className="flex flex-col items-center p-3 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all"
-                  data-tour="bookmarks"
-                >
-                  <BookmarkIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Bookmarks
-                  </span>
-                </Link>
-
-                <Link
-                  href="/events"
-                  className="flex flex-col items-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all"
-                  data-tour="events"
-                >
-                  <CalendarIcon className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Events
-                  </span>
-                </Link>
-
-                <Link
-                  href="/connections"
-                  className="flex flex-col items-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all"
-                  data-tour="connections"
-                >
-                  <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Connect
-                  </span>
-                </Link>
-
-                <Link
-                  href="/jobs"
-                  className="flex flex-col items-center p-3 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all"
-                >
-                  <BriefcaseIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Jobs
-                  </span>
-                </Link>
-              </div>
             </div>
           </motion.section>
         </div>

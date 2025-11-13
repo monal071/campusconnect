@@ -147,7 +147,20 @@ export default function Jobs() {
                     )}
                   </div>
                 </div>
-                <span className="badge badge-primary">{job.type}</span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="badge badge-primary">{job.type}</span>
+                  {job.expiresAt && (
+                    <span className={`text-xs font-medium px-2 py-1 rounded ${
+                      new Date(job.expiresAt) < new Date() 
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' 
+                        : new Date(job.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                    }`}>
+                      Due: {new Date(job.expiresAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Salary */}
@@ -196,23 +209,8 @@ export default function Jobs() {
 
               {/* Footer with dates */}
               <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-4">
-                  {job.postedAt && (
-                    <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
-                  )}
-                </div>
-                {job.expiresAt && (
-                  <div className="flex items-center gap-1">
-                    <span className={`font-medium ${
-                      new Date(job.expiresAt) < new Date() 
-                        ? 'text-red-500' 
-                        : new Date(job.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                        ? 'text-orange-500'
-                        : 'text-slate-600 dark:text-slate-400'
-                    }`}>
-                      Deadline: {new Date(job.expiresAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                {job.postedAt && (
+                  <span>Posted: {new Date(job.postedAt).toLocaleDateString()}</span>
                 )}
               </div>
             </div>

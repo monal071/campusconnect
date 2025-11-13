@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import Layout from "../../components/Layout";
 import CreateQuizModal from "../../components/CreateQuizModal";
 import QuizCard from "../../components/QuizCard";
 import QuizResultsModal from "../../components/QuizResultsModal";
@@ -359,13 +358,11 @@ export default function QuizPage() {
 
   if (status === "loading") {
     return (
-      <Layout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner />
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner />
         </div>
-      </Layout>
+      </div>
     );
   }
 
@@ -379,8 +376,7 @@ export default function QuizPage() {
     session.user?.role === "faculty" || session.user?.role === "admin";
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
@@ -605,6 +601,5 @@ export default function QuizPage() {
           onQuizFound={handlePrivateQuizFound}
         />
       </div>
-    </Layout>
   );
 }

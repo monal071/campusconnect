@@ -35,16 +35,23 @@ export default async function handler(req, res) {
 
       if (session.user.role === 'admin') {
         // Admins can directly add jobs
-        await addItem(TABLE_NAME, {
+        const jobData = {
           ...job,
           createdBy: session.user.id,
           createdAt: new Date(),
+          postedAt: new Date(),
           status: 'approved'
-        });
+        };
+        // Map deadline to expiresAt
+        if (job.deadline) {
+          jobData.expiresAt = new Date(job.deadline);
+          delete jobData.deadline;
+        }
+        await addItem(TABLE_NAME, jobData);
         res.status(201).json({ message: 'Job added successfully' });
       } else {
         // Regular users submit for approval
-        await db.collection('pending_jobs').insertOne({
+        const pendingJobData = {
           ...job,
           createdBy: session.user.id,
           createdAt: new Date(),
@@ -54,7 +61,13 @@ export default async function handler(req, res) {
             name: session.user.name,
             email: session.user.email
           }
-        });
+        };
+        // Map deadline to expiresAt
+        if (job.deadline) {
+          pendingJobData.expiresAt = new Date(job.deadline);
+          delete pendingJobData.deadline;
+        }
+        await db.collection('pending_jobs').insertOne(pendingJobData);
 
         // Notify all admins about new pending job
         const admins = await db.collection('users').find({ role: 'admin' }).toArray();
