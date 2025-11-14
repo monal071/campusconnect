@@ -21,46 +21,18 @@ export default function Login() {
 
   // Handle authentication state changes
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      // User is authenticated, check if they need to complete registration
-      const checkRegistrationAndRedirect = async () => {
-        try {
-          const res = await fetch('/api/auth/check-registration');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.isRegistered && data.role) {
-              // User has a role, redirect based on role
-              if (data.role === 'admin') {
-                router.push('/admin');
-              } else if (data.role === 'student' || data.role === 'faculty') {
-                router.push('/dashboard');
-              } else {
-                // Handle legacy 'user' role if it exists
-                router.push('/dashboard');
-              }
-            } else {
-              // User needs to complete registration
-              router.push('/signup');
-            }
-          } else {
-            // Default redirect if check fails
-            router.push('/dashboard');
-          }
-        } catch (error) {
-          console.error('Error checking registration:', error);
-          router.push('/home');
-        }
-      };
-
-      checkRegistrationAndRedirect();
+    // Only redirect if authenticated and not currently signing in
+    if (status === 'authenticated' && session?.user && !isSigningIn) {
+      // Simple redirect to dashboard - let the dashboard handle role-based routing
+      router.replace('/dashboard');
     }
-  }, [status, session, router]);
+  }, [status, session, router, isSigningIn]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
     try {
       await signIn('google', { 
-        callbackUrl: '/login' // Will be handled by the useEffect above
+        callbackUrl: '/dashboard' // Redirect to dashboard after successful login
       });
     } catch (error) {
       console.error('Sign in error:', error);
