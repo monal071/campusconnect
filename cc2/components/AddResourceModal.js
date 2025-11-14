@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   XMarkIcon,
   CloudArrowUpIcon,
@@ -230,37 +229,32 @@ export default function AddResourceModal({
   };
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
-        </Transition.Child>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleClose}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+          />
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all border border-gray-200 dark:border-gray-700">
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <Dialog.Title className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                       {isEditing ? "Edit Resource" : "Add New Resource"}
-                    </Dialog.Title>
+                    </h2>
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                       Share your knowledge with the community! All students,
                       faculty, and members can contribute resources.
@@ -565,11 +559,11 @@ export default function AddResourceModal({
                     </button>
                   </div>
                 </form>
-              </Dialog.Panel>
-            </Transition.Child>
+              </motion.div>
+            </div>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+      )}
+    </AnimatePresence>
   );
 }
