@@ -27,13 +27,17 @@ export default async function handler(req, res) {
       email: session.user.email.toLowerCase() 
     });
     
+    console.log('🔍 Check registration for:', session.user.email, 'Found user:', !!user, 'Role:', user?.role);
+    
     // Check if the user exists and has a role
     if (user && user.role) {
+      console.log('✅ User is registered with role:', user.role);
       return res.status(200).json({
         isRegistered: true,
         role: user.role
       });
     } else {
+      console.log('⚠️ User not registered or no role');
       return res.status(200).json({
         isRegistered: false
       });

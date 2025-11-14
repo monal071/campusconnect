@@ -127,6 +127,7 @@ export default function Signup() {
     }
 
     try {
+      console.log('📤 Submitting role:', role);
       const res = await fetch('/api/auth/complete-registration', {
         method: 'POST',
         headers: {
@@ -137,6 +138,7 @@ export default function Signup() {
           name: session.user.name,
           role,
           adminPassword,
+          facultyPassword,
         }),
       });
       
@@ -146,18 +148,21 @@ export default function Signup() {
         throw new Error(data.message || 'Registration failed');
       }
       
+      console.log('✅ Registration completed, role:', data.role);
+      
       // Store user data in localStorage
       localStorage.setItem('role', role);
       
-      // Redirect based on role
-      if (role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      // Force session refresh by signing out and back in
+      // This ensures the JWT token gets updated with the new role
+      console.log('🔄 Forcing session refresh...');
+      await signIn('google', { 
+        callbackUrl: role === 'admin' ? '/admin' : '/dashboard',
+        redirect: true 
+      });
     } catch (error) {
+      console.error('❌ Registration error:', error);
       setError(error.message);
-    } finally {
       setLoading(false);
     }
   };
