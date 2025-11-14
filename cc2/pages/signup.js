@@ -64,7 +64,7 @@ export default function Signup() {
       // Check if the user already has a complete registration with a role
       const checkUserRegistration = async () => {
         try {
-          console.log("Checking registration status...");
+          console.log("🔍 Checking registration status for:", session.user.email);
           const res = await fetch('/api/auth/check-registration', {
             method: 'GET',
             headers: {
@@ -72,20 +72,20 @@ export default function Signup() {
             },
           });
           
-          console.log("Registration check response:", res.status);
+          console.log("📥 Registration check response:", res.status);
           
           if (res.status === 401) {
             // User is not authenticated with the server, keep showing Google sign-in
-            console.log("Session not recognized by server");
+            console.log("❌ Session not recognized by server");
             return;
           }
           
           const data = await res.json();
-          console.log("Registration data:", data);
+          console.log("📊 Registration data:", JSON.stringify(data, null, 2));
           
           if (res.ok && data.isRegistered) {
             // User is already registered with a role, redirect based on role
-            console.log("User is registered with role:", data.role);
+            console.log("✅ User is registered with role:", data.role);
             setAlreadyRegistered(true);
             if (data.role === 'admin') {
               router.push('/admin');
@@ -94,11 +94,11 @@ export default function Signup() {
             }
           } else {
             // User authenticated but needs to select a role
-            console.log("User needs to select a role");
+            console.log("⚠️ User needs to select a role - showing role selection");
             setShowRoleSelection(true);
           }
         } catch (error) {
-          console.error('Error checking registration:', error);
+          console.error('❌ Error checking registration:', error);
           // Don't show role selection on error - might not be authenticated properly
         }
       };

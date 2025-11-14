@@ -86,9 +86,18 @@ export async function middleware(req) {
     }
 
     // Get user role from token
-    const userRole = token?.role || "user";
+    const userRole = token?.role;
     if (shouldLog) {
       console.log(`User with role '${userRole}' accessing: ${pathname}`);
+    }
+
+    // If user doesn't have a role, redirect to signup to complete registration
+    // Allow access to signup and auth API routes
+    if (!userRole && pathname !== "/signup" && !pathname.startsWith("/api/auth/")) {
+      console.log(`User without role accessing ${pathname}. Redirecting to signup.`);
+      const url = req.nextUrl.clone();
+      url.pathname = "/signup";
+      return NextResponse.redirect(url);
     }
 
     // No role-based restrictions - any authenticated user can access any page

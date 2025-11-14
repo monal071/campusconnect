@@ -31,7 +31,7 @@ const Header = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const userRole =
-    session?.user?.role || localStorage.getItem("role") || "user";
+    session?.user?.role || localStorage.getItem("role");
 
   useEffect(() => setMounted(true), []);
 

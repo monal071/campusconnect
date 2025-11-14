@@ -25,7 +25,14 @@ export default function Login() {
     // Only redirect once if authenticated using ref to prevent multiple calls
     if (status === 'authenticated' && session?.user && !redirecting.current) {
       redirecting.current = true;
-      router.replace('/dashboard');
+      // Check if user has a role, if not redirect to signup to complete registration
+      if (!session.user.role) {
+        console.log('User authenticated but no role, redirecting to signup...');
+        router.replace('/signup');
+      } else {
+        console.log('Already authenticated with role, redirecting to dashboard...');
+        router.replace('/dashboard');
+      }
     }
   }, [status, session, router]);
 
