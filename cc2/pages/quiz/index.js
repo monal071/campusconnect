@@ -374,6 +374,9 @@ export default function QuizPage() {
   const stats = getQuizStats();
   const isFaculty =
     session.user?.role === "faculty" || session.user?.role === "admin";
+  
+  // Debug log to check role
+  console.log('Quiz page - User role:', session.user?.role, 'isFaculty:', isFaculty);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
