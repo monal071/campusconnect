@@ -46,9 +46,10 @@ export default function Dashboard() {
 
   // Check if user is authenticated and set up real-time updates
   useEffect(() => {
+    // Only redirect if definitely unauthenticated (not loading)
     if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
+      router.replace("/login");
+    } else if (status === "authenticated" && session?.user) {
       fetchDashboardData();
 
       // Set up real-time updates every 30 seconds

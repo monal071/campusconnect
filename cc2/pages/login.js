@@ -11,6 +11,7 @@ export default function Login() {
   const { data: session, status } = useSession();
   const [message, setMessage] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
   
   // Check for message in URL query parameter
   useEffect(() => {
@@ -21,12 +22,12 @@ export default function Login() {
 
   // Handle authentication state changes
   useEffect(() => {
-    // Only redirect if authenticated and not currently signing in
-    if (status === 'authenticated' && session?.user && !isSigningIn) {
-      // Simple redirect to dashboard - let the dashboard handle role-based routing
+    // Only redirect once if authenticated
+    if (status === 'authenticated' && session?.user && !hasRedirected) {
+      setHasRedirected(true);
       router.replace('/dashboard');
     }
-  }, [status, session, router, isSigningIn]);
+  }, [status, session, router, hasRedirected]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -39,6 +40,18 @@ export default function Login() {
       setIsSigningIn(false);
     }
   };
+
+  // Show loading spinner if checking session or already authenticated
+  if (status === 'loading' || (status === 'authenticated' && session?.user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
