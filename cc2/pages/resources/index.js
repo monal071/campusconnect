@@ -131,8 +131,11 @@ export default function Resources() {
 
   // Effects
   useEffect(() => {
-    fetchResources(1, true);
-  }, [searchTerm, selectedType, selectedCategory, sortBy, selectedTags]);
+    if (status === "authenticated") {
+      fetchResources(1, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedType, selectedCategory, sortBy, selectedTags, status]);
 
   // Handlers
   const handleAddResource = async (resourceData) => {
