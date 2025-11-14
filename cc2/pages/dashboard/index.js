@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Image from "next/image";
@@ -28,6 +28,7 @@ import {
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const redirecting = useRef(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     connections: 0,
@@ -46,8 +47,9 @@ export default function Dashboard() {
 
   // Check if user is authenticated and set up real-time updates
   useEffect(() => {
-    // Only redirect if definitely unauthenticated (not loading)
-    if (status === "unauthenticated") {
+    // Only redirect if definitely unauthenticated (not loading) and not already redirecting
+    if (status === "unauthenticated" && !redirecting.current) {
+      redirecting.current = true;
       router.replace("/login");
     } else if (status === "authenticated" && session?.user) {
       fetchDashboardData();

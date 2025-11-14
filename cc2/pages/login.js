@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Login() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [message, setMessage] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const redirecting = useRef(false);
   
   // Check for message in URL query parameter
   useEffect(() => {
@@ -22,12 +22,12 @@ export default function Login() {
 
   // Handle authentication state changes
   useEffect(() => {
-    // Only redirect once if authenticated
-    if (status === 'authenticated' && session?.user && !hasRedirected) {
-      setHasRedirected(true);
+    // Only redirect once if authenticated using ref to prevent multiple calls
+    if (status === 'authenticated' && session?.user && !redirecting.current) {
+      redirecting.current = true;
       router.replace('/dashboard');
     }
-  }, [status, session, router, hasRedirected]);
+  }, [status, session, router]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
