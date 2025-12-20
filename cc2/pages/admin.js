@@ -156,9 +156,12 @@ export default function AdminPage() {
       const res = await fetch("/api/events");
       const data = await res.json();
       console.log("Events API response:", data);
-      setEvents(data || []);
+      // Handle both array response and object with events property
+      const eventsArray = Array.isArray(data) ? data : (data?.events || []);
+      setEvents(eventsArray);
     } catch (error) {
       console.error("Failed to fetch events:", error);
+      setEvents([]);
     }
   };
 
@@ -306,26 +309,26 @@ export default function AdminPage() {
     );
   }
 
-  // Filter functions
-  const filteredEvents = events.filter(
+  // Filter functions with safety checks
+  const filteredEvents = (Array.isArray(events) ? events : []).filter(
     (event) =>
       event.title?.toLowerCase().includes(eventSearch.toLowerCase()) ||
       event.description?.toLowerCase().includes(eventSearch.toLowerCase())
   );
 
-  const filteredJobs = jobs.filter(
+  const filteredJobs = (Array.isArray(jobs) ? jobs : []).filter(
     (job) =>
       job.title?.toLowerCase().includes(jobSearch.toLowerCase()) ||
       job.company?.toLowerCase().includes(jobSearch.toLowerCase())
   );
 
-  const filteredUsers = users.filter(
+  const filteredUsers = (Array.isArray(users) ? users : []).filter(
     (user) =>
       user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
       user.email?.toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  const filteredCommunities = communities.filter(
+  const filteredCommunities = (Array.isArray(communities) ? communities : []).filter(
     (community) =>
       community.name?.toLowerCase().includes(communitySearch.toLowerCase()) ||
       community.description
@@ -333,7 +336,7 @@ export default function AdminPage() {
         .includes(communitySearch.toLowerCase())
   );
 
-  const filteredResources = resources.filter(
+  const filteredResources = (Array.isArray(resources) ? resources : []).filter(
     (resource) =>
       resource.title?.toLowerCase().includes(resourceSearch.toLowerCase()) ||
       resource.description
