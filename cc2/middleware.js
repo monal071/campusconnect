@@ -21,11 +21,9 @@ export async function middleware(req) {
     "/events",
     "/resources",
     "/jobs",
-    "/posts",
     "/connections",
     "/quiz",
     "/api/auth/authenticate",
-    "/api/debug/session",
     "/api/migrate-user-roles",
   ];
 
@@ -34,7 +32,6 @@ export async function middleware(req) {
     "/api/events",
     "/api/resources",
     "/api/jobs",
-    "/api/posts",
     "/api/dashboard/stats",
     "/api/notifications",
     "/api/connection-requests",
@@ -77,7 +74,7 @@ export async function middleware(req) {
     if (!token && !hasGuestAccess) {
       if (shouldLog) {
         console.log(
-          `Unauthenticated access to ${pathname}. Redirecting to login.`
+          `Unauthenticated access to ${pathname}. Redirecting to login.`,
         );
       }
       const url = req.nextUrl.clone();
@@ -93,8 +90,14 @@ export async function middleware(req) {
 
     // If user doesn't have a role, redirect to signup to complete registration
     // Allow access to signup and auth API routes
-    if (!userRole && pathname !== "/signup" && !pathname.startsWith("/api/auth/")) {
-      console.log(`User without role accessing ${pathname}. Redirecting to signup.`);
+    if (
+      !userRole &&
+      pathname !== "/signup" &&
+      !pathname.startsWith("/api/auth/")
+    ) {
+      console.log(
+        `User without role accessing ${pathname}. Redirecting to signup.`,
+      );
       const url = req.nextUrl.clone();
       url.pathname = "/signup";
       return NextResponse.redirect(url);

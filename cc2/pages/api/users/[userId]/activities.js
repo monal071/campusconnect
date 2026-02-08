@@ -24,27 +24,6 @@ export default async function handler(req, res) {
       // Fetch activities from various collections
       const activities = [];
 
-      // Posts
-      const posts = await db
-        .collection("posts")
-        .find({ userId: new ObjectId(targetUserId) })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .toArray();
-
-      posts.forEach((post) => {
-        activities.push({
-          _id: post._id,
-          type: "post",
-          description: "Created a new post",
-          details:
-            post.content?.substring(0, 100) +
-            (post.content?.length > 100 ? "..." : ""),
-          timestamp: post.createdAt,
-          link: `/posts/${post._id}`,
-        });
-      });
-
       // Resources
       const resources = await db
         .collection("resources")
@@ -150,10 +129,7 @@ export default async function handler(req, res) {
           description: `Saved a ${bookmark.itemType}`,
           details: bookmark.itemTitle,
           timestamp: bookmark.createdAt,
-          link:
-            bookmark.itemType === "post"
-              ? `/posts/${bookmark.itemId}`
-              : `/${bookmark.itemType}s/${bookmark.itemId}`,
+          link: `/${bookmark.itemType}s/${bookmark.itemId}`,
         });
       });
 

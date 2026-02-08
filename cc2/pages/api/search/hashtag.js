@@ -20,20 +20,6 @@ export default async function handler(req, res) {
       const db = client.db();
       const results = {};
 
-      // Search in posts
-      if (type === "all" || type === "posts") {
-        const posts = await db
-          .collection("posts")
-          .find({
-            content: { $regex: `#${tag}`, $options: "i" },
-          })
-          .sort({ createdAt: -1 })
-          .limit(parseInt(limit))
-          .toArray();
-
-        results.posts = posts;
-      }
-
       // Search in resources
       if (type === "all" || type === "resources") {
         const resources = await db

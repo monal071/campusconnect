@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import Post from "../../components/Post";
 
 // Icons
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -240,7 +239,7 @@ export default function CommunityPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Compact Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="px-6 lg:px-8 py-6">
             <button
               onClick={() => router.push("/communities")}
               className="mb-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-2"
@@ -288,7 +287,7 @@ export default function CommunityPage() {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="px-6 lg:px-8 py-6">
           {/* Announcements Section */}
           <div className="mb-6">
             <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800 overflow-hidden">
@@ -377,11 +376,11 @@ export default function CommunityPage() {
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {new Date(
-                                  announcement.createdAt
+                                  announcement.createdAt,
                                 ).toLocaleDateString()}{" "}
                                 at{" "}
                                 {new Date(
-                                  announcement.createdAt
+                                  announcement.createdAt,
                                 ).toLocaleTimeString([], {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -450,8 +449,8 @@ export default function CommunityPage() {
                     postImages.length === 1
                       ? "grid-cols-1"
                       : postImages.length === 2
-                      ? "grid-cols-2"
-                      : "grid-cols-2"
+                        ? "grid-cols-2"
+                        : "grid-cols-2"
                   }`}
                 >
                   {postImages.map((img, index) => (
@@ -518,15 +517,69 @@ export default function CommunityPage() {
               Community Posts
             </h3>
             {posts.map((post) => (
-              <Post
+              <div
                 key={post._id}
-                post={post}
-                onDelete={handleDeletePost}
-                canDelete={
-                  community.isCreator ||
-                  post.author?.email === session?.user?.email
-                }
-              />
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {post.author?.image ? (
+                      <img
+                        src={post.author.image}
+                        alt={post.author.name}
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-700 dark:text-indigo-300 text-sm font-semibold">
+                        {(post.author?.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {post.author?.name || "Unknown"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {post.createdAt
+                          ? new Date(post.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                  {(community.isCreator ||
+                    post.author?.email === session?.user?.email) && (
+                    <button
+                      onClick={() => handleDeletePost(post._id)}
+                      className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </button>
+                  )}
+                </div>
+                {post.content && (
+                  <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap mb-3">
+                    {post.content}
+                  </p>
+                )}
+                {post.images && post.images.length > 0 && (
+                  <div
+                    className={`grid gap-2 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+                  >
+                    {post.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`Post image ${idx + 1}`}
+                        className="w-full rounded-lg object-cover max-h-64"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
             {posts.length === 0 && (
               <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl">

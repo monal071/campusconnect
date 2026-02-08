@@ -83,7 +83,7 @@ export default function AddResourceModal({
 
       if (!allowedTypes.includes(file.type)) {
         setError(
-          "File type not supported. Please upload PDF, Word, PowerPoint, Excel, text, or image files."
+          "File type not supported. Please upload PDF, Word, PowerPoint, Excel, text, or image files.",
         );
         return;
       }
@@ -231,7 +231,10 @@ export default function AddResourceModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleClose}>
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto"
+          onClick={handleClose}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

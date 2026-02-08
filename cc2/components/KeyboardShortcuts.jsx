@@ -81,7 +81,7 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
           break;
         case "p":
           e.preventDefault();
-          router.push("/posts");
+          router.push("/quiz");
           break;
         case "r":
           e.preventDefault();

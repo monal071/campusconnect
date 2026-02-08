@@ -79,7 +79,7 @@ export default async function handler(req, res) {
                 .collection("users")
                 .findOne(
                   { _id: new ObjectId(resource.userId) },
-                  { projection: { name: 1, email: 1, image: 1, role: 1 } }
+                  { projection: { name: 1, email: 1, image: 1, role: 1 } },
                 );
               return {
                 ...resource,
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
             authorImage: null,
             authorRole: "student",
           };
-        })
+        }),
       );
 
       res.status(200).json({
@@ -204,8 +204,8 @@ export default async function handler(req, res) {
         tags: Array.isArray(tags)
           ? tags
           : tags
-          ? tags.split(",").map((t) => t.trim())
-          : [],
+            ? tags.split(",").map((t) => t.trim())
+            : [],
         fileSize: fileSize || null,
         fileName: fileName || null,
         isPublic,
@@ -225,7 +225,12 @@ export default async function handler(req, res) {
         updatedAt: new Date(),
       };
 
-      console.log("Creating resource with author:", resource.author, "userId:", resource.userId);
+      console.log(
+        "Creating resource with author:",
+        resource.author,
+        "userId:",
+        resource.userId,
+      );
 
       const result = await db.collection("resources").insertOne(resource);
 
@@ -292,7 +297,7 @@ export default async function handler(req, res) {
         .collection("resources")
         .updateOne(
           { _id: new ObjectId(resourceId) },
-          { $set: updatedResource }
+          { $set: updatedResource },
         );
 
       res.status(200).json({
@@ -405,7 +410,7 @@ export default async function handler(req, res) {
               verifiedAt: new Date(),
               updatedAt: new Date(),
             },
-          }
+          },
         );
 
         return res.status(200).json({

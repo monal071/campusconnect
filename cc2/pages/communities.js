@@ -88,7 +88,7 @@ export default function Communities() {
   const filteredCommunities = communities.filter(
     (community) =>
       community.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      community.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      community.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) {
@@ -106,7 +106,7 @@ export default function Communities() {
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           {/* Header with gradient */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -224,7 +224,7 @@ export default function Communities() {
                     onDelete={handleDeleteCommunity}
                     isAdmin={isAdmin}
                     isMember={myCommunities.some(
-                      (c) => c._id === community._id
+                      (c) => c._id === community._id,
                     )}
                   />
                 ))
@@ -338,7 +338,7 @@ function CommunityCard({
   const handleDelete = async () => {
     if (
       !confirm(
-        `Are you sure you want to delete "${community.name}"? This will delete all posts and cannot be undone.`
+        `Are you sure you want to delete "${community.name}"? This will delete all posts and cannot be undone.`,
       )
     ) {
       return;

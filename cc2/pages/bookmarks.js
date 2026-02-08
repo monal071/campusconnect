@@ -85,12 +85,12 @@ export default function Bookmarks() {
         `/api/bookmarks?itemId=${itemId}&type=${type}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (response.ok) {
         setBookmarks((prev) =>
-          prev.filter((b) => !(b.itemId === itemId && b.type === type))
+          prev.filter((b) => !(b.itemId === itemId && b.type === type)),
         );
         toast.success("Bookmark removed");
       } else {
@@ -104,7 +104,7 @@ export default function Bookmarks() {
 
   const handleBookmarkClick = (bookmark) => {
     const routes = {
-      post: "/posts",
+      post: "/dashboard",
       resource: "/resources",
       quiz: "/quiz",
       event: "/events",
@@ -126,7 +126,7 @@ export default function Bookmarks() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">

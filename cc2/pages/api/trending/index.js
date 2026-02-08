@@ -20,19 +20,6 @@ export default async function handler(req, res) {
     const limitNum = parseInt(limit);
     const results = {};
 
-    // Get trending posts (by likes and recent comments)
-    if (type === "all" || type === "posts") {
-      const posts = await db
-        .collection("posts")
-        .find({
-          createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-        })
-        .sort({ likes: -1 })
-        .limit(limitNum)
-        .toArray();
-      results.posts = posts;
-    }
-
     // Get most viewed resources
     if (type === "all" || type === "resources") {
       const resources = await db

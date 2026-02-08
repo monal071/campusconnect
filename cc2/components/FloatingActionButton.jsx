@@ -14,13 +14,6 @@ import { useRouter } from "next/router";
 
 const QUICK_ACTIONS = [
   {
-    id: "post",
-    label: "New Post",
-    icon: PencilIcon,
-    color: "bg-blue-500 hover:bg-blue-600",
-    action: "newPost",
-  },
-  {
     id: "resource",
     label: "Add Resource",
     icon: DocumentPlusIcon,
@@ -68,9 +61,6 @@ export default function FloatingActionButton({
     } else {
       // Default actions
       switch (action) {
-        case "newPost":
-          router.push("/posts");
-          break;
         case "newResource":
           router.push("/resources");
           break;

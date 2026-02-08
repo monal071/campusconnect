@@ -99,7 +99,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
     // Navigate based on result type
     switch (result.type) {
       case "posts":
-        router.push(`/posts`);
+        router.push(`/dashboard`);
         break;
       case "resources":
         router.push(`/resources`);

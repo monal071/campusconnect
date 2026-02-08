@@ -1,45 +1,52 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, LockClosedIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  XMarkIcon,
+  LockClosedIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
 export default function JoinPrivateQuizModal({ isOpen, onClose, onQuizFound }) {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!password.trim()) {
-      toast.error('Please enter a quiz password');
+      toast.error("Please enter a quiz password");
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/quiz/get?password=${encodeURIComponent(password.trim())}`, {
-        method: 'GET',
-      });
+      const response = await fetch(
+        `/api/quiz/get?password=${encodeURIComponent(password.trim())}`,
+        {
+          method: "GET",
+        },
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Quiz not found');
+        throw new Error(result.message || "Quiz not found");
       }
 
       toast.success(`Found quiz: ${result.quiz.quizName}`);
       onQuizFound(result.quiz);
-      setPassword('');
+      setPassword("");
       onClose();
     } catch (error) {
-      toast.error(error.message || 'Quiz not found or invalid password');
+      toast.error(error.message || "Quiz not found or invalid password");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    setPassword('');
+    setPassword("");
     onClose();
   };
 
@@ -85,12 +92,16 @@ export default function JoinPrivateQuizModal({ isOpen, onClose, onQuizFound }) {
 
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Enter the quiz password provided by your instructor to access a private quiz.
+                    Enter the quiz password provided by your instructor to
+                    access a private quiz.
                   </p>
 
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                      <label htmlFor="quiz-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label
+                        htmlFor="quiz-password"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                      >
                         Quiz Password
                       </label>
                       <div className="relative">
@@ -123,12 +134,27 @@ export default function JoinPrivateQuizModal({ isOpen, onClose, onQuizFound }) {
                         disabled={isLoading || !password.trim()}
                       >
                         {isLoading && (
-                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                           </svg>
                         )}
-                        <span>{isLoading ? 'Searching...' : 'Find Quiz'}</span>
+                        <span>{isLoading ? "Searching..." : "Find Quiz"}</span>
                       </button>
                     </div>
                   </form>
@@ -141,8 +167,9 @@ export default function JoinPrivateQuizModal({ isOpen, onClose, onQuizFound }) {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Note:</strong> Ask your instructor for the quiz password. 
-                        This will allow you to access and take their private quiz.
+                        <strong>Note:</strong> Ask your instructor for the quiz
+                        password. This will allow you to access and take their
+                        private quiz.
                       </p>
                     </div>
                   </div>

@@ -1,30 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { motion } from 'framer-motion';
-import ConnectionRequests from '../../components/ConnectionRequests';
-import ChatModal from '../../components/ChatModal';
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
+import ConnectionRequests from "../../components/ConnectionRequests";
+import ChatModal from "../../components/ChatModal";
+import Image from "next/image";
 
 // Material UI Icons
-import PeopleIcon from '@mui/icons-material/People';
-import SearchIcon from '@mui/icons-material/Search';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import DeleteIcon from '@mui/icons-material/Delete';
+import PeopleIcon from "@mui/icons-material/People";
+import SearchIcon from "@mui/icons-material/Search";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function ConnectionsPage() {
   const { data: session } = useSession();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [friends, setFriends] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [userId, setUserId] = useState(null);
   const [sentRequests, setSentRequests] = useState(new Set());
-  const [chatModal, setChatModal] = useState({ isOpen: false, participant: null });
+  const [chatModal, setChatModal] = useState({
+    isOpen: false,
+    participant: null,
+  });
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -44,7 +47,7 @@ export default function ConnectionsPage() {
       const data = await res.json();
       setFriends(data.friends || []);
     } catch (error) {
-      console.error('Error fetching friends:', error);
+      console.error("Error fetching friends:", error);
     } finally {
       setLoading(false);
     }
@@ -57,34 +60,34 @@ export default function ConnectionsPage() {
       const data = await res.json();
       setRecommendations(data.recommendations || []);
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      console.error("Error fetching recommendations:", error);
     }
   };
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!search.trim()) return;
-    
+
     setSearchLoading(true);
-    setMessage('');
+    setMessage("");
     try {
       const res = await fetch(
-        `/api/connections/users?q=${encodeURIComponent(search.trim())}`
+        `/api/connections/users?q=${encodeURIComponent(search.trim())}`,
       );
       const data = await res.json();
-      
+
       if (res.ok) {
         // Filter out current user from search results
-        const filteredUsers = (data.users || []).filter(user => 
-          user._id !== session?.user?.id
+        const filteredUsers = (data.users || []).filter(
+          (user) => user._id !== session?.user?.id,
         );
         setUsers(filteredUsers);
       } else {
-        setMessage(data.message || 'Error searching users.');
+        setMessage(data.message || "Error searching users.");
         setUsers([]);
       }
     } catch (error) {
-      setMessage('Error searching users.');
+      setMessage("Error searching users.");
       setUsers([]);
     }
     setSearchLoading(false);
@@ -97,78 +100,83 @@ export default function ConnectionsPage() {
         setMessage("You must be logged in to send requests.");
         return;
       }
-      
+
       const fromUserId = session.user.id;
-      
-      const response = await fetch('/api/connections/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+
+      const response = await fetch("/api/connections/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromUserId, toUserId }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send request');
+        throw new Error(data.message || "Failed to send request");
       }
-      
-      setMessage('Connection request sent!');
-      setSentRequests(prev => new Set([...prev, toUserId]));
-      
+
+      setMessage("Connection request sent!");
+      setSentRequests((prev) => new Set([...prev, toUserId]));
+
       // Refresh recommendations to remove the user we just sent a request to
       fetchRecommendations(fromUserId);
     } catch (error) {
-      console.error('Error sending connection request:', error);
-      setMessage(error.message || 'Failed to send request.');
+      console.error("Error sending connection request:", error);
+      setMessage(error.message || "Failed to send request.");
     }
   };
 
   const handleRemoveConnection = async (friendId) => {
-    if (!confirm('Are you sure you want to remove this connection?')) {
+    if (!confirm("Are you sure you want to remove this connection?")) {
       return;
     }
-    
+
     setMessage("");
     try {
       if (!session?.user?.id) {
         setMessage("You must be logged in to remove connections.");
         return;
       }
-      
+
       const userId = session.user.id;
-      
-      const response = await fetch('/api/connections/request', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+
+      const response = await fetch("/api/connections/request", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId1: userId, userId2: friendId }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to remove connection');
+        throw new Error(data.message || "Failed to remove connection");
       }
-      
-      setMessage('Connection removed successfully');
-      
+
+      setMessage("Connection removed successfully");
+
       // Refresh friends list and recommendations
       fetchFriends(userId);
       fetchRecommendations(userId);
     } catch (error) {
-      console.error('Error removing connection:', error);
-      setMessage(error.message || 'Failed to remove connection.');
+      console.error("Error removing connection:", error);
+      setMessage(error.message || "Failed to remove connection.");
     }
   };
 
   const getUserInitials = (name) => {
-    if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const handleStartChat = (user) => {
-    setChatModal({ 
-      isOpen: true, 
-      participant: user 
+    setChatModal({
+      isOpen: true,
+      participant: user,
     });
   };
 
@@ -178,7 +186,7 @@ export default function ConnectionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -203,7 +211,7 @@ export default function ConnectionsPage() {
           >
             <ConnectionRequests />
           </motion.div>
-          
+
           {/* Main Content */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -225,7 +233,7 @@ export default function ConnectionsPage() {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Search by name or email"
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                     required
                   />
                 </div>
@@ -234,25 +242,27 @@ export default function ConnectionsPage() {
                   className="px-6 py-3 bg-indigo-600 text-white rounded-r-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
                   disabled={searchLoading}
                 >
-                  {searchLoading ? 'Searching...' : 'Search'}
+                  {searchLoading ? "Searching..." : "Search"}
                 </button>
               </form>
-              
+
               {message && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`p-3 rounded-lg mb-4 ${
-                    message.includes('sent') || message.includes('accepted')
-                      ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                      : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                    message.includes("sent") || message.includes("accepted")
+                      ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                   }`}
                 >
-                  {message.includes('sent') && <CheckCircleIcon className="inline-block mr-2 w-5 h-5" />}
+                  {message.includes("sent") && (
+                    <CheckCircleIcon className="inline-block mr-2 w-5 h-5" />
+                  )}
                   {message}
                 </motion.div>
               )}
-              
+
               {users.length > 0 ? (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {users.map((user, index) => (
@@ -270,10 +280,16 @@ export default function ConnectionsPage() {
                           </span>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {user.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </p>
                           {user.department && (
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400">{user.department}</p>
+                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                              {user.department}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -282,12 +298,12 @@ export default function ConnectionsPage() {
                         disabled={sentRequests.has(user._id)}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                           sentRequests.has(user._id)
-                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                            : "bg-indigo-600 text-white hover:bg-indigo-700"
                         }`}
                       >
                         <PersonAddIcon className="inline-block mr-1 w-4 h-4" />
-                        {sentRequests.has(user._id) ? 'Sent' : 'Connect'}
+                        {sentRequests.has(user._id) ? "Sent" : "Connect"}
                       </button>
                     </motion.div>
                   ))}
@@ -296,9 +312,11 @@ export default function ConnectionsPage() {
                 <div className="text-center py-8">
                   <SearchIcon className="mx-auto w-12 h-12 text-gray-400 mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
-                    {searchLoading ? 'Searching...' : 
-                     search && !searchLoading ? 'No users found' : 
-                     'Search for users to connect with'}
+                    {searchLoading
+                      ? "Searching..."
+                      : search && !searchLoading
+                        ? "No users found"
+                        : "Search for users to connect with"}
                   </p>
                 </div>
               )}
@@ -313,12 +331,16 @@ export default function ConnectionsPage() {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading connections...</span>
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">
+                    Loading connections...
+                  </span>
                 </div>
               ) : friends.length === 0 ? (
                 <div className="text-center py-8">
                   <PeopleIcon className="mx-auto w-16 h-16 text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400 text-lg">No connections yet</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
+                    No connections yet
+                  </p>
                   <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
                     Start connecting with people in your campus community
                   </p>
@@ -340,10 +362,16 @@ export default function ConnectionsPage() {
                           </span>
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {user.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </p>
                           {user.department && (
-                            <p className="text-xs text-green-600 dark:text-green-400">{user.department}</p>
+                            <p className="text-xs text-green-600 dark:text-green-400">
+                              {user.department}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -353,8 +381,18 @@ export default function ConnectionsPage() {
                           className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                           title="Start Chat"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
                           </svg>
                         </button>
                         <div className="text-green-500">
@@ -373,7 +411,7 @@ export default function ConnectionsPage() {
                 </div>
               )}
             </div>
-            
+
             {/* Recommendations */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white flex items-center">
@@ -383,9 +421,12 @@ export default function ConnectionsPage() {
               {recommendations.length === 0 ? (
                 <div className="text-center py-8">
                   <PersonAddIcon className="mx-auto w-16 h-16 text-gray-400 mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400 text-lg">No recommendations available</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
+                    No recommendations available
+                  </p>
                   <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                    We'll suggest people for you to connect with as more users join
+                    We'll suggest people for you to connect with as more users
+                    join
                   </p>
                 </div>
               ) : (
@@ -405,10 +446,16 @@ export default function ConnectionsPage() {
                           </span>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {user.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {user.email}
+                          </p>
                           {user.department && (
-                            <p className="text-xs text-indigo-600 dark:text-indigo-400">{user.department}</p>
+                            <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                              {user.department}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -417,12 +464,12 @@ export default function ConnectionsPage() {
                         disabled={sentRequests.has(user._id)}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                           sentRequests.has(user._id)
-                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                            : "bg-indigo-600 text-white hover:bg-indigo-700"
                         }`}
                       >
                         <PersonAddIcon className="inline-block mr-1 w-4 h-4" />
-                        {sentRequests.has(user._id) ? 'Sent' : 'Connect'}
+                        {sentRequests.has(user._id) ? "Sent" : "Connect"}
                       </button>
                     </motion.div>
                   ))}

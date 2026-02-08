@@ -21,24 +21,6 @@ async function createIndexes() {
     await db.collection("users").createIndex({ "profile.major": 1 });
     console.log("✅ Users indexes created");
 
-    // Posts Collection
-    console.log("\n📊 Posts Collection...");
-    await db.collection("posts").createIndex({ userId: 1, createdAt: -1 });
-    await db.collection("posts").createIndex({ createdAt: -1 });
-    await db.collection("posts").createIndex({ likes: 1 });
-    await db.collection("posts").createIndex({ hashtags: 1 });
-    await db.collection("posts").createIndex({ mentions: 1 });
-    await db.collection("posts").createIndex(
-      {
-        text: "text",
-        "user.name": "text",
-      },
-      {
-        name: "post_text_search",
-      }
-    );
-    console.log("✅ Posts indexes created");
-
     // Resources Collection
     console.log("\n📊 Resources Collection...");
     await db.collection("resources").createIndex({ userId: 1, createdAt: -1 });
@@ -56,7 +38,7 @@ async function createIndexes() {
       },
       {
         name: "resource_text_search",
-      }
+      },
     );
     console.log("✅ Resources indexes created");
 
@@ -123,7 +105,7 @@ async function createIndexes() {
       },
       {
         name: "job_text_search",
-      }
+      },
     );
     console.log("✅ Jobs indexes created");
 
@@ -136,7 +118,7 @@ async function createIndexes() {
         userId: 1,
         connectedUserId: 1,
       },
-      { unique: true }
+      { unique: true },
     );
     await db.collection("connections").createIndex({ connectedAt: -1 });
     console.log("✅ Connections indexes created");

@@ -22,17 +22,23 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      // Get all bookmarks for the user
-      const { type } = req.query; // post, resource, event, job, quiz
+      // Get bookmarks for the user
+      const { type, limit } = req.query;
+      const limitNum = parseInt(limit) || 0;
 
-      const bookmarks = await db
+      let query = db
         .collection("bookmarks")
         .find({
           userId: user._id,
           ...(type && type !== "all" ? { type } : {}),
         })
-        .sort({ createdAt: -1 })
-        .toArray();
+        .sort({ createdAt: -1 });
+
+      if (limitNum > 0) {
+        query = query.limit(limitNum);
+      }
+
+      const bookmarks = await query.toArray();
 
       // Populate the bookmarked items
       const populatedBookmarks = await Promise.all(
@@ -41,11 +47,6 @@ export default async function handler(req, res) {
 
           try {
             switch (bookmark.type) {
-              case "post":
-                item = await db
-                  .collection("posts")
-                  .findOne({ _id: new ObjectId(bookmark.itemId) });
-                break;
               case "resource":
                 item = await db
                   .collection("resources")

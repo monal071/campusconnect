@@ -28,26 +28,6 @@ export default async function handler(req, res) {
     let results = [];
 
     // Search in different collections based on type
-    if (type === "all" || type === "posts") {
-      const posts = await db
-        .collection("posts")
-        .find({
-          $or: [{ content: searchRegex }, { tags: searchRegex }],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...posts.map((post) => ({
-          ...post,
-          type: "posts",
-          title:
-            post.content.substring(0, 100) +
-            (post.content.length > 100 ? "..." : ""),
-        }))
-      );
-    }
-
     if (type === "all" || type === "resources") {
       const resources = await db
         .collection("resources")
@@ -65,7 +45,7 @@ export default async function handler(req, res) {
         ...resources.map((resource) => ({
           ...resource,
           type: "resources",
-        }))
+        })),
       );
     }
 
@@ -82,7 +62,7 @@ export default async function handler(req, res) {
         ...quizzes.map((quiz) => ({
           ...quiz,
           type: "quizzes",
-        }))
+        })),
       );
     }
 
@@ -99,7 +79,7 @@ export default async function handler(req, res) {
         ...events.map((event) => ({
           ...event,
           type: "events",
-        }))
+        })),
       );
     }
 
@@ -120,7 +100,7 @@ export default async function handler(req, res) {
         ...jobs.map((job) => ({
           ...job,
           type: "jobs",
-        }))
+        })),
       );
     }
 
@@ -137,7 +117,7 @@ export default async function handler(req, res) {
         ...communities.map((community) => ({
           ...community,
           type: "communities",
-        }))
+        })),
       );
     }
 

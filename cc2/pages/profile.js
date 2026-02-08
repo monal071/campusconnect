@@ -108,8 +108,8 @@ export default function Profile() {
                       userData?.role === "admin"
                         ? "bg-purple-500 text-white"
                         : userData?.role === "faculty"
-                        ? "bg-green-500 text-white"
-                        : "bg-blue-500 text-white"
+                          ? "bg-green-500 text-white"
+                          : "bg-blue-500 text-white"
                     }`}
                   >
                     {userData?.role?.charAt(0).toUpperCase() +
@@ -221,16 +221,6 @@ export default function Profile() {
                     <p className="text-white font-medium">My Connections</p>
                     <p className="text-sm text-gray-400 mt-1">
                       Manage connections
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => router.push("/posts")}
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 text-left transition-all"
-                  >
-                    <p className="text-white font-medium">My Posts</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      View your posts
                     </p>
                   </button>
                 </div>

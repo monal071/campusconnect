@@ -9,7 +9,6 @@ import ImprovedToaster from "../components/ImprovedToaster";
 import ProgressBar from "../components/ProgressBar";
 import KeyboardShortcuts from "../components/KeyboardShortcuts";
 import PWAInstallPrompt from "../components/PWAInstallPrompt";
-import OnboardingTour from "../components/OnboardingTour";
 
 export default function App({
   Component,
@@ -54,9 +53,6 @@ export default function App({
 
               {/* PWA Install Prompt */}
               {mounted && <PWAInstallPrompt />}
-
-              {/* Onboarding Tour (shows for new users) */}
-              {mounted && <OnboardingTour />}
             </Layout>
           </ThemeProvider>
         </RecoilRoot>

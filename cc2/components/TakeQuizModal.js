@@ -1,48 +1,49 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  XMarkIcon, 
-  ClockIcon, 
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  XMarkIcon,
+  ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
-
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 
 export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [studentInfo, setStudentInfo] = useState({ studentId: '', studentName: '' });
+  const [studentInfo, setStudentInfo] = useState({
+    studentId: "",
+    studentName: "",
+  });
   const [showStudentForm, setShowStudentForm] = useState(true);
   const [startTime, setStartTime] = useState(null);
 
-
   // Initialize quiz when quiz changes
   useEffect(() => {
-    console.log('🔄 TakeQuizModal useEffect triggered:', {
+    console.log("🔄 TakeQuizModal useEffect triggered:", {
       quizId: quiz?._id,
-      hasQuestions: !!(quiz?.questions?.length),
+      hasQuestions: !!quiz?.questions?.length,
       questionsCount: quiz?.questions?.length || 0,
       isOpen,
-      requiresPassword: !quiz?.isPublic && quiz?.password
+      requiresPassword: !quiz?.isPublic && quiz?.password,
     });
-    
+
     if (quiz && isOpen) {
-      setAnswers(new Array(quiz.questions?.length || 0).fill(''));
+      setAnswers(new Array(quiz.questions?.length || 0).fill(""));
       setTimeRemaining(quiz.timeLimit * 60); // Convert minutes to seconds
       setCurrentQuestion(0);
       setStartTime(null);
-      
+
       // Always show student form if quiz has questions, regardless of password
       if (quiz.questions && quiz.questions.length > 0) {
-        console.log('✅ Quiz has questions, showing student form');
+        console.log("✅ Quiz has questions, showing student form");
         setShowStudentForm(true);
       } else {
-        console.log('❌ Quiz missing questions, need to fetch full quiz data');
+        console.log("❌ Quiz missing questions, need to fetch full quiz data");
         // Quiz doesn't have questions, need to fetch them
         setShowStudentForm(false);
       }
@@ -54,7 +55,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
     let interval;
     if (!showStudentForm && timeRemaining > 0) {
       interval = setInterval(() => {
-        setTimeRemaining(prev => {
+        setTimeRemaining((prev) => {
           if (prev <= 1) {
             handleAutoSubmit();
             return 0;
@@ -69,20 +70,20 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   const getTimeColor = () => {
     const percentage = (timeRemaining / (quiz.timeLimit * 60)) * 100;
-    if (percentage > 50) return 'text-green-600 dark:text-green-400';
-    if (percentage > 25) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (percentage > 50) return "text-green-600 dark:text-green-400";
+    if (percentage > 25) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
   };
 
   const handleStudentInfoSubmit = (e) => {
     e.preventDefault();
     if (!studentInfo.studentId.trim() || !studentInfo.studentName.trim()) {
-      toast.error('Please enter both student ID and name');
+      toast.error("Please enter both student ID and name");
       return;
     }
     setShowStudentForm(false);
@@ -97,10 +98,10 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
 
   const handleNavigation = (direction) => {
     if (!quiz?.questions) return;
-    
-    if (direction === 'next' && currentQuestion < quiz.questions.length - 1) {
+
+    if (direction === "next" && currentQuestion < quiz.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
-    } else if (direction === 'prev' && currentQuestion > 0) {
+    } else if (direction === "prev" && currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
     }
   };
@@ -110,11 +111,11 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
   };
 
   const getAnsweredQuestionsCount = () => {
-    return answers.filter(answer => answer.trim() !== '').length;
+    return answers.filter((answer) => answer.trim() !== "").length;
   };
 
   const handleAutoSubmit = () => {
-    toast.error('Time\'s up! Quiz will be submitted automatically.');
+    toast.error("Time's up! Quiz will be submitted automatically.");
     setTimeout(() => {
       handleSubmit();
     }, 2000);
@@ -126,7 +127,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
     const unansweredCount = quiz.questions.length - getAnsweredQuestionsCount();
     if (unansweredCount > 0) {
       const confirmed = confirm(
-        `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`
+        `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`,
       );
       if (!confirmed) return;
     }
@@ -134,21 +135,21 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
     setIsLoading(true);
     try {
       const timeSpent = Math.floor((new Date() - startTime) / 1000); // in seconds
-      
+
       const submissionData = {
         quizId: quiz._id,
         answers,
         studentId: studentInfo.studentId,
         studentName: studentInfo.studentName,
         timeSpent,
-        password: quiz.password || null
+        password: quiz.password || null,
       };
 
       await onSubmit(submissionData);
       onClose();
     } catch (error) {
-      toast.error('Failed to submit quiz');
-      console.error('Submission error:', error);
+      toast.error("Failed to submit quiz");
+      console.error("Submission error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -156,14 +157,16 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
 
   const handleClose = () => {
     if (!showStudentForm && getAnsweredQuestionsCount() > 0) {
-      const confirmed = confirm('Are you sure you want to exit? Your progress will be lost.');
+      const confirmed = confirm(
+        "Are you sure you want to exit? Your progress will be lost.",
+      );
       if (!confirmed) return;
     }
-    
+
     setAnswers([]);
     setCurrentQuestion(0);
     setTimeRemaining(0);
-    setStudentInfo({ studentId: '', studentName: '' });
+    setStudentInfo({ studentId: "", studentName: "" });
     setShowStudentForm(true);
     setStartTime(null);
     onClose();
@@ -212,16 +215,15 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                           <ClockIcon className="h-4 w-4 mr-1" />
                           {quiz.timeLimit} minutes
                         </div>
-                        <div>
-                          {quiz.totalQuestions} questions
-                        </div>
-                        <div>
-                          {quiz.totalPoints} points
-                        </div>
+                        <div>{quiz.totalQuestions} questions</div>
+                        <div>{quiz.totalPoints} points</div>
                       </div>
                     </div>
 
-                    <form onSubmit={handleStudentInfoSubmit} className="max-w-md mx-auto space-y-6">
+                    <form
+                      onSubmit={handleStudentInfoSubmit}
+                      className="max-w-md mx-auto space-y-6"
+                    >
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Student ID *
@@ -229,7 +231,12 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                         <input
                           type="text"
                           value={studentInfo.studentId}
-                          onChange={(e) => setStudentInfo({ ...studentInfo, studentId: e.target.value })}
+                          onChange={(e) =>
+                            setStudentInfo({
+                              ...studentInfo,
+                              studentId: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           placeholder="Enter your student ID"
                           required
@@ -243,7 +250,12 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                         <input
                           type="text"
                           value={studentInfo.studentName}
-                          onChange={(e) => setStudentInfo({ ...studentInfo, studentName: e.target.value })}
+                          onChange={(e) =>
+                            setStudentInfo({
+                              ...studentInfo,
+                              studentName: e.target.value,
+                            })
+                          }
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           placeholder="Enter your full name"
                           required
@@ -254,12 +266,24 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                         <div className="flex">
                           <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
                           <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                            <p className="font-medium mb-1">Important Instructions:</p>
+                            <p className="font-medium mb-1">
+                              Important Instructions:
+                            </p>
                             <ul className="list-disc list-inside space-y-1">
-                              <li>You have {quiz.timeLimit} minutes to complete this quiz</li>
-                              <li>Make sure you have a stable internet connection</li>
-                              <li>Do not refresh or close this page during the quiz</li>
-                              {!quiz.allowRetakes && <li>You can only take this quiz once</li>}
+                              <li>
+                                You have {quiz.timeLimit} minutes to complete
+                                this quiz
+                              </li>
+                              <li>
+                                Make sure you have a stable internet connection
+                              </li>
+                              <li>
+                                Do not refresh or close this page during the
+                                quiz
+                              </li>
+                              {!quiz.allowRetakes && (
+                                <li>You can only take this quiz once</li>
+                              )}
                             </ul>
                           </div>
                         </div>
@@ -298,13 +322,15 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                             {studentInfo.studentName} ({studentInfo.studentId})
                           </p>
                         </div>
-                        
+
                         <div className="flex items-center space-x-4">
-                          <div className={`flex items-center text-lg font-mono ${getTimeColor()}`}>
+                          <div
+                            className={`flex items-center text-lg font-mono ${getTimeColor()}`}
+                          >
                             <ClockIcon className="h-5 w-5 mr-2" />
                             {formatTime(timeRemaining)}
                           </div>
-                          
+
                           <button
                             onClick={handleClose}
                             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -313,15 +339,18 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                           </button>
                         </div>
                       </div>
-                      
+
                       {/* Progress Bar */}
                       <div className="mt-4">
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                          <span>Question {currentQuestion + 1} of {quiz.questions.length}</span>
+                          <span>
+                            Question {currentQuestion + 1} of{" "}
+                            {quiz.questions.length}
+                          </span>
                           <span>{getAnsweredQuestionsCount()} answered</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           />
@@ -347,7 +376,10 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                                     Question {currentQuestion + 1}
                                   </h3>
                                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {currentQuestionData.points} point{currentQuestionData.points !== 1 ? 's' : ''}
+                                    {currentQuestionData.points} point
+                                    {currentQuestionData.points !== 1
+                                      ? "s"
+                                      : ""}
                                   </span>
                                 </div>
                                 <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
@@ -356,31 +388,40 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                               </div>
 
                               <div className="space-y-3">
-                                {currentQuestionData.options.map((option, optionIndex) => (
-                                  <label
-                                    key={optionIndex}
-                                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                      answers[currentQuestion] === option
-                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                                    }`}
-                                  >
-                                    <input
-                                      type="radio"
-                                      name={`question_${currentQuestion}`}
-                                      value={option}
-                                      checked={answers[currentQuestion] === option}
-                                      onChange={(e) => handleAnswerChange(currentQuestion, e.target.value)}
-                                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 mr-4"
-                                    />
-                                    <span className="text-gray-900 dark:text-white flex-1">
-                                      {option}
-                                    </span>
-                                    {answers[currentQuestion] === option && (
-                                      <CheckCircleIcon className="h-5 w-5 text-indigo-600" />
-                                    )}
-                                  </label>
-                                ))}
+                                {currentQuestionData.options.map(
+                                  (option, optionIndex) => (
+                                    <label
+                                      key={optionIndex}
+                                      className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                        answers[currentQuestion] === option
+                                          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                                          : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
+                                      }`}
+                                    >
+                                      <input
+                                        type="radio"
+                                        name={`question_${currentQuestion}`}
+                                        value={option}
+                                        checked={
+                                          answers[currentQuestion] === option
+                                        }
+                                        onChange={(e) =>
+                                          handleAnswerChange(
+                                            currentQuestion,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 mr-4"
+                                      />
+                                      <span className="text-gray-900 dark:text-white flex-1">
+                                        {option}
+                                      </span>
+                                      {answers[currentQuestion] === option && (
+                                        <CheckCircleIcon className="h-5 w-5 text-indigo-600" />
+                                      )}
+                                    </label>
+                                  ),
+                                )}
                               </div>
                             </>
                           )}
@@ -398,10 +439,10 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                               onClick={() => handleQuestionJump(index)}
                               className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                                 index === currentQuestion
-                                  ? 'bg-indigo-600 text-white'
+                                  ? "bg-indigo-600 text-white"
                                   : answers[index]
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                  : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                    : "bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500"
                               }`}
                             >
                               {index + 1}
@@ -413,7 +454,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                       {/* Navigation Controls */}
                       <div className="flex justify-between items-center">
                         <button
-                          onClick={() => handleNavigation('prev')}
+                          onClick={() => handleNavigation("prev")}
                           disabled={currentQuestion === 0}
                           className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -428,9 +469,24 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
                           >
                             {isLoading && (
-                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
                               </svg>
                             )}
                             <span>Submit Quiz</span>
@@ -438,8 +494,10 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
                         </div>
 
                         <button
-                          onClick={() => handleNavigation('next')}
-                          disabled={currentQuestion === quiz.questions.length - 1}
+                          onClick={() => handleNavigation("next")}
+                          disabled={
+                            currentQuestion === quiz.questions.length - 1
+                          }
                           className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Next
