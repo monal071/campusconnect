@@ -10,6 +10,7 @@ import {
   updateResource as apiUpdateResource,
   deleteResource as apiDeleteResource,
   updateResourceLikes as apiUpdateResourceLikes,
+  updateResourceDislikes as apiUpdateResourceDislikes,
   trackResourceView,
   trackResourceDownload,
 } from "../../utils/api";
@@ -18,13 +19,11 @@ import ResourceCard from "../../components/ResourceCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
 import {
-  MagnifyingGlassIcon,
   FunnelIcon,
   PlusIcon,
   ViewColumnsIcon,
   Squares2X2Icon,
   ListBulletIcon,
-  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 
 const ITEMS_PER_PAGE = 12;
@@ -41,20 +40,15 @@ export default function Resources() {
   const [editingResource, setEditingResource] = useState(null);
 
   // Filters and pagination
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [authorRole, setAuthorRole] = useState("all"); // all, faculty, student
   const [sortBy, setSortBy] = useState("newest");
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResources, setTotalResources] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-
-  // Advanced filters
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]);
 
   const resourceTypes = [
     { value: "all", label: "All Types" },
@@ -88,6 +82,12 @@ export default function Resources() {
     { value: "updated", label: "Recently Updated" },
   ];
 
+  const authorRoleOptions = [
+    { value: "all", label: "All Authors" },
+    { value: "faculty", label: "Faculty Only" },
+    { value: "student", label: "Student Only" },
+  ];
+
   // Fetch resources with current filters
   const fetchResources = async (page = 1, replace = true) => {
     try {
@@ -98,10 +98,9 @@ export default function Resources() {
         page,
         limit: ITEMS_PER_PAGE,
         sort: sortBy,
-        search: searchTerm || undefined,
         type: selectedType !== "all" ? selectedType : undefined,
         category: selectedCategory !== "all" ? selectedCategory : undefined,
-        tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
+        authorRole: authorRole !== "all" ? authorRole : undefined,
       };
 
       const result = await getResources(params);
@@ -116,11 +115,6 @@ export default function Resources() {
       setTotalResources(result.total || 0);
       setHasMore(result.hasMore || false);
       setCurrentPage(page);
-
-      // Extract unique tags for filter suggestions
-      const allTags =
-        result.data?.flatMap((resource) => resource.tags || []) || [];
-      setAvailableTags([...new Set(allTags)].sort());
     } catch (error) {
       setError("Failed to load resources");
       console.error("Error fetching resources:", error);
@@ -135,7 +129,7 @@ export default function Resources() {
       fetchResources(1, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedType, selectedCategory, sortBy, selectedTags, status]);
+  }, [selectedType, selectedCategory, sortBy, authorRole, status]);
 
   // Handlers
   const handleAddResource = async (resourceData) => {
@@ -201,6 +195,7 @@ export default function Resources() {
             ? {
                 ...resource,
                 likes: result.likes,
+                dislikes: result.dislikes || resource.dislikes || 0,
                 likedBy: result.liked
                   ? [...(resource.likedBy || []), session?.user?.id].filter(
                       Boolean
@@ -208,6 +203,43 @@ export default function Resources() {
                   : (resource.likedBy || []).filter(
                       (id) => id !== session?.user?.id
                     ),
+                dislikedBy: result.disliked === false
+                  ? (resource.dislikedBy || []).filter(
+                      (id) => id !== session?.user?.id
+                    )
+                  : resource.dislikedBy,
+              }
+            : resource
+        )
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleDislike = async (resourceId) => {
+    try {
+      const result = await apiUpdateResourceDislikes(resourceId);
+      setResources((prev) =>
+        prev.map((resource) =>
+          resource._id === resourceId
+            ? {
+                ...resource,
+                dislikes: result.dislikes,
+                likes: result.likes || resource.likes || 0,
+                dislikedBy: result.disliked
+                  ? [...(resource.dislikedBy || []), session?.user?.id].filter(
+                      Boolean
+                    )
+                  : (resource.dislikedBy || []).filter(
+                      (id) => id !== session?.user?.id
+                    ),
+                likedBy: result.liked === false
+                  ? (resource.likedBy || []).filter(
+                      (id) => id !== session?.user?.id
+                    )
+                  : resource.likedBy,
               }
             : resource
         )
@@ -285,10 +317,9 @@ export default function Resources() {
   };
 
   const handleClearFilters = () => {
-    setSearchTerm("");
     setSelectedType("all");
     setSelectedCategory("all");
-    setSelectedTags([]);
+    setAuthorRole("all");
     setSortBy("newest");
     setCurrentPage(1);
   };
@@ -296,12 +327,6 @@ export default function Resources() {
   const handleCloseModal = () => {
     setShowAddModal(false);
     setEditingResource(null);
-  };
-
-  const handleTagToggle = (tag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
   };
 
   // Loading state
@@ -399,34 +424,16 @@ export default function Resources() {
           </div>
         </div>
 
-        {/* Search and Filters */}
+        {/* Filters & Controls */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          {/* Search Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-4">
-            <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search resources..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
+          {/* View Mode & Quick Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filter Resources</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{totalResources} resources available</p>
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-4 py-3 border rounded-lg font-medium transition-colors ${
-                  showFilters
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-700 dark:text-indigo-300"
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-                }`}
-              >
-                <FunnelIcon className="h-5 w-5 mr-2" />
-                Filters
-              </button>
-
               <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg">
                 <button
                   onClick={() => setViewMode("grid")}
@@ -454,12 +461,12 @@ export default function Resources() {
             </div>
           </div>
 
-          {/* Quick Filters */}
-          <div className="flex flex-wrap gap-3 mb-4">
+          {/* Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               {resourceTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -471,7 +478,7 @@ export default function Resources() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               {categories.map((category) => (
                 <option key={category.value} value={category.value}>
@@ -480,10 +487,23 @@ export default function Resources() {
               ))}
             </select>
 
+            {/* Faculty/Student Switch */}
+            <select
+              value={authorRole}
+              onChange={(e) => setAuthorRole(e.target.value)}
+              className="px-4 py-2 border-2 border-purple-300 dark:border-purple-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium"
+            >
+              {authorRoleOptions.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -491,54 +511,20 @@ export default function Resources() {
                 </option>
               ))}
             </select>
-
-            {(searchTerm ||
-              selectedType !== "all" ||
-              selectedCategory !== "all" ||
-              selectedTags.length > 0) && (
-              <button
-                onClick={handleClearFilters}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 underline"
-              >
-                Clear filters
-              </button>
-            )}
           </div>
 
-          {/* Advanced Filters */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="border-t border-gray-200 dark:border-gray-700 pt-4"
-              >
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Filter by Tags
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {availableTags.slice(0, 20).map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => handleTagToggle(tag)}
-                          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                            selectedTags.includes(tag)
-                              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Clear Filters Button */}
+          {(selectedType !== "all" ||
+            selectedCategory !== "all" ||
+            authorRole !== "all" ||
+            sortBy !== "newest") && (
+            <button
+              onClick={handleClearFilters}
+              className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold"
+            >
+              Reset All Filters
+            </button>
+          )}
         </div>
 
         {/* Resources Grid/List */}
@@ -602,6 +588,7 @@ export default function Resources() {
                       <ResourceCard
                         resource={resource}
                         onLike={handleLike}
+                        onDislike={handleDislike}
                         onEdit={handleEditResource}
                         onDelete={handleDeleteResource}
                         onView={handleView}

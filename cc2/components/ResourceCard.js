@@ -18,10 +18,12 @@ import {
   BookOpenIcon,
   TagIcon,
   CheckBadgeIcon,
+  HandThumbDownIcon,
 } from "@heroicons/react/24/outline";
 import {
   HeartIcon as HeartIconSolid,
   CheckBadgeIcon as CheckBadgeIconSolid,
+  HandThumbDownIcon as HandThumbDownIconSolid,
 } from "@heroicons/react/24/solid";
 
 const typeIcons = {
@@ -41,6 +43,7 @@ const typeColors = {
 export default function ResourceCard({
   resource,
   onLike,
+  onDislike,
   onEdit,
   onDelete,
   onView,
@@ -49,9 +52,13 @@ export default function ResourceCard({
 }) {
   const { data: session } = useSession();
   const [isLiked, setIsLiked] = useState(
-    resource.likedBy?.includes(session?.user?.id) || false
+    resource.likedBy?.includes(session?.user?.id) || false,
+  );
+  const [isDisliked, setIsDisliked] = useState(
+    resource.dislikedBy?.includes(session?.user?.id) || false,
   );
   const [likes, setLikes] = useState(resource.likes || 0);
+  const [dislikes, setDislikes] = useState(resource.dislikes || 0);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(resource.isVerified || false);
 
@@ -76,8 +83,40 @@ export default function ResourceCard({
       const result = await onLike(resource._id);
       setIsLiked(result.liked);
       setLikes(result.likes);
+      if (result.disliked !== undefined) {
+        setIsDisliked(result.disliked);
+      }
+      if (result.dislikes !== undefined) {
+        setDislikes(result.dislikes);
+      }
     } catch (error) {
       toast.error("Failed to update like");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDislike = async () => {
+    if (!session) {
+      toast.error("Please sign in to dislike resources");
+      return;
+    }
+
+    if (!onDislike) return;
+
+    setIsLoading(true);
+    try {
+      const result = await onDislike(resource._id);
+      setIsDisliked(result.disliked);
+      setDislikes(result.dislikes);
+      if (result.liked !== undefined) {
+        setIsLiked(result.liked);
+      }
+      if (result.likes !== undefined) {
+        setLikes(result.likes);
+      }
+    } catch (error) {
+      toast.error("Failed to update dislike");
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +188,7 @@ export default function ResourceCard({
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(
-          resource.url || window.location.href
+          resource.url || window.location.href,
         );
         toast.success("Link copied to clipboard!");
       } catch (error) {
@@ -342,12 +381,12 @@ export default function ResourceCard({
                   {getFileType(resource.url) === "word"
                     ? "Word Document"
                     : getFileType(resource.url) === "powerpoint"
-                    ? "PowerPoint Presentation"
-                    : getFileType(resource.url) === "excel"
-                    ? "Excel Spreadsheet"
-                    : getFileType(resource.url) === "text"
-                    ? "Text File"
-                    : "Document"}
+                      ? "PowerPoint Presentation"
+                      : getFileType(resource.url) === "excel"
+                        ? "Excel Spreadsheet"
+                        : getFileType(resource.url) === "text"
+                          ? "Text File"
+                          : "Document"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Click to open
@@ -451,6 +490,23 @@ export default function ResourceCard({
                 <HeartIcon className="h-4 w-4" />
               )}
               <span className="text-sm font-medium">{likes}</span>
+            </button>
+
+            <button
+              onClick={handleDislike}
+              disabled={isLoading}
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors ${
+                isDisliked
+                  ? "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400"
+              }`}
+            >
+              {isDisliked ? (
+                <HandThumbDownIconSolid className="h-4 w-4" />
+              ) : (
+                <HandThumbDownIcon className="h-4 w-4" />
+              )}
+              <span className="text-sm font-medium">{dislikes}</span>
             </button>
 
             <button

@@ -30,8 +30,7 @@ const Header = () => {
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const { data: session } = useSession();
-  const userRole =
-    session?.user?.role || localStorage.getItem("role");
+  const userRole = session?.user?.role || localStorage.getItem("role");
 
   useEffect(() => setMounted(true), []);
 
@@ -54,7 +53,7 @@ const Header = () => {
     { href: "/communities", Icon: PeopleIcon, text: "Communities" },
     { href: "/dashboard", Icon: DashboardIcon, text: "Dashboard" },
     { href: "/events", Icon: EventIcon, text: "Events" },
-    { href: "/connect", Icon: PeopleIcon, text: "Connect" },
+    { href: "/connections", Icon: PeopleIcon, text: "Connect" },
     { href: "/jobs", Icon: WorkIcon, text: "Jobs" },
     { href: "/resources", Icon: MenuBookIcon, text: "Resources" },
     { href: "/news", Icon: NewspaperIcon, text: "News" },

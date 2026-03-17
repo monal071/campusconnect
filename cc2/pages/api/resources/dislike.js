@@ -9,7 +9,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get the user's session
     const session = await getServerSession(req, res, authOptions);
 
     if (!session) {
@@ -26,7 +25,6 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db();
 
-    // Get the resource
     const resource = await db.collection("resources").findOne({
       _id: new ObjectId(resourceId),
     });
@@ -35,39 +33,38 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Resource not found" });
     }
 
-    // Check if user already liked this resource
-    const likedBy = resource.likedBy || [];
     const dislikedBy = resource.dislikedBy || [];
-    const hasLiked = likedBy.includes(userId);
+    const likedBy = resource.likedBy || [];
     const hasDisliked = dislikedBy.includes(userId);
+    const hasLiked = likedBy.includes(userId);
 
-    if (hasLiked) {
-      // Unlike the resource
+    if (hasDisliked) {
+      // Remove dislike
       await db.collection("resources").updateOne(
         { _id: new ObjectId(resourceId) },
         {
-          $pull: { likedBy: userId },
-          $inc: { likes: -1 },
+          $pull: { dislikedBy: userId },
+          $inc: { dislikes: -1 },
         },
       );
 
       return res.status(200).json({
-        message: "Resource unliked",
-        liked: false,
-        likes: Math.max(0, (resource.likes || 0) - 1),
-        dislikes: resource.dislikes || 0,
+        message: "Dislike removed",
+        disliked: false,
+        dislikes: Math.max(0, (resource.dislikes || 0) - 1),
+        likes: resource.likes || 0,
       });
     } else {
-      // Like the resource and remove dislike if exists
+      // Add dislike and remove like if exists
       const updateOps = {
-        $addToSet: { likedBy: userId },
-        $inc: { likes: 1 },
+        $addToSet: { dislikedBy: userId },
+        $inc: { dislikes: 1 },
       };
 
-      // If user had disliked, remove the dislike
-      if (hasDisliked) {
-        updateOps.$pull = { dislikedBy: userId };
-        updateOps.$inc.dislikes = -1;
+      // If user had liked, remove the like
+      if (hasLiked) {
+        updateOps.$pull = { likedBy: userId };
+        updateOps.$inc.likes = -1;
       }
 
       await db
@@ -75,17 +72,17 @@ export default async function handler(req, res) {
         .updateOne({ _id: new ObjectId(resourceId) }, updateOps);
 
       return res.status(200).json({
-        message: "Resource liked",
-        liked: true,
-        likes: (resource.likes || 0) + 1,
-        dislikes: hasDisliked
-          ? Math.max(0, (resource.dislikes || 0) - 1)
-          : resource.dislikes || 0,
-        disliked: false,
+        message: "Resource disliked",
+        disliked: true,
+        dislikes: (resource.dislikes || 0) + 1,
+        likes: hasLiked
+          ? Math.max(0, (resource.likes || 0) - 1)
+          : resource.likes || 0,
+        liked: false,
       });
     }
   } catch (error) {
-    console.error("Error handling resource like:", error);
-    return res.status(500).json({ message: "Failed to process like" });
+    console.error("Error handling resource dislike:", error);
+    return res.status(500).json({ message: "Failed to process dislike" });
   }
 }

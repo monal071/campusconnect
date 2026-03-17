@@ -17,6 +17,7 @@ import CreateIcon from "@mui/icons-material/Create";
 import ForumIcon from "@mui/icons-material/Forum";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditIcon from "@mui/icons-material/Edit";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 export default function CommunityPage() {
@@ -36,6 +37,7 @@ export default function CommunityPage() {
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -217,6 +219,35 @@ export default function CommunityPage() {
     }
   };
 
+  const handleLeaveCommunity = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to leave this community? You can rejoin later with the community code.",
+      )
+    ) {
+      return;
+    }
+
+    setIsLeaving(true);
+    try {
+      const response = await fetch(`/api/communities/${id}/leave`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to leave community");
+      }
+
+      toast.success("You have left the community");
+      router.push("/communities");
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -294,6 +325,18 @@ export default function CommunityPage() {
                     >
                       <EditIcon style={{ fontSize: 16 }} />
                       <span>Edit</span>
+                    </button>
+                  )}
+                  {/* Leave Community Button - only for non-creators */}
+                  {!community.isCreator && (
+                    <button
+                      onClick={handleLeaveCommunity}
+                      disabled={isLeaving}
+                      className="flex items-center gap-2 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-lg text-sm text-red-800 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/40 transition-all disabled:opacity-50"
+                      title="Leave community"
+                    >
+                      <ExitToAppIcon style={{ fontSize: 16 }} />
+                      <span>{isLeaving ? "Leaving..." : "Leave"}</span>
                     </button>
                   )}
                 </div>
@@ -779,14 +822,11 @@ function EditCommunityModal({ community, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/communities/${community._id}/update`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, description }),
-        },
-      );
+      const res = await fetch(`/api/communities/${community._id}/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description }),
+      });
 
       if (!res.ok) {
         const error = await res.json();

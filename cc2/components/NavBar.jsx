@@ -54,7 +54,7 @@ export default function NavBar() {
           "NavBar userRole debug:",
           role,
           "session role:",
-          session.user.role
+          session.user.role,
         );
         setUserRole(role);
 
@@ -296,7 +296,7 @@ export default function NavBar() {
             <Link href="/communities" className="nav-link">
               Communities
             </Link>
-            <Link href="/connect" className="nav-link relative">
+            <Link href="/connections" className="nav-link relative">
               Connect
               {pendingRequests > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
@@ -304,23 +304,6 @@ export default function NavBar() {
                 </span>
               )}
             </Link>
-
-            {/* Chat button - only for authenticated users */}
-            {session && (
-              <button
-                onClick={() => setShowChatList(true)}
-                className="nav-link relative flex items-center"
-                title="Messages"
-              >
-                <ChatBubbleOutlineIcon className="w-5 h-5 mr-1" />
-                Chat
-                {unreadMessages > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                    {unreadMessages > 9 ? "9+" : unreadMessages}
-                  </span>
-                )}
-              </button>
-            )}
 
             {/* Quiz link - only for faculty and students */}
             {session && (userRole === "faculty" || userRole === "student") && (
@@ -459,7 +442,7 @@ export default function NavBar() {
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                   {formatNotificationTime(
-                                    notification.createdAt
+                                    notification.createdAt,
                                   )}
                                 </p>
                               </div>
@@ -503,8 +486,8 @@ export default function NavBar() {
                   userRole === "admin"
                     ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                     : userRole === "faculty"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                 }`}
               >
                 {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
@@ -564,8 +547,8 @@ export default function NavBar() {
                             userRole === "admin"
                               ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                               : userRole === "faculty"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           }`}
                         >
                           {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
@@ -699,8 +682,8 @@ export default function NavBar() {
                       userRole === "admin"
                         ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                         : userRole === "faculty"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                        : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                     }`}
                   >
                     {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
@@ -744,7 +727,7 @@ export default function NavBar() {
                 Communities
               </Link>
               <Link
-                href="/connect"
+                href="/connections"
                 className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -755,27 +738,6 @@ export default function NavBar() {
                   </span>
                 )}
               </Link>
-
-              {/* Chat button for mobile - only for authenticated users */}
-              {session && (
-                <button
-                  onClick={() => {
-                    setShowChatList(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
-                >
-                  <div className="flex items-center">
-                    <ChatBubbleOutlineIcon className="w-4 h-4 mr-2" />
-                    Chat
-                    {unreadMessages > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadMessages > 9 ? "9+" : unreadMessages}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              )}
 
               {/* Quiz link for mobile - only for faculty and students */}
               {session &&

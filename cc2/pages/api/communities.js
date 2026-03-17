@@ -63,13 +63,21 @@ async function handleGet(req, res, db, session) {
       .sort({ updatedAt: -1 })
       .toArray();
 
-    const communitiesWithMeta = communities.map((c) => ({
-      ...c,
-      _id: c._id.toString(),
-      memberCount: c.members?.length || 0,
-      isCreator: c.creatorId === userId,
-      isAdmin: c.admins?.includes(userId) || c.creatorId === userId,
-    }));
+    const communitiesWithMeta = communities.map((c) => {
+      // Check multiple possible formats for creator matching
+      const isCreator =
+        c.creatorId === userId ||
+        c.creatorId === user.email ||
+        c.creator?.id === userId ||
+        c.creator?.email === user.email;
+      return {
+        ...c,
+        _id: c._id.toString(),
+        memberCount: c.members?.length || 0,
+        isCreator,
+        isAdmin: c.admins?.includes(userId) || isCreator,
+      };
+    });
 
     const response = {
       success: true,

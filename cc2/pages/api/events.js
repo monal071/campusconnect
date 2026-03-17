@@ -130,12 +130,13 @@ export default async function handler(req, res) {
     }
   } else if (req.method === "DELETE") {
     try {
-      const { id } = req.body;
-      if (!id) {
+      const { id, eventId } = req.body;
+      const deleteId = id || eventId;
+      if (!deleteId) {
         return res.status(400).json({ error: "Missing event ID" });
       }
 
-      const result = await deleteItem(TABLE_NAME, id);
+      const result = await deleteItem(TABLE_NAME, deleteId);
 
       if (result && result.success) {
         res.status(200).json({ success: true, message: "Event deleted" });

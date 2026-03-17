@@ -231,6 +231,15 @@ export default function AdminPage() {
   };
 
   const handleDeleteCommunity = async (communityId) => {
+    const adminMessage = prompt(
+      "Enter a message to send to the community admin (optional - leave empty to skip):",
+    );
+
+    // If user cancels the prompt, adminMessage will be null
+    if (adminMessage === null) {
+      return;
+    }
+
     if (
       !confirm(
         "Are you sure you want to delete this community? This will delete all posts and cannot be undone.",
@@ -242,6 +251,8 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/communities/${communityId}/delete`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: adminMessage.trim() || null }),
       });
 
       if (!response.ok) {

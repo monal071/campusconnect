@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     }
 
     const { id } = req.query;
+    const { message } = req.body || {};
 
     if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid community ID" });
@@ -49,11 +50,33 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Community not found" });
     }
 
+    // Send notification to community creator before deleting
+    if (community.creatorId) {
+      const notificationMessage = message
+        ? `Your community "${community.name}" has been deleted by an administrator. Reason: ${message}`
+        : `Your community "${community.name}" has been deleted by an administrator.`;
+
+      await db.collection("notifications").insertOne({
+        userId: community.creatorId,
+        type: "community_deleted",
+        title: "Community Deleted",
+        message: notificationMessage,
+        communityName: community.name,
+        deletedBy: user.name || user.email,
+        adminMessage: message || null,
+        read: false,
+        createdAt: new Date(),
+      });
+    }
+
     // Delete all posts in the community
     await db.collection("communityPosts").deleteMany({ communityId: id });
 
-    // Delete all notifications related to this community
-    await db.collection("notifications").deleteMany({ communityId: id });
+    // Delete all notifications related to this community (except the deletion notification)
+    await db.collection("notifications").deleteMany({
+      communityId: id,
+      type: { $ne: "community_deleted" },
+    });
 
     // Remove community from all users' community lists
     await db.collection("users").updateMany(

@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
-import clientPromise from "../../../utils/mongodb";
+import { authOptions } from "../../auth/[...nextauth]";
+import clientPromise from "../../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db();
 
+    // Get user
     const user = await db
       .collection("users")
       .findOne({ email: session.user.email });
@@ -32,6 +33,9 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const userId = user._id.toString();
+
+    // Get community
     const community = await db
       .collection("communities")
       .findOne({ _id: new ObjectId(id) });
@@ -40,37 +44,40 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Community not found" });
     }
 
-    const userId = user._id.toString();
+    // Check if user is a member
     const isMember = community.members?.includes(userId);
-    // Check multiple possible formats for creator matching
-    const isCreator =
-      community.creatorId === userId ||
-      community.creatorId === user.email ||
-      community.creator?.id === userId ||
-      community.creator?.email === user.email;
-    const isAdmin = community.admins?.includes(userId) || isCreator;
 
-    // Only members can view community details
     if (!isMember) {
-      return res.status(403).json({
-        message: "You must be a member to view this community",
+      return res
+        .status(400)
+        .json({ message: "You are not a member of this community" });
+    }
+
+    // Creator cannot leave their own community
+    if (community.creatorId === userId) {
+      return res.status(400).json({
+        message:
+          "As the creator, you cannot leave the community. You can delete it instead.",
       });
     }
 
+    // Remove user from members array
+    await db.collection("communities").updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $pull: {
+          members: userId,
+          admins: userId, // Also remove from admins if they were an admin
+        },
+      },
+    );
+
     return res.status(200).json({
       success: true,
-      community: {
-        ...community,
-        _id: community._id.toString(),
-        memberCount: community.members?.length || 0,
-        isMember: true,
-        isCreator,
-        isAdmin,
-        code: community.code,
-      },
+      message: "You have left the community successfully",
     });
   } catch (error) {
-    console.error("Error fetching community:", error);
-    return res.status(500).json({ message: "Failed to fetch community" });
+    console.error("Error leaving community:", error);
+    return res.status(500).json({ message: "Failed to leave community" });
   }
 }

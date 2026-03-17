@@ -10,7 +10,16 @@ export default async function handler(req, res) {
       const db = client.db();
 
       // Get query parameters for pagination, filtering, and sorting
-      const { limit, sort, page = 1, type, search, category, tags } = req.query;
+      const {
+        limit,
+        sort,
+        page = 1,
+        type,
+        search,
+        category,
+        tags,
+        authorRole,
+      } = req.query;
 
       const limitNum = parseInt(limit) || 20;
       const pageNum = parseInt(page) || 1;
@@ -27,6 +36,11 @@ export default async function handler(req, res) {
       // Filter by category
       if (category && category !== "all") {
         filterQuery.category = category;
+      }
+
+      // Filter by author role (faculty/student)
+      if (authorRole && authorRole !== "all") {
+        filterQuery.authorRole = authorRole;
       }
 
       // Search functionality
@@ -79,7 +93,7 @@ export default async function handler(req, res) {
                 .collection("users")
                 .findOne(
                   { _id: new ObjectId(resource.userId) },
-                  { projection: { name: 1, email: 1, image: 1, role: 1 } }
+                  { projection: { name: 1, email: 1, image: 1, role: 1 } },
                 );
               return {
                 ...resource,
@@ -105,7 +119,7 @@ export default async function handler(req, res) {
             authorImage: null,
             authorRole: "student",
           };
-        })
+        }),
       );
 
       res.status(200).json({
@@ -204,8 +218,8 @@ export default async function handler(req, res) {
         tags: Array.isArray(tags)
           ? tags
           : tags
-          ? tags.split(",").map((t) => t.trim())
-          : [],
+            ? tags.split(",").map((t) => t.trim())
+            : [],
         fileSize: fileSize || null,
         fileName: fileName || null,
         isPublic,
@@ -225,7 +239,12 @@ export default async function handler(req, res) {
         updatedAt: new Date(),
       };
 
-      console.log("Creating resource with author:", resource.author, "userId:", resource.userId);
+      console.log(
+        "Creating resource with author:",
+        resource.author,
+        "userId:",
+        resource.userId,
+      );
 
       const result = await db.collection("resources").insertOne(resource);
 
@@ -292,7 +311,7 @@ export default async function handler(req, res) {
         .collection("resources")
         .updateOne(
           { _id: new ObjectId(resourceId) },
-          { $set: updatedResource }
+          { $set: updatedResource },
         );
 
       res.status(200).json({
@@ -405,7 +424,7 @@ export default async function handler(req, res) {
               verifiedAt: new Date(),
               updatedAt: new Date(),
             },
-          }
+          },
         );
 
         return res.status(200).json({
