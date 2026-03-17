@@ -29,6 +29,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;

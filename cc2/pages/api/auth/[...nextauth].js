@@ -2,6 +2,37 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "../../../utils/mongodb";
 
+// Allowed email domains for Charusat university
+const ALLOWED_DOMAINS = ["charusat.edu.in", "charusat.ac.in"];
+
+function isAllowedEmail(email) {
+  if (!email) return false;
+  const domain = email.toLowerCase().split("@")[1];
+  return ALLOWED_DOMAINS.some((d) => domain === d || domain.endsWith("." + d));
+}
+
+// Detect role from email pattern
+// Students: enrollment numbers like 23dce087@charusat.edu.in
+// Faculty/staff: name-based emails like john.doe@charusat.edu.in
+function detectRoleFromEmail(email) {
+  const localPart = email.toLowerCase().split("@")[0];
+  // Student pattern: starts with 2 digits (year), then department code, then number
+  if (/^\d{2}[a-z]{2,4}\d{2,4}$/.test(localPart)) {
+    return "student";
+  }
+  return "faculty";
+}
+
+// Extract department from student email (e.g., 23dce087 -> DCE)
+function extractDeptFromEmail(email) {
+  const localPart = email.toLowerCase().split("@")[0];
+  const match = localPart.match(/^\d{2}([a-z]{2,4})\d{2,4}$/);
+  if (match) {
+    return match[1].toUpperCase();
+  }
+  return null;
+}
+
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -12,17 +43,18 @@ export const authOptions = {
           prompt: "select_account",
           access_type: "offline",
           response_type: "code",
+          hd: "charusat.edu.in", // Restrict Google account chooser to Charusat domain
         },
       },
       httpOptions: {
-        timeout: 20000, // 20 seconds timeout
+        timeout: 20000,
       },
     }),
   ],
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 5 * 60, // Update session every 5 minutes to get fresh data from database
+    updateAge: 24 * 60 * 60, // Only refresh token once per day (was 5 min - caused excessive DB queries)
   },
   pages: {
     signIn: "/login",
@@ -31,167 +63,111 @@ export const authOptions = {
   },
   debug: process.env.NODE_ENV === "development",
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       try {
-        console.log("SignIn callback for:", user.email);
+        const email = user.email?.toLowerCase();
 
-        // Add generous timeout for MongoDB operations
+        // BLOCK non-Charusat emails
+        if (!isAllowedEmail(email)) {
+          console.log("Blocked sign-in from non-Charusat email:", email);
+          return "/login?error=AccessDenied&message=Only+Charusat+university+emails+are+allowed";
+        }
+
         const client = await Promise.race([
           clientPromise,
           new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error("MongoDB connection timeout")),
-              10000
-            )
+            setTimeout(() => reject(new Error("MongoDB timeout")), 10000),
           ),
         ]);
-
         const db = client.db();
 
-        // Check if user exists with timeout
-        const existingUser = await Promise.race([
-          db.collection("users").findOne({ email: user.email.toLowerCase() }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Database query timeout")), 5000)
-          ),
-        ]);
+        const existingUser = await db.collection("users").findOne({ email });
 
         if (!existingUser) {
-          // Create new user without role initially (will be set during signup flow)
-          await Promise.race([
-            db.collection("users").insertOne({
-              email: user.email.toLowerCase(),
-              name: user.name,
-              image: user.image,
-              connections: [],
-              pendingRequests: [],
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Database insert timeout")),
-                5000
-              )
-            ),
-          ]);
-          console.log("New user created:", user.email);
-        } else {
-          console.log(
-            "Existing user signed in:",
-            user.email,
-            "Role:",
-            existingUser.role
-          );
+          // Create new user - detect role from email pattern
+          const detectedRole = detectRoleFromEmail(email);
+          const dept = extractDeptFromEmail(email);
+
+          await db.collection("users").insertOne({
+            email,
+            name: user.name,
+            image: user.image,
+            role: null, // Will be confirmed during registration
+            detectedRole,
+            department: dept,
+            institute: null,
+            enrollmentNo:
+              detectedRole === "student"
+                ? email.split("@")[0].toUpperCase()
+                : null,
+            bio: "",
+            connections: [],
+            pendingRequests: [],
+            isProfileComplete: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          console.log("New Charusat user created:", email);
         }
 
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
-        // Allow sign in even if database fails
-        return true;
+        return true; // Allow sign in even if DB fails
       }
     },
+
     async redirect({ url, baseUrl }) {
-      // Handle role-based redirects
-      try {
-        // If redirecting after sign-in, let the login page handle it
-        if (url.includes("/login") || url === baseUrl) {
-          return `${baseUrl}/login`;
-        }
-
-        // For other redirects, maintain the URL
-        if (url.startsWith("/")) return `${baseUrl}${url}`;
-        else if (new URL(url).origin === baseUrl) return url;
-
-        // Default fallback
-        return `${baseUrl}/login`;
-      } catch (error) {
-        console.error("Redirect error:", error);
-        return `${baseUrl}/login`;
-      }
+      // After sign-in, go to dashboard (login page handles role check)
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/dashboard`;
     },
-    async jwt({ token, user, account }) {
-      // Add role information to the JWT token
-      if (user || !token.role) {
+
+    async jwt({ token, user, trigger }) {
+      // On first sign-in or when session update is triggered
+      if (user || trigger === "update" || !token.role) {
         try {
           const client = await Promise.race([
             clientPromise,
             new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("MongoDB connection timeout")),
-                3000
-              )
+              setTimeout(() => reject(new Error("MongoDB timeout")), 3000),
             ),
           ]);
-
           const db = client.db();
-          const dbUser = await Promise.race([
-            db
-              .collection("users")
-              .findOne({ email: (user?.email || token.email)?.toLowerCase() }),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Database query timeout")),
-                2000
-              )
-            ),
-          ]);
+          const dbUser = await db
+            .collection("users")
+            .findOne({ email: (user?.email || token.email)?.toLowerCase() });
 
           if (dbUser) {
             token.role = dbUser.role || null;
             token.userId = dbUser._id.toString();
+            token.department = dbUser.department || null;
+            token.institute = dbUser.institute || null;
+            token.isProfileComplete = dbUser.isProfileComplete || false;
+            token.createdAt = dbUser.createdAt?.toISOString?.() || null;
+            token.dbName = dbUser.name;
+            token.dbImage = dbUser.image;
           }
         } catch (error) {
           console.error("JWT callback error:", error);
-          // Keep existing role if database fails
         }
       }
       return token;
     },
+
     async session({ session, token }) {
-      // Always fetch the MongoDB user and set the correct _id as session.user.id
-      if (session?.user?.email) {
-        try {
-          const client = await Promise.race([
-            clientPromise,
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("MongoDB connection timeout")),
-                3000
-              )
-            ),
-          ]);
-
-          const db = client.db();
-          const user = await Promise.race([
-            db
-              .collection("users")
-              .findOne({ email: session.user.email.toLowerCase() }),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Database query timeout")),
-                2000
-              )
-            ),
-          ]);
-
-          if (user && user._id) {
-            session.user.id = user._id.toString();
-            session.user.name = user.name;
-            session.user.image = user.image; // Get image from database
-            session.user.role = user.role || null; // Include role from database
-          } else {
-            // fallback to token data if not found
-            session.user.id = token.userId || token.sub;
-            session.user.role = token.role || null;
-          }
-        } catch (error) {
-          console.error("Session callback error:", error);
-          // Fallback to token data if database fails
-          session.user.id = token.userId || token.sub;
-          session.user.role = token.role || null;
-        }
+      // Use JWT data directly - NO extra DB query needed
+      if (session?.user) {
+        session.user.id = token.userId || token.sub;
+        session.user.role = token.role || null;
+        session.user.department = token.department || null;
+        session.user.institute = token.institute || null;
+        session.user.isProfileComplete = token.isProfileComplete || false;
+        session.user.createdAt = token.createdAt || null;
+        // Use DB name/image if available (allows profile updates to reflect)
+        if (token.dbName) session.user.name = token.dbName;
+        if (token.dbImage) session.user.image = token.dbImage;
       }
       return session;
     },

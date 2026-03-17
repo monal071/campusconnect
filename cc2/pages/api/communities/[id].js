@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db();
 
-    // Get user
     const user = await db
       .collection("users")
       .findOne({ email: session.user.email });
@@ -33,7 +32,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Get community
     const community = await db
       .collection("communities")
       .findOne({ _id: new ObjectId(id) });
@@ -42,18 +40,15 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Community not found" });
     }
 
-    // Check if user is a member
-    const isMember = community.members?.includes(user._id.toString());
-    const isPending = community.pendingRequests?.includes(user._id.toString());
-    const isCreator =
-      community.createdBy === user._id.toString() ||
-      community.creatorId === user._id.toString();
+    const userId = user._id.toString();
+    const isMember = community.members?.includes(userId);
+    const isCreator = community.creatorId === userId;
+    const isAdmin = community.admins?.includes(userId) || isCreator;
 
-    // If private and not a member, deny access
-    if (community.isPrivate && !isMember) {
+    // Only members can view community details
+    if (!isMember) {
       return res.status(403).json({
-        message: "This is a private community",
-        joinStatus: isPending ? "pending" : "none",
+        message: "You must be a member to view this community",
       });
     }
 
@@ -61,10 +56,12 @@ export default async function handler(req, res) {
       success: true,
       community: {
         ...community,
+        _id: community._id.toString(),
         memberCount: community.members?.length || 0,
-        isMember,
+        isMember: true,
         isCreator,
-        joinStatus: isMember ? "member" : isPending ? "pending" : "none",
+        isAdmin,
+        code: community.code,
       },
     });
   } catch (error) {

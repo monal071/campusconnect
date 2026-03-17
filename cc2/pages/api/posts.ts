@@ -55,7 +55,7 @@ const commentSchema = z.object({
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   try {
     switch (req.method) {
@@ -178,7 +178,8 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    const post = (await getItem(TABLE_NAME, { id })) as Post;
+    const postResult = await getItem(TABLE_NAME, id);
+    const post = postResult.data as Post;
     const likes = new Set(post.likes || []);
 
     if (likes.has(userId)) {
@@ -204,7 +205,8 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    const post = (await getItem(TABLE_NAME, { id })) as Post;
+    const postResult = await getItem(TABLE_NAME, id);
+    const post = postResult.data as Post;
     const comment = {
       ...parse.data,
       id: `comment_${Date.now()}`,

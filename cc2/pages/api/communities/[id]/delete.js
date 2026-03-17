@@ -57,15 +57,10 @@ export default async function handler(req, res) {
 
     // Remove community from all users' community lists
     await db.collection("users").updateMany(
+      { communities: id },
       {
-        $or: [{ communities: id }, { pendingCommunityRequests: id }],
+        $pull: { communities: id },
       },
-      {
-        $pull: {
-          communities: id,
-          pendingCommunityRequests: id,
-        },
-      }
     );
 
     // Delete the community

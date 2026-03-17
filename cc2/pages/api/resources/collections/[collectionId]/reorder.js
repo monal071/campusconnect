@@ -1,6 +1,6 @@
-import { connectToDatabase } from "../../../../utils/mongodb";
+import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]";
+import { authOptions } from "../../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { collectionId } = req.query;
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     // Update resource order
     const updatedResources = resources.map((resourceId, index) => {
       const existing = collection.resources.find(
-        (r) => r.resourceId === resourceId
+        (r) => r.resourceId === resourceId,
       );
       return {
         resourceId,
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
           resources: updatedResources,
           updatedAt: new Date(),
         },
-      }
+      },
     );
 
     return res.status(200).json({

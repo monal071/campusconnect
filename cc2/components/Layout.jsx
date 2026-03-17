@@ -1,31 +1,25 @@
 import NavBar from "./NavBar";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 
 const Layout = ({ children }) => {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
+  const { data: session, status } = useSession();
 
   // Pages where we don't show the NavBar or footer
   const noNavBarPages = ["/", "/login", "/signup"];
   const showNavBar = !noNavBarPages.includes(router.pathname);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsLoggedIn(!!localStorage.getItem("token"));
-      setIsGuest(!!localStorage.getItem("guest"));
-    }
-  }, []);
+  const isLoggedIn = status === "authenticated" && !!session;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
-      {showNavBar && <NavBar isLoggedIn={isLoggedIn} isGuest={isGuest} />}
+      {showNavBar && <NavBar isLoggedIn={isLoggedIn} isGuest={false} />}
       <motion.main
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2 }}
         className={
           showNavBar ? "flex-1 container pt-16 w-full" : "flex-1 w-full"
         }

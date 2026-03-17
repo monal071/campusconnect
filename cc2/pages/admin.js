@@ -157,7 +157,7 @@ export default function AdminPage() {
       const data = await res.json();
       console.log("Events API response:", data);
       // Handle both array response and object with events property
-      const eventsArray = Array.isArray(data) ? data : (data?.events || []);
+      const eventsArray = Array.isArray(data) ? data : data?.events || [];
       setEvents(eventsArray);
     } catch (error) {
       console.error("Failed to fetch events:", error);
@@ -233,7 +233,7 @@ export default function AdminPage() {
   const handleDeleteCommunity = async (communityId) => {
     if (
       !confirm(
-        "Are you sure you want to delete this community? This will delete all posts and cannot be undone."
+        "Are you sure you want to delete this community? This will delete all posts and cannot be undone.",
       )
     ) {
       return;
@@ -313,27 +313,29 @@ export default function AdminPage() {
   const filteredEvents = (Array.isArray(events) ? events : []).filter(
     (event) =>
       event.title?.toLowerCase().includes(eventSearch.toLowerCase()) ||
-      event.description?.toLowerCase().includes(eventSearch.toLowerCase())
+      event.description?.toLowerCase().includes(eventSearch.toLowerCase()),
   );
 
   const filteredJobs = (Array.isArray(jobs) ? jobs : []).filter(
     (job) =>
       job.title?.toLowerCase().includes(jobSearch.toLowerCase()) ||
-      job.company?.toLowerCase().includes(jobSearch.toLowerCase())
+      job.company?.toLowerCase().includes(jobSearch.toLowerCase()),
   );
 
   const filteredUsers = (Array.isArray(users) ? users : []).filter(
     (user) =>
       user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      user.email?.toLowerCase().includes(userSearch.toLowerCase())
+      user.email?.toLowerCase().includes(userSearch.toLowerCase()),
   );
 
-  const filteredCommunities = (Array.isArray(communities) ? communities : []).filter(
+  const filteredCommunities = (
+    Array.isArray(communities) ? communities : []
+  ).filter(
     (community) =>
       community.name?.toLowerCase().includes(communitySearch.toLowerCase()) ||
       community.description
         ?.toLowerCase()
-        .includes(communitySearch.toLowerCase())
+        .includes(communitySearch.toLowerCase()),
   );
 
   const filteredResources = (Array.isArray(resources) ? resources : []).filter(
@@ -342,7 +344,7 @@ export default function AdminPage() {
       resource.description
         ?.toLowerCase()
         .includes(resourceSearch.toLowerCase()) ||
-      resource.type?.toLowerCase().includes(resourceSearch.toLowerCase())
+      resource.type?.toLowerCase().includes(resourceSearch.toLowerCase()),
   );
 
   return (
@@ -934,19 +936,12 @@ export default function AdminPage() {
                           <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
                             {community.name}
                           </h3>
-                          <span className="text-lg">
-                            {community.isPrivate ? "🔒" : "🌐"}
-                          </span>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                           {community.description || "No description"}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                           <span>👥 {community.memberCount || 0} members</span>
-                          <span>•</span>
-                          <span>
-                            {community.isPrivate ? "Private" : "Public"}
-                          </span>
                         </div>
                       </div>
                       <button
@@ -1144,7 +1139,7 @@ export default function AdminPage() {
                                     <span>
                                       📅{" "}
                                       {new Date(
-                                        event.date
+                                        event.date,
                                       ).toLocaleDateString()}
                                     </span>
                                     <span>📍 {event.location}</span>
@@ -1170,17 +1165,17 @@ export default function AdminPage() {
                                               itemId: event._id,
                                               action: "approve",
                                             }),
-                                          }
+                                          },
                                         );
                                         if (res.ok) {
                                           setMessage(
-                                            "Event approved successfully"
+                                            "Event approved successfully",
                                           );
                                           fetchPendingApprovals();
                                           fetchEvents();
                                           setTimeout(
                                             () => setMessage(""),
-                                            3000
+                                            3000,
                                           );
                                         }
                                       } catch (error) {
@@ -1208,14 +1203,14 @@ export default function AdminPage() {
                                                 itemId: event._id,
                                                 action: "reject",
                                               }),
-                                            }
+                                            },
                                           );
                                           if (res.ok) {
                                             setMessage("Event rejected");
                                             fetchPendingApprovals();
                                             setTimeout(
                                               () => setMessage(""),
-                                              3000
+                                              3000,
                                             );
                                           }
                                         } catch (error) {
@@ -1284,17 +1279,17 @@ export default function AdminPage() {
                                               itemId: job._id,
                                               action: "approve",
                                             }),
-                                          }
+                                          },
                                         );
                                         if (res.ok) {
                                           setMessage(
-                                            "Job approved successfully"
+                                            "Job approved successfully",
                                           );
                                           fetchPendingApprovals();
                                           fetchJobs();
                                           setTimeout(
                                             () => setMessage(""),
-                                            3000
+                                            3000,
                                           );
                                         }
                                       } catch (error) {
@@ -1322,14 +1317,14 @@ export default function AdminPage() {
                                                 itemId: job._id,
                                                 action: "reject",
                                               }),
-                                            }
+                                            },
                                           );
                                           if (res.ok) {
                                             setMessage("Job rejected");
                                             fetchPendingApprovals();
                                             setTimeout(
                                               () => setMessage(""),
-                                              3000
+                                              3000,
                                             );
                                           }
                                         } catch (error) {

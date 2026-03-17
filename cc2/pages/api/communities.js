@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from "../../utils/mongodb";
-import { ObjectId } from "mongodb";
+import { cache } from "../../lib/redis";
+import { generateUniqueCommunityCode } from "../../lib/communityCode";
 
 export const config = {
   api: {
@@ -38,51 +39,6 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res, db, session) {
   try {
-    // Get all communities with member count
-    const communities = await db
-      .collection("communities")
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    // Get user's memberships and pending requests
-    const user = await db
-      .collection("users")
-      .findOne({ email: session.user.email });
-    const userMemberCommunities = user?.communities || [];
-    const userPendingRequests = user?.pendingCommunityRequests || [];
-
-    // Add join status and member count for each community
-    const communitiesWithStatus = communities.map((community) => ({
-      ...community,
-      memberCount: community.members?.length || 0,
-      joinStatus: userMemberCommunities.includes(community._id.toString())
-        ? "member"
-        : userPendingRequests.includes(community._id.toString())
-        ? "pending"
-        : "none",
-      isCreator: community.creatorId === user?._id?.toString(),
-    }));
-
-    return res.status(200).json({
-      success: true,
-      communities: communitiesWithStatus,
-    });
-  } catch (error) {
-    console.error("Error fetching communities:", error);
-    return res.status(500).json({ message: "Failed to fetch communities" });
-  }
-}
-
-async function handlePost(req, res, db, session) {
-  try {
-    const { name, description, isPrivate } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: "Community name is required" });
-    }
-
-    // Get user info
     const user = await db
       .collection("users")
       .findOne({ email: session.user.email });
@@ -91,38 +47,96 @@ async function handlePost(req, res, db, session) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Create community
+    const userId = user._id.toString();
+
+    // Check cache
+    const cacheKey = `communities:user:${userId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
+    // Only fetch communities the user belongs to
+    const communities = await db
+      .collection("communities")
+      .find({ members: userId })
+      .sort({ updatedAt: -1 })
+      .toArray();
+
+    const communitiesWithMeta = communities.map((c) => ({
+      ...c,
+      _id: c._id.toString(),
+      memberCount: c.members?.length || 0,
+      isCreator: c.creatorId === userId,
+      isAdmin: c.admins?.includes(userId) || c.creatorId === userId,
+    }));
+
+    const response = {
+      success: true,
+      communities: communitiesWithMeta,
+    };
+
+    await cache.set(cacheKey, response, 120);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching communities:", error);
+    return res.status(500).json({ message: "Failed to fetch communities" });
+  }
+}
+
+async function handlePost(req, res, db, session) {
+  try {
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Community name is required" });
+    }
+
+    const user = await db
+      .collection("users")
+      .findOne({ email: session.user.email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userId = user._id.toString();
+    const code = await generateUniqueCommunityCode(db);
+
     const community = {
       name: name.trim(),
       description: description?.trim() || "",
-      isPrivate: !!isPrivate,
-      creatorId: user._id.toString(),
+      code,
+      creatorId: userId,
       creator: {
-        id: user._id.toString(),
+        id: userId,
         name: user.name,
         email: user.email,
         image: user.image,
       },
-      members: [user._id.toString()],
-      pendingRequests: [],
+      members: [userId],
+      admins: [userId],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     const result = await db.collection("communities").insertOne(community);
 
-    // Add community to user's communities list
     await db.collection("users").updateOne(
       { _id: user._id },
       {
         $push: { communities: result.insertedId.toString() },
         $set: { updatedAt: new Date() },
-      }
+      },
     );
+
+    // Invalidate user's community cache
+    await cache.del(`communities:user:${userId}`);
 
     return res.status(201).json({
       success: true,
-      community: { ...community, _id: result.insertedId },
+      community: { ...community, _id: result.insertedId.toString() },
     });
   } catch (error) {
     console.error("Error creating community:", error);

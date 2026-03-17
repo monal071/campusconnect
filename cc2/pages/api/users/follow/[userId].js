@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import clientPromise from "../../../utils/mongodb";
+import clientPromise from "../../../../utils/mongodb";
 
 export default async function handler(req, res) {
   const session = await getSession({ req });

@@ -1,14 +1,9 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
-import { connectToDatabase } from "../../../utils/mongodb";
-import {
-  cache,
-  cacheKeys,
-  cacheTTL,
-  invalidateCache,
-} from "../../../lib/redis";
-import { withRateLimit } from "../../../lib/rateLimiter";
-import { withErrorTracking } from "../../../lib/sentry";
+import { authOptions } from "./auth/[...nextauth]";
+import { connectToDatabase } from "../../utils/mongodb";
+import { cache, cacheKeys, cacheTTL, invalidateCache } from "../../lib/redis";
+import { withRateLimit } from "../../lib/rateLimiter";
+import { withErrorTracking } from "../../lib/sentry";
 
 /**
  * Enhanced Posts API with Redis caching and rate limiting
@@ -56,10 +51,10 @@ async function handler(req, res) {
             .collection("users")
             .findOne(
               { _id: post.userId },
-              { projection: { name: 1, email: 1, image: 1 } }
+              { projection: { name: 1, email: 1, image: 1 } },
             );
           return { ...post, user };
-        })
+        }),
       );
 
       // Cache the results
@@ -102,7 +97,7 @@ async function handler(req, res) {
         .collection("users")
         .findOne(
           { _id: session.user.id },
-          { projection: { name: 1, email: 1, image: 1 } }
+          { projection: { name: 1, email: 1, image: 1 } },
         );
 
       const post = {

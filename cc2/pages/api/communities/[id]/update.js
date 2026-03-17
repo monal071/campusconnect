@@ -2,9 +2,10 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
 import clientPromise from "../../../../utils/mongodb";
 import { ObjectId } from "mongodb";
+import { cache } from "../../../../lib/redis";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
+  if (req.method !== "PATCH") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
@@ -16,6 +17,7 @@ export default async function handler(req, res) {
     }
 
     const { id } = req.query;
+    const { name, description } = req.body;
 
     if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid community ID" });
@@ -24,7 +26,6 @@ export default async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db();
 
-    // Get user
     const user = await db
       .collection("users")
       .findOne({ email: session.user.email });
@@ -33,7 +34,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Get community
     const community = await db
       .collection("communities")
       .findOne({ _id: new ObjectId(id) });
@@ -42,36 +42,39 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Community not found" });
     }
 
-    // Check if user is a member
-    const isMember = community.members?.includes(user._id.toString());
+    const userId = user._id.toString();
+    const isAdmin =
+      community.admins?.includes(userId) || community.creatorId === userId;
 
-    if (!isMember) {
+    if (!isAdmin) {
       return res
         .status(403)
-        .json({ message: "You must be a member to view members" });
+        .json({ message: "Only community admins can update community" });
     }
 
-    // Fetch member details
-    const memberIds = community.members || [];
-    const adminIds = community.admins || [];
-    const members = await db
-      .collection("users")
-      .find({ _id: { $in: memberIds.map((id) => new ObjectId(id)) } })
-      .project({ name: 1, email: 1, image: 1, role: 1, department: 1 })
-      .toArray();
+    const updates = {};
+    if (name && name.trim()) {
+      updates.name = name.trim();
+    }
+    if (description !== undefined) {
+      updates.description = description?.trim() || "";
+    }
+    updates.updatedAt = new Date();
+
+    const result = await db
+      .collection("communities")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updates });
+
+    // Invalidate cache for all users in the community
+    await cache.delPattern("communities:user:*");
 
     return res.status(200).json({
       success: true,
-      members: members.map((member) => ({
-        ...member,
-        isCreator: member._id.toString() === community.creatorId,
-        isAdmin:
-          adminIds.includes(member._id.toString()) ||
-          member._id.toString() === community.creatorId,
-      })),
+      message: "Community updated successfully",
+      community: { ...community, ...updates, _id: id },
     });
   } catch (error) {
-    console.error("Error fetching members:", error);
-    return res.status(500).json({ message: "Failed to fetch members" });
+    console.error("Error updating community:", error);
+    return res.status(500).json({ message: "Failed to update community" });
   }
 }

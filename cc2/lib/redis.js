@@ -171,11 +171,12 @@ export const cacheKeys = {
   userProfile: (userId) => `user:${userId}:profile`,
   posts: (page = 1) => `posts:page:${page}`,
   post: (postId) => `post:${postId}`,
+  communities: (userId) => `communities:user:${userId}`,
   resources: (filters = "") => `resources:${filters}`,
   resource: (resourceId) => `resource:${resourceId}`,
   quiz: (quizId) => `quiz:${quizId}`,
   quizSubmissions: (quizId) => `quiz:${quizId}:submissions`,
-  events: (date = "all") => `events:${date}`,
+  events: (page = 1, limit = 20) => `events:page:${page}:limit:${limit}`,
   event: (eventId) => `event:${eventId}`,
   connections: (userId) => `connections:${userId}`,
   notifications: (userId) => `notifications:${userId}`,
@@ -189,9 +190,10 @@ export const cacheKeys = {
 export const cacheTTL = {
   user: 600, // 10 minutes
   posts: 300, // 5 minutes
+  communities: 300, // 5 minutes
   resources: 600, // 10 minutes
   quiz: 1800, // 30 minutes
-  events: 900, // 15 minutes
+  events: 600, // 10 minutes
   trending: 600, // 10 minutes
   search: 300, // 5 minutes
   notifications: 60, // 1 minute
@@ -230,6 +232,14 @@ export const invalidateCache = {
 
   async events() {
     await cache.delPattern("events:*");
+  },
+
+  async communities(userId) {
+    if (userId) {
+      await cache.del(`communities:user:${userId}`);
+    } else {
+      await cache.delPattern("communities:*");
+    }
   },
 
   async event(eventId) {

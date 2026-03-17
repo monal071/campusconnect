@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
 
-// Configure API route to handle larger payloads (for images)
 export const config = {
   api: {
     bodyParser: {
@@ -17,7 +16,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get the authenticated user's session
     const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user?.email) {
@@ -26,74 +24,51 @@ export default async function handler(req, res) {
         .json({ message: "Unauthorized - No session found" });
     }
 
-    const { name, image } = req.body;
+    const { name, image, bio, department, institute, semester } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ message: "Name is required" });
     }
 
-    // Connect to database
     const client = await clientPromise;
     const db = client.db();
+    const email = session.user.email.toLowerCase();
 
-    // Check if user exists first
-    const existingUser = await db.collection("users").findOne({
-      email: session.user.email,
-    });
-
-    if (!existingUser) {
-      // User doesn't exist in database, create them
-      const newUser = {
-        name,
-        email: session.user.email,
-        image: image || session.user.image || "",
-        role: session.user.role || "student",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const insertResult = await db.collection("users").insertOne(newUser);
-
-      if (insertResult.acknowledged) {
-        const createdUser = await db
-          .collection("users")
-          .findOne(
-            { _id: insertResult.insertedId },
-            { projection: { password: 0 } }
-          );
-
-        return res.status(200).json({
-          success: true,
-          message: "Profile created successfully",
-          user: createdUser,
-        });
-      } else {
-        return res
-          .status(500)
-          .json({ message: "Failed to create user profile" });
-      }
-    }
-
-    // Prepare update data
+    // Build update data
     const updateData = {
-      name,
+      name: name.trim(),
       updatedAt: new Date(),
     };
 
-    // Only update image if provided
-    if (image) {
-      updateData.image = image;
-    }
+    // Only update optional fields if provided
+    if (image) updateData.image = image;
+    if (bio !== undefined) updateData.bio = bio.trim();
+    if (department) updateData.department = department;
+    if (institute) updateData.institute = institute;
+    if (semester !== undefined) updateData.semester = semester;
 
     // Update user in database
-    await db
+    const result = await db
       .collection("users")
-      .updateOne({ email: session.user.email }, { $set: updateData });
+      .updateOne({ email }, { $set: updateData });
+
+    if (result.matchedCount === 0) {
+      // User doesn't exist, create them
+      await db.collection("users").insertOne({
+        email,
+        image: image || session.user.image || "",
+        role: session.user.role || "student",
+        connections: [],
+        pendingRequests: [],
+        createdAt: new Date(),
+        ...updateData,
+      });
+    }
 
     // Fetch the updated user
     const updatedUser = await db
       .collection("users")
-      .findOne({ email: session.user.email }, { projection: { password: 0 } });
+      .findOne({ email }, { projection: { password: 0 } });
 
     return res.status(200).json({
       success: true,
@@ -104,7 +79,6 @@ export default async function handler(req, res) {
     console.error("Error updating profile:", error);
     return res.status(500).json({
       message: "Failed to update profile",
-      error: error.message,
     });
   }
 }

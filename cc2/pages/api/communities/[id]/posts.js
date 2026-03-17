@@ -101,7 +101,7 @@ async function handlePost(req, res, db, communityId, user) {
       return res.status(400).json({ message: "Maximum 4 images allowed" });
     }
 
-    // If announcement, check if user is creator
+    // If announcement, check if user is admin
     if (isAnnouncement) {
       const community = await db
         .collection("communities")
@@ -111,10 +111,14 @@ async function handlePost(req, res, db, communityId, user) {
         return res.status(404).json({ message: "Community not found" });
       }
 
-      if (community.createdBy !== user._id.toString()) {
+      const isAdmin =
+        community.admins?.includes(user._id.toString()) ||
+        community.creatorId === user._id.toString();
+
+      if (!isAdmin) {
         return res
           .status(403)
-          .json({ message: "Only community creators can post announcements" });
+          .json({ message: "Only community admins can post announcements" });
       }
     }
 
@@ -142,7 +146,7 @@ async function handlePost(req, res, db, communityId, user) {
       .collection("communities")
       .updateOne(
         { _id: new ObjectId(communityId) },
-        { $set: { updatedAt: new Date() } }
+        { $set: { updatedAt: new Date() } },
       );
 
     return res.status(201).json({

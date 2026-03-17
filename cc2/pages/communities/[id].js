@@ -11,12 +11,13 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import PeopleIcon from "@mui/icons-material/People";
-import SettingsIcon from "@mui/icons-material/Settings";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CreateIcon from "@mui/icons-material/Create";
 import ForumIcon from "@mui/icons-material/Forum";
-import LockIcon from "@mui/icons-material/Lock";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import EditIcon from "@mui/icons-material/Edit";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 export default function CommunityPage() {
   const { data: session, status } = useSession();
@@ -34,6 +35,7 @@ export default function CommunityPage() {
   const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -269,16 +271,29 @@ export default function CommunityPage() {
                     <PeopleIcon fontSize="small" />
                     <span>{members.length} members</span>
                   </button>
-                  {community.privacy === "private" && (
-                    <span className="flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1.5 rounded-lg text-sm text-yellow-800 dark:text-yellow-400">
-                      <LockIcon fontSize="small" />
-                      <span>Private</span>
-                    </span>
+                  {community.code && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(community.code);
+                        toast.success("Community code copied!");
+                      }}
+                      className="flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-lg text-sm text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800/40 transition-all"
+                      title="Click to copy invite code"
+                    >
+                      <span className="font-mono font-bold tracking-wider">
+                        {community.code}
+                      </span>
+                      <ContentCopyIcon style={{ fontSize: 16 }} />
+                    </button>
                   )}
-                  {community.isCreator && (
-                    <button className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
-                      <SettingsIcon fontSize="small" />
-                      <span>Settings</span>
+                  {community.isAdmin && (
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg text-sm text-blue-800 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-all"
+                      title="Edit community"
+                    >
+                      <EditIcon style={{ fontSize: 16 }} />
+                      <span>Edit</span>
                     </button>
                   )}
                 </div>
@@ -377,11 +392,11 @@ export default function CommunityPage() {
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {new Date(
-                                  announcement.createdAt
+                                  announcement.createdAt,
                                 ).toLocaleDateString()}{" "}
                                 at{" "}
                                 {new Date(
-                                  announcement.createdAt
+                                  announcement.createdAt,
                                 ).toLocaleTimeString([], {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -450,8 +465,8 @@ export default function CommunityPage() {
                     postImages.length === 1
                       ? "grid-cols-1"
                       : postImages.length === 2
-                      ? "grid-cols-2"
-                      : "grid-cols-2"
+                        ? "grid-cols-2"
+                        : "grid-cols-2"
                   }`}
                 >
                   {postImages.map((img, index) => (
@@ -542,13 +557,121 @@ export default function CommunityPage() {
 
       {/* Members Modal */}
       {showMembers && (
-        <MembersModal members={members} onClose={() => setShowMembers(false)} />
+        <MembersModal
+          community={community}
+          members={members}
+          currentUserEmail={session?.user?.email}
+          onClose={() => setShowMembers(false)}
+          onRefresh={fetchCommunityData}
+        />
+      )}
+
+      {/* Edit Community Modal */}
+      {showEditModal && community?.isAdmin && (
+        <EditCommunityModal
+          community={community}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            setShowEditModal(false);
+            fetchCommunityData();
+          }}
+        />
       )}
     </>
   );
 }
 
-function MembersModal({ members, onClose }) {
+function MembersModal({
+  community,
+  members,
+  currentUserEmail,
+  onClose,
+  onRefresh,
+}) {
+  const [isUpdating, setIsUpdating] = useState(null);
+
+  const handleRemoveMember = async (memberId) => {
+    if (!confirm("Remove this member from the community?")) return;
+
+    setIsUpdating(memberId);
+    try {
+      const res = await fetch(
+        `/api/communities/${community._id}/manage-member`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId, action: "remove" }),
+        },
+      );
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      toast.success("Member removed");
+      onRefresh();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleMakeAdmin = async (memberId) => {
+    setIsUpdating(memberId);
+    try {
+      const res = await fetch(
+        `/api/communities/${community._id}/manage-member`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId, action: "make-admin" }),
+        },
+      );
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      toast.success("Member made admin");
+      onRefresh();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleRemoveAdmin = async (memberId) => {
+    setIsUpdating(memberId);
+    try {
+      const res = await fetch(
+        `/api/communities/${community._id}/manage-member`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId, action: "remove-admin" }),
+        },
+      );
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      toast.success("Admin status removed");
+      onRefresh();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const isCurrentUserAdmin = community.isAdmin;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
@@ -574,30 +697,174 @@ function MembersModal({ members, onClose }) {
           {members.map((member) => (
             <div
               key={member._id}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors justify-between"
             >
-              {member.image ? (
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                  {member.name.charAt(0).toUpperCase()}
+              <div className="flex items-center gap-3 flex-1">
+                {member.image ? (
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
+                    {member.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {member.isCreator
+                      ? "Creator"
+                      : member.isAdmin
+                        ? "Admin"
+                        : "Member"}
+                  </p>
+                </div>
+              </div>
+
+              {isCurrentUserAdmin && !member.isCreator && (
+                <div className="flex gap-1">
+                  {member.isAdmin ? (
+                    <button
+                      onClick={() => handleRemoveAdmin(member._id.toString())}
+                      disabled={isUpdating === member._id.toString()}
+                      className="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors disabled:opacity-50"
+                      title="Remove admin status"
+                    >
+                      Remove Admin
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleMakeAdmin(member._id.toString())}
+                      disabled={isUpdating === member._id.toString()}
+                      className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-50"
+                      title="Make admin"
+                    >
+                      Make Admin
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleRemoveMember(member._id.toString())}
+                    disabled={isUpdating === member._id.toString()}
+                    className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
+                    title="Remove member"
+                  >
+                    Remove
+                  </button>
                 </div>
               )}
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {member.name}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {member.role || "Member"}
-                </p>
-              </div>
             </div>
           ))}
         </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function EditCommunityModal({ community, onClose, onSuccess }) {
+  const [name, setName] = useState(community.name);
+  const [description, setDescription] = useState(community.description || "");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!name.trim()) {
+      toast.error("Community name is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/communities/${community._id}/update`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, description }),
+        },
+      );
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      toast.success("Community updated successfully");
+      onSuccess();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Edit Community
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Community Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows="3"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </form>
       </motion.div>
     </div>
   );

@@ -13,15 +13,11 @@ import {
   CalendarIcon,
   BriefcaseIcon,
   UserGroupIcon,
-  DocumentTextIcon,
   BookOpenIcon,
   NewspaperIcon,
   PencilIcon,
   AcademicCapIcon,
   PlayIcon,
-  ClipboardDocumentListIcon,
-  ChartBarIcon,
-  BookmarkIcon,
   FireIcon,
 } from "@heroicons/react/24/outline";
 
@@ -43,7 +39,6 @@ export default function Dashboard() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
 
   // Check if user is authenticated and set up real-time updates
   useEffect(() => {
@@ -71,7 +66,7 @@ export default function Dashboard() {
         clearInterval(interval);
         document.removeEventListener(
           "visibilitychange",
-          handleVisibilityChange
+          handleVisibilityChange,
         );
       };
     }
@@ -131,15 +126,6 @@ export default function Dashboard() {
         setUpcomingEvents(userEvents.slice(0, 3));
       } else {
         setUpcomingEvents([]);
-      }
-
-      // Fetch pending community join requests
-      const requestsRes = await fetch("/api/communities/requests/pending");
-      const requestsData = await requestsRes.json();
-      if (requestsRes.ok && requestsData.requests) {
-        setPendingRequests(requestsData.requests);
-      } else {
-        setPendingRequests([]);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -210,42 +196,6 @@ export default function Dashboard() {
         return <BriefcaseIcon />;
       default:
         return <NewspaperIcon />;
-    }
-  };
-
-  // Handle approve join request
-  const handleApprove = async (communityId, requesterId) => {
-    try {
-      const res = await fetch(`/api/communities/${communityId}/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requesterId }),
-      });
-
-      if (res.ok) {
-        // Refresh pending requests
-        fetchDashboardData();
-      }
-    } catch (error) {
-      console.error("Error approving request:", error);
-    }
-  };
-
-  // Handle decline join request
-  const handleDecline = async (communityId, requesterId) => {
-    try {
-      const res = await fetch(`/api/communities/${communityId}/decline`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requesterId }),
-      });
-
-      if (res.ok) {
-        // Refresh pending requests
-        fetchDashboardData();
-      }
-    } catch (error) {
-      console.error("Error declining request:", error);
     }
   };
 
@@ -352,89 +302,6 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </motion.section>
-        )}
-
-        {/* Pending Approvals Section */}
-        {pendingRequests.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl shadow-md p-6 border-2 border-yellow-200 dark:border-yellow-800"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="rounded-full bg-yellow-100 dark:bg-yellow-900/40 p-2">
-                <ClipboardDocumentListIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Pending Approvals
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {pendingRequests.length} join request
-                  {pendingRequests.length !== 1 ? "s" : ""} waiting
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {pendingRequests.slice(0, 5).map((request) => (
-                <div
-                  key={`${request.communityId}-${request.requester.id}`}
-                  className="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center justify-between shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={request.requester.image || "/default-avatar.png"}
-                      alt={request.requester.name}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {request.requester.name}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        wants to join{" "}
-                        <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                          {request.communityName}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() =>
-                        handleApprove(request.communityId, request.requester.id)
-                      }
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleDecline(request.communityId, request.requester.id)
-                      }
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-                    >
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {pendingRequests.length > 5 && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  +{pendingRequests.length - 5} more pending request
-                  {pendingRequests.length - 5 !== 1 ? "s" : ""}
-                </p>
-              </div>
-            )}
           </motion.section>
         )}
 
@@ -677,7 +544,10 @@ export default function Dashboard() {
             </div>
 
             {/* Trending Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6" data-tour="trending">
+            <div
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6"
+              data-tour="trending"
+            >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <FireIcon className="h-6 w-6 text-orange-500" />
@@ -689,7 +559,7 @@ export default function Dashboard() {
           </motion.section>
         </div>
       </div>
-      
+
       {/* Floating Action Button */}
       <FloatingActionButton position="bottom-right" />
     </div>

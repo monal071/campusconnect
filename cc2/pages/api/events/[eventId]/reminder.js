@@ -1,6 +1,6 @@
-import { connectToDatabase } from "../../../utils/mongodb";
+import { connectToDatabase } from "../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]";
+import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const { eventId } = req.query;
