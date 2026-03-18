@@ -31,7 +31,7 @@ export default function NavBar() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showChatList, setShowChatList] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState("user");
+  const [userRole, setUserRole] = useState(null);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -49,7 +49,7 @@ export default function NavBar() {
         setUserImage(session.user.image || "");
         // Get role from session first, then localStorage as fallback
         const role =
-          session.user.role || localStorage.getItem("role") || "user";
+          session.user.role || localStorage.getItem("role") || null;
         console.log(
           "NavBar userRole debug:",
           role,
@@ -64,7 +64,7 @@ export default function NavBar() {
         fetchNotifications();
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
-        setUserRole(localStorage.getItem("role") || "user");
+        setUserRole(localStorage.getItem("role") || null);
       }
     }
   }, [session]);
@@ -263,7 +263,10 @@ export default function NavBar() {
         {/* Logo and brand */}
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <Link href="/dashboard" className="flex items-center">
+            <Link
+              href={userRole === "admin" ? "/admin" : "/dashboard"}
+              className="flex items-center"
+            >
               <Image
                 src="/campusconnect-logo.svg"
                 alt="CampusConnect Logo"
@@ -278,83 +281,93 @@ export default function NavBar() {
           </div>
         </div>
 
-        {/* Desktop navigation links */}
-        <div className="hidden md:block">
-          <div className="ml-10 flex items-center space-x-6">
-            <Link href="/dashboard" className="nav-link">
-              Dashboard
-            </Link>
-            <Link href="/events" className="nav-link">
-              Events
-            </Link>
-            <Link href="/resources" className="nav-link">
-              Resources
-            </Link>
-            <Link href="/jobs" className="nav-link">
-              Jobs
-            </Link>
-            <Link href="/communities" className="nav-link">
-              Communities
-            </Link>
-            <Link href="/connections" className="nav-link relative">
-              Connect
-              {pendingRequests > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                  {pendingRequests}
-                </span>
-              )}
-            </Link>
-
-            {/* Quiz link - only for faculty and students */}
-            {session && (userRole === "faculty" || userRole === "student") && (
-              <Link
-                href="/quiz"
-                className="nav-link flex items-center"
-                title="Quiz"
-              >
-                <QuizIcon className="w-5 h-5 mr-1" />
-                Quiz
+        {/* Desktop navigation links - Hide for admin users */}
+        {userRole !== "admin" && (
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-center space-x-6">
+              <Link href="/dashboard" className="nav-link">
+                Dashboard
               </Link>
-            )}
-
-            {/* Admin Panel link - only visible to admins */}
-            {userRole === "admin" && (
-              <Link href="/admin" className="btn btn-secondary text-sm">
-                Admin Panel
+              <Link href="/events" className="nav-link">
+                Events
               </Link>
-            )}
+              <Link href="/resources" className="nav-link">
+                Resources
+              </Link>
+              <Link href="/jobs" className="nav-link">
+                Jobs
+              </Link>
+              <Link href="/communities" className="nav-link">
+                Communities
+              </Link>
+              <Link href="/connections" className="nav-link relative">
+                Connect
+                {pendingRequests > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                    {pendingRequests}
+                  </span>
+                )}
+              </Link>
+
+              {/* Quiz link - only for faculty and students */}
+              {session &&
+                (userRole === "faculty" || userRole === "student") && (
+                  <Link
+                    href="/quiz"
+                    className="nav-link flex items-center"
+                    title="Quiz"
+                  >
+                    <QuizIcon className="w-5 h-5 mr-1" />
+                    Quiz
+                  </Link>
+                )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          aria-label="Toggle mobile menu"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* Admin Panel indicator */}
+        {userRole === "admin" && (
+          <div className="hidden md:flex items-center">
+            <div className="flex items-center px-4 py-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <AdminPanelSettingsIcon className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+              <span className="text-red-600 dark:text-red-400 font-semibold">
+                Admin Panel
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Menu Button - Hide for admin */}
+        {userRole !== "admin" && (
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Toggle mobile menu"
           >
-            {mobileMenuOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
-        </button>
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {mobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        )}
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3">
@@ -480,18 +493,20 @@ export default function NavBar() {
 
           {session || isGuest ? (
             <div className="relative flex items-center gap-2">
-              {/* Role indicator button */}
-              <div
-                className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  userRole === "admin"
-                    ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                    : userRole === "faculty"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                }`}
-              >
-                {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-              </div>
+              {/* Role indicator button - only show if user has a valid role */}
+              {userRole && (
+                <div
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    userRole === "admin"
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                      : userRole === "faculty"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  }`}
+                >
+                  {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                </div>
+              )}
 
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -542,17 +557,19 @@ export default function NavBar() {
                         {session?.user?.email}
                       </p>
                       <div className="mt-1">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            userRole === "admin"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              : userRole === "faculty"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          }`}
-                        >
-                          {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-                        </span>
+                        {userRole && (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              userRole === "admin"
+                                ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                : userRole === "faculty"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            }`}
+                          >
+                            {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -677,67 +694,74 @@ export default function NavBar() {
                   <span className="text-slate-700 dark:text-slate-200 font-medium">
                     {userName}
                   </span>
-                  <div
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      userRole === "admin"
-                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                        : userRole === "faculty"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                    }`}
-                  >
-                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-                  </div>
+                  {userRole && (
+                    <div
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        userRole === "admin"
+                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                          : userRole === "faculty"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      }`}
+                    >
+                      {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <Link
-                href="/dashboard"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/events"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Events
-              </Link>
-              <Link
-                href="/resources"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Resources
-              </Link>
-              <Link
-                href="/jobs"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Jobs
-              </Link>
-              <Link
-                href="/communities"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Communities
-              </Link>
-              <Link
-                href="/connections"
-                className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Connect
-                {pendingRequests > 0 && (
-                  <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                    {pendingRequests}
-                  </span>
-                )}
-              </Link>
+              {/* Show regular links only for non-admin users */}
+              {userRole !== "admin" && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    href="/events"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Events
+                  </Link>
+                  <Link
+                    href="/resources"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Resources
+                  </Link>
+                  <Link
+                    href="/jobs"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Jobs
+                  </Link>
+                  <Link
+                    href="/communities"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Communities
+                  </Link>
+                  <Link
+                    href="/connections"
+                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Connect
+                    {pendingRequests > 0 && (
+                      <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                        {pendingRequests}
+                      </span>
+                    )}
+                  </Link>
+                </>
+              )}
 
               {/* Quiz link for mobile - only for faculty and students */}
               {session &&
@@ -756,13 +780,14 @@ export default function NavBar() {
 
               {/* Admin Panel link in mobile menu - only visible to admins */}
               {userRole === "admin" && (
-                <Link
-                  href="/admin"
-                  className="block px-3 py-2 mt-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-medium"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Admin Panel
-                </Link>
+                <div className="pt-2">
+                  <div className="flex items-center justify-center px-3 py-3 bg-red-100 dark:bg-red-900/30 rounded-md">
+                    <AdminPanelSettingsIcon className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+                    <span className="text-red-600 dark:text-red-400 font-semibold">
+                      Admin Panel
+                    </span>
+                  </div>
+                </div>
               )}
 
               {!session && !isGuest && (

@@ -47,6 +47,15 @@ export default function Dashboard() {
       redirecting.current = true;
       router.replace("/login");
     } else if (status === "authenticated" && session?.user) {
+      // Check if profile is complete - if not, redirect to signup
+      if (!session.user.role || !session.user.isProfileComplete) {
+        if (!redirecting.current) {
+          redirecting.current = true;
+          router.replace("/signup");
+        }
+        return;
+      }
+
       fetchDashboardData();
 
       // Set up real-time updates every 30 seconds

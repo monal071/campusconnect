@@ -11,6 +11,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LoginIcon from "@mui/icons-material/Login";
 import CloseIcon from "@mui/icons-material/Close";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 export default function Communities() {
   const { data: session, status } = useSession();
@@ -46,6 +47,10 @@ export default function Communities() {
   };
 
   const handleDeleteCommunity = (communityId) => {
+    setCommunities(communities.filter((c) => c._id !== communityId));
+  };
+
+  const handleLeaveCommunity = (communityId) => {
     setCommunities(communities.filter((c) => c._id !== communityId));
   };
 
@@ -119,6 +124,7 @@ export default function Communities() {
                   key={community._id}
                   community={community}
                   onDelete={handleDeleteCommunity}
+                  onLeave={handleLeaveCommunity}
                   isAdmin={isAdmin}
                 />
               ))}
@@ -196,9 +202,10 @@ export default function Communities() {
   );
 }
 
-function CommunityCard({ community, onDelete, isAdmin }) {
+function CommunityCard({ community, onDelete, isAdmin, onLeave }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const handleDelete = async () => {
     if (
@@ -226,6 +233,36 @@ function CommunityCard({ community, onDelete, isAdmin }) {
       toast.error(error.message);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleLeave = async (e) => {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Are you sure you want to leave "${community.name}"? You can rejoin later with the community code.`,
+      )
+    ) {
+      return;
+    }
+
+    setIsLeaving(true);
+    try {
+      const response = await fetch(`/api/communities/${community._id}/leave`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to leave community");
+      }
+
+      toast.success("You have left the community");
+      if (onLeave) onLeave(community._id);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsLeaving(false);
     }
   };
 
@@ -290,20 +327,35 @@ function CommunityCard({ community, onDelete, isAdmin }) {
             <span>{community.memberCount || 0} members</span>
           </div>
 
-          {/* Admin Delete Button */}
-          {isAdmin && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              disabled={isDeleting}
-              className="text-red-400 hover:text-red-600 transition-colors text-sm disabled:opacity-50"
-              title="Delete Community (Admin)"
-            >
-              {isDeleting ? "..." : "Delete"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Leave Button - for non-creators */}
+            {!community.isCreator && (
+              <button
+                onClick={handleLeave}
+                disabled={isLeaving}
+                className="flex items-center gap-1 text-red-400 hover:text-red-600 transition-colors text-sm disabled:opacity-50"
+                title="Leave Community"
+              >
+                <ExitToAppIcon style={{ fontSize: 16 }} />
+                {isLeaving ? "..." : "Leave"}
+              </button>
+            )}
+
+            {/* Admin Delete Button */}
+            {isAdmin && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                disabled={isDeleting}
+                className="text-red-400 hover:text-red-600 transition-colors text-sm disabled:opacity-50"
+                title="Delete Community (Admin)"
+              >
+                {isDeleting ? "..." : "Delete"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

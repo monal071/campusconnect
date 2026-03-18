@@ -70,7 +70,7 @@ export default function QuizCard({
   // Memoized computed values
   const isTeacher = useMemo(
     () => userRole === "faculty" || userRole === "admin",
-    [userRole]
+    [userRole],
   );
 
   const isStudent = useMemo(() => userRole === "student", [userRole]);
@@ -203,7 +203,7 @@ export default function QuizCard({
     }
 
     const confirmed = confirm(
-      `Are you sure you want to end "${quiz.quizName}"?\n\nStudents will no longer be able to take this quiz.`
+      `Are you sure you want to end "${quiz.quizName}"?\n\nStudents will no longer be able to take this quiz.`,
     );
 
     if (!confirmed) return;
@@ -223,7 +223,7 @@ export default function QuizCard({
     }
 
     const confirmed = confirm(
-      `Are you sure you want to reactivate "${quiz.quizName}"?\n\nStudents will be able to take this quiz again.`
+      `Are you sure you want to reactivate "${quiz.quizName}"?\n\nStudents will be able to take this quiz again.`,
     );
 
     if (!confirmed) return;
@@ -243,7 +243,7 @@ export default function QuizCard({
     }
 
     const confirmed = confirm(
-      `⚠️ DANGER: Delete "${quiz.quizName}"?\n\nThis action cannot be undone. All quiz data and submissions will be permanently lost.`
+      `⚠️ DANGER: Delete "${quiz.quizName}"?\n\nThis action cannot be undone. All quiz data and submissions will be permanently lost.`,
     );
 
     if (!confirmed) return;
@@ -338,19 +338,6 @@ export default function QuizCard({
             >
               {quizStatus.displayText}
             </span>
-
-            {!quiz.isPublic && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200">
-                <LockClosedIcon className="h-3 w-3 mr-1" />
-                Private
-              </span>
-            )}
-
-            {isTeacher && quiz.password && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 border border-indigo-200 max-w-24 truncate">
-                🔑 {quiz.password}
-              </span>
-            )}
           </div>
         </div>
 
@@ -359,7 +346,7 @@ export default function QuizCard({
           {quiz.difficulty && (
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDifficultyColor(
-                quiz.difficulty
+                quiz.difficulty,
               )}`}
             >
               {quiz.difficulty.charAt(0).toUpperCase() +
@@ -370,12 +357,6 @@ export default function QuizCard({
           {quiz.category && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
               {quiz.category}
-            </span>
-          )}
-
-          {quiz.isPublic && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              Public
             </span>
           )}
         </div>
@@ -520,8 +501,8 @@ export default function QuizCard({
                 {quizStatus.canTake
                   ? "Take Quiz"
                   : quizStatus.hasSubmitted
-                  ? "Completed"
-                  : "Quiz Not Available"}
+                    ? "Completed"
+                    : "Quiz Not Available"}
               </motion.button>
             </div>
           )}

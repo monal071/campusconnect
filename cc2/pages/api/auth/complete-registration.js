@@ -14,25 +14,36 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const { fullName, institute, department, semester, bio, role } = req.body;
+    const { fullName, institute, department, semester, studentId, bio, role } =
+      req.body;
 
     // Validate required fields
     if (!fullName || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required" });
     }
-    if (!institute) {
-      return res.status(400).json({ message: "Institute is required" });
-    }
-    if (!department) {
-      return res.status(400).json({ message: "Department is required" });
-    }
-    if (!role || !["student", "faculty"].includes(role)) {
+    if (!role || !["student", "faculty", "admin"].includes(role)) {
       return res.status(400).json({ message: "Valid role is required" });
     }
-    if (role === "student" && !semester) {
-      return res
-        .status(400)
-        .json({ message: "Semester is required for students" });
+
+    // Validate role-specific fields
+    if (role !== "admin") {
+      if (!institute) {
+        return res.status(400).json({ message: "Institute is required" });
+      }
+      if (!department) {
+        return res.status(400).json({ message: "Department is required" });
+      }
+    }
+
+    if (role === "student") {
+      if (!semester) {
+        return res
+          .status(400)
+          .json({ message: "Semester is required for students" });
+      }
+      if (!studentId || !studentId.trim()) {
+        return res.status(400).json({ message: "Student ID is required" });
+      }
     }
 
     const client = await clientPromise;
@@ -44,9 +55,11 @@ export default async function handler(req, res) {
     const updateData = {
       name: fullName.trim(),
       role,
-      institute,
-      department,
+      institute: role !== "admin" ? institute : null,
+      department: role !== "admin" ? department : null,
       semester: role === "student" ? semester : null,
+      studentId: role === "student" ? studentId.trim().toUpperCase() : null,
+      enrollmentNo: role === "student" ? studentId.trim().toUpperCase() : null,
       bio: bio?.trim() || "",
       isProfileComplete: true,
       updatedAt: new Date(),

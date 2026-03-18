@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
   Dialog,
   DialogTitle,
@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function EditProfileModal({ open, onClose, user, onSave }) {
   const { update } = useSession();
@@ -19,6 +20,8 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Update form when user prop changes
   useEffect(() => {
@@ -35,7 +38,7 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
       // Check file size (limit to 2MB for better performance)
       if (file.size > 2 * 1024 * 1024) {
         setError(
-          "Image size should be less than 2MB. Please choose a smaller image."
+          "Image size should be less than 2MB. Please choose a smaller image.",
         );
         return;
       }
@@ -145,6 +148,32 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/delete-account", {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete account");
+      }
+
+      // Sign out and redirect to login
+      await signOut({ callbackUrl: "/login" });
+    } catch (err) {
+      console.error("Delete account error:", err);
+      setError(err.message || "Failed to delete account");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -217,6 +246,56 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
               className: "text-gray-600 dark:text-gray-400",
             }}
           />
+
+          {/* Delete Account Section */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Danger Zone
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 transition-colors"
+                disabled={isLoading || isDeleting}
+              >
+                <DeleteIcon fontSize="small" />
+                Delete Account
+              </button>
+            ) : (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-red-700 dark:text-red-400 text-sm font-medium mb-3">
+                  Are you sure you want to delete your account? This action
+                  cannot be undone.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <CircularProgress size={14} color="inherit" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Yes, Delete My Account"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
 
         <DialogActions className="border-t border-gray-200 dark:border-gray-700 p-4 gap-2">
