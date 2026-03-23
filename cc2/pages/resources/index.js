@@ -157,8 +157,8 @@ export default function Resources() {
       if (result.data) {
         setResources((prev) =>
           prev.map((resource) =>
-            resource._id === resourceData.resourceId ? result.data : resource
-          )
+            resource._id === resourceData.resourceId ? result.data : resource,
+          ),
         );
       }
       setShowAddModal(false);
@@ -177,7 +177,7 @@ export default function Resources() {
     try {
       await apiDeleteResource(resourceId);
       setResources((prev) =>
-        prev.filter((resource) => resource._id !== resourceId)
+        prev.filter((resource) => resource._id !== resourceId),
       );
       setTotalResources((prev) => prev - 1);
       toast.success("Resource deleted successfully!");
@@ -198,19 +198,20 @@ export default function Resources() {
                 dislikes: result.dislikes || resource.dislikes || 0,
                 likedBy: result.liked
                   ? [...(resource.likedBy || []), session?.user?.id].filter(
-                      Boolean
+                      Boolean,
                     )
                   : (resource.likedBy || []).filter(
-                      (id) => id !== session?.user?.id
+                      (id) => id !== session?.user?.id,
                     ),
-                dislikedBy: result.disliked === false
-                  ? (resource.dislikedBy || []).filter(
-                      (id) => id !== session?.user?.id
-                    )
-                  : resource.dislikedBy,
+                dislikedBy:
+                  result.disliked === false
+                    ? (resource.dislikedBy || []).filter(
+                        (id) => id !== session?.user?.id,
+                      )
+                    : resource.dislikedBy,
               }
-            : resource
-        )
+            : resource,
+        ),
       );
       return result;
     } catch (error) {
@@ -230,19 +231,20 @@ export default function Resources() {
                 likes: result.likes || resource.likes || 0,
                 dislikedBy: result.disliked
                   ? [...(resource.dislikedBy || []), session?.user?.id].filter(
-                      Boolean
+                      Boolean,
                     )
                   : (resource.dislikedBy || []).filter(
-                      (id) => id !== session?.user?.id
+                      (id) => id !== session?.user?.id,
                     ),
-                likedBy: result.liked === false
-                  ? (resource.likedBy || []).filter(
-                      (id) => id !== session?.user?.id
-                    )
-                  : resource.likedBy,
+                likedBy:
+                  result.liked === false
+                    ? (resource.likedBy || []).filter(
+                        (id) => id !== session?.user?.id,
+                      )
+                    : resource.likedBy,
               }
-            : resource
-        )
+            : resource,
+        ),
       );
       return result;
     } catch (error) {
@@ -257,8 +259,8 @@ export default function Resources() {
         prev.map((resource) =>
           resource._id === resourceId
             ? { ...resource, views: (resource.views || 0) + 1 }
-            : resource
-        )
+            : resource,
+        ),
       );
     } catch (error) {
       console.error("Error tracking view:", error);
@@ -272,8 +274,8 @@ export default function Resources() {
         prev.map((resource) =>
           resource._id === resourceId
             ? { ...resource, downloads: (resource.downloads || 0) + 1 }
-            : resource
-        )
+            : resource,
+        ),
       );
     } catch (error) {
       console.error("Error tracking download:", error);
@@ -298,8 +300,8 @@ export default function Resources() {
         prev.map((resource) =>
           resource._id === resourceId
             ? { ...resource, isVerified: true }
-            : resource
-        )
+            : resource,
+        ),
       );
 
       toast.success("Resource verified successfully!");
@@ -429,8 +431,12 @@ export default function Resources() {
           {/* View Mode & Quick Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filter Resources</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{totalResources} resources available</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Filter Resources
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {totalResources} resources available
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -550,10 +556,7 @@ export default function Resources() {
                 No resources found
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {searchTerm ||
-                selectedType !== "all" ||
-                selectedCategory !== "all" ||
-                selectedTags.length > 0
+                {selectedType !== "all" || selectedCategory !== "all"
                   ? "Try adjusting your search criteria or filters."
                   : "Be the first to share a resource with the community! Everyone can contribute - students, faculty, and all members are welcome to upload and share educational materials."}
               </p>
