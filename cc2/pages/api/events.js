@@ -8,7 +8,7 @@ import {
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from "../../utils/mongodb";
-import { cache, cacheKeys, cacheTTL } from "../../lib/redis";
+import { cache, cacheKeys, cacheTTL, invalidateCache } from "../../lib/redis";
 import { getPaginationParams, paginatedQuery } from "../../lib/pagination";
 
 const TABLE_NAME = "events";
@@ -162,7 +162,33 @@ export default async function handler(req, res) {
       if (!joined.includes(userId)) {
         joined.push(userId);
         await updateItem(TABLE_NAME, eventId, { joined });
+
+        // Record user activity for joining event
+        try {
+          const client = await clientPromise;
+          const db = client.db();
+          await db.collection("userActivity").insertOne({
+            userId,
+            type: "event_join",
+            content: `Joined event: ${eventRes.data.title || eventId}`,
+            eventId,
+            timestamp: new Date(),
+            icon: "EventIcon",
+          });
+        } catch (err) {
+          console.error("Failed to record user activity for event join:", err);
+        }
+
+        // Invalidate events cache so lists update immediately
+        try {
+          if (invalidateCache && typeof invalidateCache.events === "function") {
+            await invalidateCache.events();
+          }
+        } catch (err) {
+          console.error("Failed to invalidate events cache after join:", err);
+        }
       }
+
       res.status(200).json({ success: true, joinedCount: joined.length });
     } catch (error) {
       res.status(500).json({ error: error.message });

@@ -2,6 +2,7 @@ import clientPromise from "../../utils/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
+import { invalidateCache } from "../../lib/redis";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -254,6 +255,32 @@ export default async function handler(req, res) {
         _id: result.insertedId,
         authorImage: user.image || null,
       };
+
+      // Record user activity for adding a resource
+      try {
+        await db.collection("userActivity").insertOne({
+          userId: user._id.toString(),
+          type: "resource_add",
+          content: `Added resource: ${resource.title}`,
+          resourceId: result.insertedId,
+          timestamp: new Date(),
+          icon: "MenuBookIcon",
+        });
+      } catch (err) {
+        console.error("Failed to insert resource activity:", err);
+      }
+
+      // Invalidate resources cache so lists update immediately
+      try {
+        if (
+          invalidateCache &&
+          typeof invalidateCache.resources === "function"
+        ) {
+          await invalidateCache.resources();
+        }
+      } catch (err) {
+        console.error("Failed to invalidate resources cache:", err);
+      }
 
       res.status(201).json({
         message: "Resource added successfully",

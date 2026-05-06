@@ -18,6 +18,7 @@ import AddResourceModal from "../../components/AddResourceModal";
 import ResourceCard from "../../components/ResourceCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
+import SearchBar from "../../components/SearchBar";
 import {
   FunnelIcon,
   PlusIcon,
@@ -49,6 +50,7 @@ export default function Resources() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResources, setTotalResources] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const resourceTypes = [
     { value: "all", label: "All Types" },
@@ -100,6 +102,10 @@ export default function Resources() {
         sort: sortBy,
         type: selectedType !== "all" ? selectedType : undefined,
         category: selectedCategory !== "all" ? selectedCategory : undefined,
+        search:
+          searchQuery && searchQuery.trim() !== ""
+            ? searchQuery.trim()
+            : undefined,
         authorRole: authorRole !== "all" ? authorRole : undefined,
       };
 
@@ -130,6 +136,18 @@ export default function Resources() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedType, selectedCategory, sortBy, authorRole, status]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (status === "authenticated") {
+        fetchResources(1, true);
+      }
+    }, 400);
+
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   // Handlers
   const handleAddResource = async (resourceData) => {
@@ -437,6 +455,15 @@ export default function Resources() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {totalResources} resources available
               </p>
+            </div>
+
+            <div className="w-full sm:w-1/2">
+              <SearchBar
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search resources by title, description or tags..."
+                onClear={() => setSearchQuery("")}
+              />
             </div>
 
             <div className="flex gap-2">

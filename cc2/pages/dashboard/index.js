@@ -125,11 +125,18 @@ export default function Dashboard() {
       const eventsRes = await fetch("/api/events");
       const eventsData = await eventsRes.json();
       if (eventsRes.ok && session?.user?.id) {
+        // events API returns { success, events, pagination }
+        const eventsArray =
+          eventsData.events || eventsData.data || eventsData || [];
         // Filter events where user has joined and are upcoming
-        const userEvents = (eventsData || []).filter((event) => {
+        const userEvents = (
+          Array.isArray(eventsArray) ? eventsArray : []
+        ).filter((event) => {
           const isJoined =
             event.joined && event.joined.includes(session.user.id);
-          const isUpcoming = new Date(event.date) > new Date();
+          const isUpcoming = event.date
+            ? new Date(event.date) > new Date()
+            : false;
           return isJoined && isUpcoming;
         });
         setUpcomingEvents(userEvents.slice(0, 3));
