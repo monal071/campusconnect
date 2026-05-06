@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
-import { invalidateCache } from "../../lib/redis";
+import { invalidateCache } from "../../../lib/redis";
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
