@@ -184,7 +184,8 @@ export default function AdminPage() {
 
   const fetchCommunities = async () => {
     try {
-      const res = await fetch("/api/communities");
+      const url = isAdmin ? "/api/communities?all=true" : "/api/communities";
+      const res = await fetch(url);
       const data = await res.json();
       console.log("Communities API response:", data);
       setCommunities(data.communities || []);

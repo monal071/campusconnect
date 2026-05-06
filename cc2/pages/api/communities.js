@@ -56,12 +56,22 @@ async function handleGet(req, res, db, session) {
       return res.status(200).json(cached);
     }
 
-    // Only fetch communities the user belongs to
-    const communities = await db
-      .collection("communities")
-      .find({ members: userId })
-      .sort({ updatedAt: -1 })
-      .toArray();
+    // If admin requested all communities, return them
+    let communities = [];
+    if (req.query.all === "true" && session.user.role === "admin") {
+      communities = await db
+        .collection("communities")
+        .find({})
+        .sort({ updatedAt: -1 })
+        .toArray();
+    } else {
+      // Only fetch communities the user belongs to
+      communities = await db
+        .collection("communities")
+        .find({ members: userId })
+        .sort({ updatedAt: -1 })
+        .toArray();
+    }
 
     const communitiesWithMeta = communities.map((c) => {
       // Check multiple possible formats for creator matching
