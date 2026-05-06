@@ -97,10 +97,13 @@ export default function ConnectionsPage() {
   };
 
   const fetchRequests = async () => {
+    if (!session?.user?.id) return;
     try {
-      const res = await fetch("/api/connections/incoming");
+      const res = await fetch(
+        `/api/connections/incoming?id=${session.user.id}`,
+      );
       const data = await res.json();
-      setRequests(data.requests || []);
+      setRequests(data.incoming || []);
     } catch (error) {
       console.error("Error fetching requests:", error);
     }
