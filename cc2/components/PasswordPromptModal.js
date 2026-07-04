@@ -43,7 +43,7 @@ export default function PasswordPromptModal({ isOpen, onClose, onPasswordSubmit,
             onClick={handleClose}
           />
 
-          <div className="fixed inset-0 overflow-y-auto">">
+          <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -51,6 +51,7 @@ export default function PasswordPromptModal({ isOpen, onClose, onPasswordSubmit,
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-md transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
                 onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -72,7 +73,7 @@ export default function PasswordPromptModal({ isOpen, onClose, onPasswordSubmit,
 
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    The quiz <strong>"{quizName}"</strong> is password protected. 
+                    The quiz <strong>&quot;{quizName}&quot;</strong> is password protected. 
                     Please enter the password provided by your instructor to continue.
                   </p>
 
@@ -121,7 +122,7 @@ export default function PasswordPromptModal({ isOpen, onClose, onPasswordSubmit,
                     <div className="ml-3">
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
                         <strong>Note:</strong> This password was provided by your instructor. 
-                        If you don't have it, please contact them for access.
+                        If you don&apos;t have it, please contact them for access.
                       </p>
                     </div>
                   </div>

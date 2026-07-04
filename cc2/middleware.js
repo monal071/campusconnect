@@ -30,6 +30,7 @@ export async function middleware(req) {
     "/api/jobs",
     "/api/posts",
     "/api/dashboard/stats",
+    "/api/uploadthing", // Required for UploadThing webhooks
   ];
 
   // Allow public paths, auth routes, and static assets

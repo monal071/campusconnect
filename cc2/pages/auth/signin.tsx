@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import Image from 'next/image';
 import type { NextPage } from 'next';
 
@@ -17,19 +18,19 @@ const SignIn: NextPage = () => {
         <div>
           <p className="text-center text-gray-700 dark:text-white">
             Please{' '}
-            <a
+            <Link
               href="/login"
               className="text-blue-500 underline"
             >
               login
-            </a>{' '}
+            </Link>{' '}
             or{' '}
-            <a
+            <Link
               href="/signup"
               className="text-blue-500 underline"
             >
               register
-            </a>{' '}
+            </Link>{' '}
             to continue.
           </p>
         </div>

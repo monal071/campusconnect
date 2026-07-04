@@ -58,10 +58,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Send a message
-      const { conversationId, content } = req.body;
+      const { conversationId, content, imageUrl } = req.body;
       
-      if (!conversationId || !content?.trim()) {
-        return res.status(400).json({ message: 'Conversation ID and content are required' });
+      if (!conversationId || (!content?.trim() && !imageUrl)) {
+        return res.status(400).json({ message: 'Conversation ID and content or image are required' });
       }
 
       try {
@@ -79,10 +79,11 @@ export default async function handler(req, res) {
         const newMessage = {
           conversationId: new ObjectId(conversationId),
           senderId: currentUserId,
-          content: content.trim(),
+          content: content?.trim() || "",
+          imageUrl: imageUrl || null,
           createdAt: new Date(),
           readBy: [currentUserId], // Sender has read the message
-          messageType: 'text'
+          messageType: imageUrl ? 'image' : 'text'
         };
 
         const result = await db.collection('messages').insertOne(newMessage);
@@ -99,7 +100,7 @@ export default async function handler(req, res) {
             $set: {
               lastMessageAt: newMessage.createdAt,
               lastMessage: {
-                content: content.trim(),
+                content: content?.trim() || "Sent an image",
                 senderId: currentUserId,
                 createdAt: newMessage.createdAt
               }

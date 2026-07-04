@@ -7,16 +7,19 @@ let redis = null;
  */
 export function getRedisClient() {
   if (!redis) {
-    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      // If no REDIS_URL is provided, gracefully disable Redis caching
+      return null;
+    }
 
     redis = new Redis(redisUrl, {
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 1,
       retryStrategy: (times) => {
-        if (times > 3) {
-          console.error("Redis connection failed after 3 retries");
-          return null;
+        if (times > 1) {
+          return null; // Stop retrying after 1 attempt
         }
-        return Math.min(times * 100, 3000);
+        return 1000;
       },
       reconnectOnError: (err) => {
         const targetError = "READONLY";
@@ -28,7 +31,10 @@ export function getRedisClient() {
     });
 
     redis.on("error", (err) => {
-      console.error("Redis error:", err);
+      // Suppress noisy connection errors in development
+      if (err.code !== 'ECONNREFUSED') {
+        console.error("Redis error:", err.message);
+      }
     });
 
     redis.on("connect", () => {
@@ -49,10 +55,13 @@ export const cache = {
   async get(key) {
     try {
       const client = getRedisClient();
+      if (!client) return null;
       const value = await client.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error("Redis GET error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis GET error:", error.message);
+      }
       return null;
     }
   },
@@ -63,6 +72,7 @@ export const cache = {
   async set(key, value, ttl = 300) {
     try {
       const client = getRedisClient();
+      if (!client) return false;
       const serialized = JSON.stringify(value);
       if (ttl) {
         await client.setex(key, ttl, serialized);
@@ -71,7 +81,9 @@ export const cache = {
       }
       return true;
     } catch (error) {
-      console.error("Redis SET error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis SET error:", error.message);
+      }
       return false;
     }
   },
@@ -82,10 +94,13 @@ export const cache = {
   async del(key) {
     try {
       const client = getRedisClient();
+      if (!client) return false;
       await client.del(key);
       return true;
     } catch (error) {
-      console.error("Redis DEL error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis DEL error:", error.message);
+      }
       return false;
     }
   },
@@ -96,13 +111,16 @@ export const cache = {
   async delPattern(pattern) {
     try {
       const client = getRedisClient();
+      if (!client) return false;
       const keys = await client.keys(pattern);
       if (keys.length > 0) {
         await client.del(...keys);
       }
       return true;
     } catch (error) {
-      console.error("Redis DEL PATTERN error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis DEL PATTERN error:", error.message);
+      }
       return false;
     }
   },
@@ -113,10 +131,13 @@ export const cache = {
   async exists(key) {
     try {
       const client = getRedisClient();
+      if (!client) return false;
       const result = await client.exists(key);
       return result === 1;
     } catch (error) {
-      console.error("Redis EXISTS error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis EXISTS error:", error.message);
+      }
       return false;
     }
   },
@@ -127,9 +148,12 @@ export const cache = {
   async incr(key, amount = 1) {
     try {
       const client = getRedisClient();
+      if (!client) return null;
       return await client.incrby(key, amount);
     } catch (error) {
-      console.error("Redis INCR error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis INCR error:", error.message);
+      }
       return null;
     }
   },
@@ -140,10 +164,13 @@ export const cache = {
   async expire(key, ttl) {
     try {
       const client = getRedisClient();
+      if (!client) return false;
       await client.expire(key, ttl);
       return true;
     } catch (error) {
-      console.error("Redis EXPIRE error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis EXPIRE error:", error.message);
+      }
       return false;
     }
   },
@@ -154,10 +181,13 @@ export const cache = {
   async mget(keys) {
     try {
       const client = getRedisClient();
+      if (!client) return keys.map(() => null);
       const values = await client.mget(...keys);
       return values.map((v) => (v ? JSON.parse(v) : null));
     } catch (error) {
-      console.error("Redis MGET error:", error);
+      if (error.message !== 'Connection is closed.') {
+        console.error("Redis MGET error:", error.message);
+      }
       return keys.map(() => null);
     }
   },

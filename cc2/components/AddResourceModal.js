@@ -8,6 +8,8 @@ import {
   TagIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+import { UploadDropzone } from "../utils/uploadthing";
+import "@uploadthing/react/styles.css";
 
 export default function AddResourceModal({
   isOpen,
@@ -56,93 +58,6 @@ export default function AddResourceModal({
     "reference",
   ];
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file size (50MB limit)
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size must be less than 50MB");
-        return;
-      }
-
-      // Validate file type
-      const allowedTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "text/plain",
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        setError(
-          "File type not supported. Please upload PDF, Word, PowerPoint, Excel, text, or image files."
-        );
-        return;
-      }
-
-      setError("");
-      setIsLoading(true);
-
-      try {
-        // Create FormData for file upload
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", file);
-
-        // Simulate upload progress
-        setUploadProgress(0);
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 90) {
-              clearInterval(progressInterval);
-              return prev;
-            }
-            return prev + 10;
-          });
-        }, 100);
-
-        const response = await fetch("/api/resources/upload", {
-          method: "POST",
-          body: uploadFormData,
-        });
-
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-
-        if (!response.ok) {
-          throw new Error("File upload failed");
-        }
-
-        const result = await response.json();
-
-        // Set both url and downloadUrl to the uploaded file URL
-        // This ensures the resource can be viewed and downloaded
-        setFormData((prev) => ({
-          ...prev,
-          file: file,
-          fileName: file.name,
-          url: result.file.url,
-          downloadUrl: result.file.url,
-        }));
-
-        setTimeout(() => setUploadProgress(0), 1000);
-        toast.success("File uploaded successfully!");
-      } catch (error) {
-        setError(error.message);
-        setUploadProgress(0);
-        toast.error("File upload failed");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -353,37 +268,36 @@ export default function AddResourceModal({
                     </div>
                   </div>
 
-                  {/* File Upload */}
+                  {/* File Upload via UploadThing */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Upload File (Optional)
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                       Upload a file OR provide a URL below. Uploaded files will
-                      be stored on our server.
+                      be securely stored in Cloudflare R2 (via UploadThing).
                     </p>
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
-                      <input
-                        type="file"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="file-upload"
-                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp"
-                        disabled={isLoading}
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800/50">
+                      <UploadDropzone
+                        endpoint="resourceUploader"
+                        onClientUploadComplete={(res) => {
+                          if (res && res[0]) {
+                            const uploadedFile = res[0];
+                            setFormData((prev) => ({
+                              ...prev,
+                              fileName: uploadedFile.name,
+                              url: uploadedFile.url,
+                              downloadUrl: uploadedFile.url,
+                            }));
+                            toast.success("File uploaded successfully!");
+                          }
+                        }}
+                        onUploadError={(error) => {
+                          toast.error(`Upload failed: ${error.message}`);
+                        }}
+                        config={{ mode: "auto" }}
                       />
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                            Click to upload
-                          </span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          PDF, DOC, PPT, XLS, TXT, or images up to 50MB
-                        </p>
-                      </label>
-
+                      
                       {formData.fileName && (
                         <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                           <div className="flex items-center justify-center space-x-2">
@@ -392,22 +306,8 @@ export default function AddResourceModal({
                               {formData.fileName}
                             </span>
                           </div>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1 text-center">
                             ✓ File uploaded successfully
-                          </p>
-                        </div>
-                      )}
-
-                      {uploadProgress > 0 && uploadProgress < 100 && (
-                        <div className="mt-4">
-                          <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                              className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Uploading... {uploadProgress}%
                           </p>
                         </div>
                       )}

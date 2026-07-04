@@ -242,7 +242,7 @@ export default function Dashboard() {
                 Welcome back, {session?.user?.name || "User"}!
               </h1>
               <p className="mt-2 text-indigo-100">
-                Here's what's been happening in your campus community.
+                Here&apos;s what&apos;s been happening in your campus community.
               </p>
             </div>
             <div className="flex items-center space-x-4">

@@ -3,6 +3,28 @@ import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import { invalidateCache } from "../../lib/redis";
+import { z } from "zod";
+
+const resourceSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title too long"),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(2000, "Description too long"),
+  type: z.string().min(1, "Type is required"),
+  category: z.string().optional(),
+  url: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.startsWith("/") || URL.canParse(val), {
+      message: "Invalid URL format",
+    }),
+  downloadUrl: z.string().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  fileSize: z.number().optional(),
+  fileName: z.string().optional(),
+  isPublic: z.boolean().optional().default(true),
+});
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -169,36 +191,20 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      console.log("Found user for resource creation:", user.name, user.email);
-
-      const {
-        title,
-        description,
-        type,
-        category,
-        url,
-        downloadUrl,
-        tags,
-        fileSize,
-        fileName,
-        isPublic = true,
-      } = req.body;
-
-      // Validate required fields
-      if (!title || !description || !type) {
+      // Validate request body with Zod
+      const parse = resourceSchema.safeParse(req.body);
+      if (!parse.success) {
         return res.status(400).json({
-          error: "Missing required fields: title, description, type",
+          error: "Validation failed",
+          message: parse.error.errors[0].message,
+          details: parse.error.errors.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })),
         });
       }
 
-      // Validate URL if provided (but allow relative paths for uploaded files)
-      if (url && !url.startsWith("/")) {
-        try {
-          new URL(url);
-        } catch {
-          return res.status(400).json({ error: "Invalid URL format" });
-        }
-      }
+      const { title, description, type, category, url, downloadUrl, tags, fileSize, fileName, isPublic } = parse.data;
 
       // Validate downloadUrl if provided (but allow relative paths for uploaded files)
       if (downloadUrl && !downloadUrl.startsWith("/")) {

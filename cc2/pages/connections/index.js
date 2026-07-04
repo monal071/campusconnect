@@ -872,7 +872,7 @@ export default function ConnectionsPage() {
                           No suggestions yet
                         </h3>
                         <p className="text-gray-500">
-                          We'll suggest people for you to connect with as more
+                          We&apos;ll suggest people for you to connect with as more
                           users join
                         </p>
                       </div>

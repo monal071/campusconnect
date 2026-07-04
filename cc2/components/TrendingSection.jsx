@@ -5,7 +5,7 @@ import {
   EyeIcon,
   HeartIcon,
   UserGroupIcon,
-  ArrowArrowTrendingUpIcon,
+  ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";

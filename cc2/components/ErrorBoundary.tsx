@@ -61,7 +61,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               </h1>
               
               <p className="text-slate-600 dark:text-slate-400 mb-8">
-                We encountered an unexpected error. Don't worry, this has been reported and we're working on fixing it.
+                We encountered an unexpected error. Don&apos;t worry, this has been reported and we&apos;re working on fixing it.
               </p>
               
               <div className="space-y-3">

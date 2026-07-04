@@ -12,6 +12,9 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LoginIcon from "@mui/icons-material/Login";
 import CloseIcon from "@mui/icons-material/Close";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import PhotoIcon from "@mui/icons-material/Photo";
+import { useUploadThing } from "../utils/uploadthing";
+import { CircularProgress } from "@mui/material";
 
 export default function Communities() {
   const { data: session, status } = useSession();
@@ -367,6 +370,13 @@ function CreateCommunityModal({ onClose, onSuccess }) {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState(null);
+  const [pendingImage, setPendingImage] = useState(null);
+
+  const { startUpload, isUploading: isUploadingImage } = useUploadThing("imageUploader", {
+    onUploadError: (error) => {
+      toast.error(`Error uploading image: ${error.message}`);
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -376,11 +386,19 @@ function CreateCommunityModal({ onClose, onSuccess }) {
     }
 
     setLoading(true);
+    let imageUrl = null;
     try {
+      if (pendingImage) {
+        const uploadResult = await startUpload([pendingImage]);
+        if (uploadResult && uploadResult.length > 0) {
+          imageUrl = uploadResult[0].url;
+        }
+      }
+
       const response = await fetch("/api/communities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, image: imageUrl }),
       });
 
       if (!response.ok) {
@@ -479,6 +497,44 @@ function CreateCommunityModal({ onClose, onSuccess }) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* Community Icon Upload */}
+              <div className="flex flex-col items-center justify-center mb-4">
+                <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex items-center justify-center group cursor-pointer hover:border-blue-500 transition-colors">
+                  {pendingImage ? (
+                    <img 
+                      src={URL.createObjectURL(pendingImage)} 
+                      alt="Community Icon" 
+                      className={`w-full h-full object-cover ${isUploadingImage ? 'opacity-50' : ''}`}
+                    />
+                  ) : (
+                    <PhotoIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  )}
+                  {isUploadingImage && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <CircularProgress size={24} />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={loading || isUploadingImage}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        if (e.target.files[0].size > 5 * 1024 * 1024) {
+                           toast.error("Image size should be less than 5MB");
+                           return;
+                        }
+                        setPendingImage(e.target.files[0]);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mt-2">Optional Icon</span>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Community Name *
@@ -521,10 +577,10 @@ function CreateCommunityModal({ onClose, onSuccess }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isUploadingImage}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
                 >
-                  {loading ? "Creating..." : "Create"}
+                  {loading || isUploadingImage ? "Creating..." : "Create"}
                 </button>
               </div>
             </form>

@@ -20,6 +20,7 @@
     "@mui/x-date-pickers": "^8.1.0",
     "@sentry/nextjs": "^10.25.0",
     "@types/jsonwebtoken": "^9.0.10",
+    "@uploadthing/react": "^7.3.3",
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.1",
@@ -39,6 +40,7 @@
     "react-icons": "^4.8.0",
     "recoil": "^0.7.7",
     "timeago-react": "^3.0.6",
+    "uploadthing": "^7.7.4",
     "zod": "^3.25.67"
   },
   "devDependencies": {

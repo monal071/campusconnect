@@ -9,6 +9,7 @@ import {
 import { z } from "zod";
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { ApiResponse, Post } from "../../types/api";
+import { withRateLimit } from "../../lib/rateLimiter";
 
 const TABLE_NAME = "Posts";
 
@@ -62,7 +63,8 @@ export default async function handler(
       case "GET":
         return await handleGet(req, res);
       case "POST":
-        return await handlePost(req, res);
+        // Rate-limit post creation: max 10 posts per 15 minutes per IP
+        return await withRateLimit(handlePost, "api")(req, res);
       case "PUT":
         return await handlePut(req, res);
       case "DELETE":
@@ -153,9 +155,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     images: parse.data.images || [],
   };
 
-  console.log("Creating post:", post); // Debug log
   const result = await addItem(TABLE_NAME, post);
-  console.log("Insert result:", result); // Debug log
   return res.status(201).json({ success: true, data: post });
 }
 

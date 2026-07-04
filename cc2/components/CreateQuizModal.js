@@ -685,7 +685,7 @@ export default function CreateQuizModal({ isOpen, onClose, onQuizCreated }) {
           <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
             <strong>Instructions for students:</strong>
             <br />
-            Go to the Quiz section and click "Join Quiz", then enter code{" "}
+            Go to the Quiz section and click &quot;Join Quiz&quot;, then enter code{" "}
             <strong>{createdQuizCode}</strong>
           </p>
         </div>

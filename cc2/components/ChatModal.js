@@ -6,8 +6,11 @@ import {
   XMarkIcon, 
   PaperAirplaneIcon,
   UserCircleIcon,
-  TrashIcon 
+  TrashIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
+import { useUploadThing } from '../utils/uploadthing';
+import { CircularProgress } from '@mui/material';
 
 export default function ChatModal({ 
   isOpen, 
@@ -22,6 +25,14 @@ export default function ChatModal({
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [sending, setSending] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [pendingImage, setPendingImage] = useState(null);
+  
+  const { startUpload, isUploading: isUploadingImage } = useUploadThing("imageUploader", {
+    onUploadError: (error) => {
+      alert(`Error uploading image: ${error.message}`);
+    },
+  });
+
   const messagesEndRef = useRef(null);
   const messageContainerRef = useRef(null);
 
@@ -128,19 +139,30 @@ export default function ChatModal({
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !conversationId || sending) return;
+    if ((!newMessage.trim() && !pendingImage) || !conversationId || sending || isUploadingImage) return;
 
     setSending(true);
     const messageContent = newMessage.trim();
     setNewMessage('');
+    
+    let imageUrl = null;
 
     try {
+      if (pendingImage) {
+        const uploadResult = await startUpload([pendingImage]);
+        if (uploadResult && uploadResult.length > 0) {
+          imageUrl = uploadResult[0].url;
+        }
+        setPendingImage(null);
+      }
+
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          content: messageContent
+          content: messageContent,
+          imageUrl
         })
       });
 
@@ -338,7 +360,16 @@ export default function ChatModal({
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                             }`}
                           >
-                            <p className="text-sm">{message.content}</p>
+                            {message.messageType === 'image' && message.imageUrl && (
+                              <div className="mb-2">
+                                <img 
+                                  src={message.imageUrl} 
+                                  alt="Attached image" 
+                                  className="max-w-full rounded-md object-contain max-h-64"
+                                />
+                              </div>
+                            )}
+                            {message.content && <p className="text-sm">{message.content}</p>}
                             <p className={`text-xs mt-1 ${
                               isOwn 
                                 ? 'text-indigo-100' 
@@ -357,19 +388,63 @@ export default function ChatModal({
             </div>
 
             {/* Message Input */}
-            <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex space-x-2">
+            <form onSubmit={sendMessage} className="p-4 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-2">
+              
+              {/* Image Preview */}
+              {pendingImage && (
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                  <img 
+                    src={URL.createObjectURL(pendingImage)} 
+                    alt="Pending upload" 
+                    className={`w-full h-full object-cover ${isUploadingImage ? 'opacity-50' : ''}`}
+                  />
+                  {isUploadingImage && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <CircularProgress size={20} />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPendingImage(null)}
+                    disabled={isUploadingImage || sending}
+                    className="absolute top-1 right-1 bg-gray-900 bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 transition-colors"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex space-x-2 items-center">
+                <label className="cursor-pointer text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors p-2">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    disabled={isUploadingImage || sending}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        if (e.target.files[0].size > 5 * 1024 * 1024) {
+                           alert("Image size should be less than 5MB");
+                           return;
+                        }
+                        setPendingImage(e.target.files[0]);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                  <PhotoIcon className="w-6 h-6" />
+                </label>
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                  disabled={sending}
+                  disabled={sending || isUploadingImage}
                 />
                 <button
                   type="submit"
-                  disabled={!newMessage.trim() || sending}
+                  disabled={(!newMessage.trim() && !pendingImage) || sending || isUploadingImage}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {sending ? (

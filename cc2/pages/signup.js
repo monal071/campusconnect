@@ -420,7 +420,7 @@ export default function Signup() {
                   Select Your Role
                 </h2>
                 <p className="text-gray-400">
-                  Choose how you'll use CampusConnect
+                  Choose how you&apos;ll use CampusConnect
                 </p>
               </div>
 

@@ -105,7 +105,7 @@ async function handleGet(req, res, db, session) {
 
 async function handlePost(req, res, db, session) {
   try {
-    const { name, description } = req.body;
+    const { name, description, image } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: "Community name is required" });
@@ -125,6 +125,7 @@ async function handlePost(req, res, db, session) {
     const community = {
       name: name.trim(),
       description: description?.trim() || "",
+      image: image || null,
       code,
       creatorId: userId,
       creator: {

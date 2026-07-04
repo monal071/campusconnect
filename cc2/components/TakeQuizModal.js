@@ -73,8 +73,8 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
 
   const getTimeColor = () => {
     const percentage = (timeRemaining / (quiz.timeLimit * 60)) * 100;
-    if (percentage > 50) return "text-green-600 dark:text-green-400";
-    if (percentage > 25) return "text-yellow-600 dark:text-yellow-400";
+    if (percentage > 50) return "text-green-600 dark:text-green-400"; // eslint-disable-line react/no-unescaped-entities
+    if (percentage > 25) return "text-yellow-600 dark:text-yellow-400"; // eslint-disable-line react/no-unescaped-entities
     return "text-red-600 dark:text-red-400";
   };
 
@@ -122,7 +122,7 @@ export default function TakeQuizModal({ isOpen, onClose, quiz, onSubmit }) {
   const handleSubmit = async () => {
     if (!startTime || !quiz?.questions) return;
 
-    const unansweredCount = quiz.questions.length - getAnsweredQuestionsCount();
+    const unansweredCount = quiz.questions.length - getAnsweredQuestionsCount(); // eslint-disable-line react/no-unescaped-entities
     if (unansweredCount > 0) {
       const confirmed = confirm(
         `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`,

@@ -6,6 +6,8 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import ImageIcon from '@mui/icons-material/Image';
 import LinkIcon from '@mui/icons-material/Link';
 import CloseIcon from '@mui/icons-material/Close';
+import { useUploadThing } from '../utils/uploadthing';
+import { CircularProgress } from '@mui/material';
 
 export default function PostEditor({ onSubmit, loading }) {
   const [content, setContent] = useState('');
@@ -13,29 +15,34 @@ export default function PostEditor({ onSubmit, loading }) {
   const [imagePreview, setImagePreview] = useState('');
   const fileInputRef = useRef(null);
 
+  const { startUpload, isUploading } = useUploadThing("imageUploader");
+
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && !selectedImage) return;
+    if ((!content.trim() && !selectedImage) || isUploading) return;
 
-    const formData = new FormData();
-    formData.append('content', content);
+    let imageUrl = null;
     if (selectedImage) {
-      formData.append('image', selectedImage);
+      const uploadResult = await startUpload([selectedImage]);
+      if (uploadResult && uploadResult.length > 0) {
+        imageUrl = uploadResult[0].url;
+      }
     }
 
-    await onSubmit(formData);
+    const payload = {
+      content,
+      image: imageUrl
+    };
+
+    await onSubmit(payload);
     setContent('');
     setSelectedImage(null);
     setImagePreview('');
@@ -135,10 +142,16 @@ export default function PostEditor({ onSubmit, loading }) {
             <img
               src={imagePreview}
               alt="Preview"
-              className="max-h-48 rounded-lg object-cover"
+              className={`max-h-48 rounded-lg object-cover ${isUploading ? 'opacity-50' : ''}`}
             />
+            {isUploading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CircularProgress size={24} />
+              </div>
+            )}
             <button
               type="button"
+              disabled={isUploading}
               onClick={() => {
                 setSelectedImage(null);
                 setImagePreview('');
@@ -153,10 +166,10 @@ export default function PostEditor({ onSubmit, loading }) {
         <div className="flex justify-end mt-3">
           <button
             type="submit"
-            disabled={loading || (!content.trim() && !selectedImage)}
+            disabled={loading || isUploading || (!content.trim() && !selectedImage)}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Posting...' : 'Post'}
+            {loading || isUploading ? 'Posting...' : 'Post'}
           </button>
         </div>
       </form>

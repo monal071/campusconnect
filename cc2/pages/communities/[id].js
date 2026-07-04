@@ -19,6 +19,9 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditIcon from "@mui/icons-material/Edit";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PhotoIcon from "@mui/icons-material/Photo";
+import { useUploadThing } from "../../utils/uploadthing";
+import { CircularProgress } from "@mui/material";
 
 export default function CommunityPage() {
   const { data: session, status } = useSession();
@@ -31,6 +34,13 @@ export default function CommunityPage() {
   const [postContent, setPostContent] = useState("");
   const [postImages, setPostImages] = useState([]);
   const [isPosting, setIsPosting] = useState(false);
+  
+  const { startUpload, isUploading: isUploadingImages } = useUploadThing("imageUploader", {
+    onUploadError: (error) => {
+      toast.error(`Error uploading image: ${error.message}`);
+    },
+  });
+
   const [showMembers, setShowMembers] = useState(false);
   const [announcementContent, setAnnouncementContent] = useState("");
   const [isPostingAnnouncement, setIsPostingAnnouncement] = useState(false);
@@ -88,48 +98,15 @@ export default function CommunityPage() {
       return;
     }
 
-    files.forEach((file) => {
+    const validFiles = files.filter(file => {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Each image must be less than 5MB");
-        return;
+        toast.error(`${file.name} must be less than 5MB`);
+        return false;
       }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          const maxWidth = 800;
-          const maxHeight = 600;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const compressedImage = canvas.toDataURL("image/jpeg", 0.8);
-          setPostImages((prev) => [...prev, compressedImage]);
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+      return true;
     });
 
+    setPostImages((prev) => [...prev, ...validFiles]);
     e.target.value = "";
   };
 
@@ -139,16 +116,24 @@ export default function CommunityPage() {
 
   const handleCreatePost = async (e) => {
     e.preventDefault();
-    if ((!postContent.trim() && postImages.length === 0) || isPosting) return;
+    if ((!postContent.trim() && postImages.length === 0) || isPosting || isUploadingImages) return;
 
     setIsPosting(true);
     try {
+      let uploadedImageUrls = [];
+      if (postImages.length > 0) {
+        const uploadResult = await startUpload(postImages);
+        if (uploadResult) {
+          uploadedImageUrls = uploadResult.map(res => res.url);
+        }
+      }
+
       const response = await fetch(`/api/communities/${id}/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: postContent.trim(),
-          images: postImages,
+          images: uploadedImageUrls,
         }),
       });
 
@@ -283,9 +268,17 @@ export default function CommunityPage() {
             </button>
 
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                {community.name?.charAt(0).toUpperCase()}
-              </div>
+              {community.image ? (
+                <img
+                  src={community.image}
+                  alt={community.name}
+                  className="w-16 h-16 rounded-xl object-cover shadow-lg"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                  {community.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
 
               <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -472,7 +465,7 @@ export default function CommunityPage() {
                     </p>
                     {community.isCreator && (
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        Click "+ New" to create your first announcement
+                        Click &quot;+ New&quot; to create your first announcement
                       </p>
                     )}
                   </div>
@@ -515,10 +508,15 @@ export default function CommunityPage() {
                   {postImages.map((img, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={img}
+                        src={URL.createObjectURL(img)}
                         alt={`Upload ${index + 1}`}
-                        className="w-full h-40 object-cover rounded-lg"
+                        className={`w-full h-40 object-cover rounded-lg ${isUploadingImages ? 'opacity-50' : ''}`}
                       />
+                      {isUploadingImages && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <CircularProgress size={24} />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
@@ -546,7 +544,7 @@ export default function CommunityPage() {
                       multiple
                       onChange={handleImageChange}
                       className="hidden"
-                      disabled={postImages.length >= 4}
+                      disabled={postImages.length >= 4 || isUploadingImages}
                     />
                     <ImageIcon />
                     <span className="text-sm">{postImages.length}/4</span>
@@ -559,11 +557,11 @@ export default function CommunityPage() {
                   type="submit"
                   disabled={
                     (!postContent.trim() && postImages.length === 0) ||
-                    isPosting
+                    isPosting || isUploadingImages
                   }
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPosting ? "Posting..." : "Share Post"}
+                  {isPosting || isUploadingImages ? "Posting..." : "Share Post"}
                 </button>
               </div>
             </form>
@@ -811,6 +809,13 @@ function EditCommunityModal({ community, onClose, onSuccess }) {
   const [name, setName] = useState(community.name);
   const [description, setDescription] = useState(community.description || "");
   const [loading, setLoading] = useState(false);
+  const [pendingImage, setPendingImage] = useState(null);
+
+  const { startUpload, isUploading: isUploadingImage } = useUploadThing("imageUploader", {
+    onUploadError: (error) => {
+      toast.error(`Error uploading image: ${error.message}`);
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -821,11 +826,19 @@ function EditCommunityModal({ community, onClose, onSuccess }) {
     }
 
     setLoading(true);
+    let imageUrl = community.image;
     try {
+      if (pendingImage) {
+        const uploadResult = await startUpload([pendingImage]);
+        if (uploadResult && uploadResult.length > 0) {
+          imageUrl = uploadResult[0].url;
+        }
+      }
+
       const res = await fetch(`/api/communities/${community._id}/update`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, image: imageUrl }),
       });
 
       if (!res.ok) {
@@ -863,6 +876,49 @@ function EditCommunityModal({ community, onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Community Icon Upload */}
+          <div className="flex flex-col items-center justify-center mb-4">
+            <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex items-center justify-center group cursor-pointer hover:border-blue-500 transition-colors">
+              {pendingImage ? (
+                <img 
+                  src={URL.createObjectURL(pendingImage)} 
+                  alt="Community Icon" 
+                  className={`w-full h-full object-cover ${isUploadingImage ? 'opacity-50' : ''}`}
+                />
+              ) : community.image ? (
+                <img 
+                  src={community.image} 
+                  alt="Community Icon" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <PhotoIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+              )}
+              {isUploadingImage && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                  <CircularProgress size={24} />
+                </div>
+              )}
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={loading || isUploadingImage}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    if (e.target.files[0].size > 5 * 1024 * 1024) {
+                       toast.error("Image size should be less than 5MB");
+                       return;
+                    }
+                    setPendingImage(e.target.files[0]);
+                  }
+                  e.target.value = '';
+                }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 mt-2">Change Icon</span>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Community Name
@@ -898,10 +954,10 @@ function EditCommunityModal({ community, onClose, onSuccess }) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isUploadingImage}
               className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
             >
-              {loading ? "Saving..." : "Save"}
+              {loading || isUploadingImage ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

@@ -1,6 +1,9 @@
 import clientPromise from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
+import { cache, cacheTTL } from "../../../lib/redis";
+
+const TRENDING_TTL = 5 * 60; // 5 minutes
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -14,13 +17,22 @@ export default async function handler(req, res) {
     }
 
     const { type = "all", limit = 10 } = req.query;
+    const limitNum = parseInt(limit);
+
+    // Try Redis cache first — key includes type + limit so different queries are cached separately
+    const cacheKey = `trending:${type}:${limitNum}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.status(200).json(cached);
+    }
+
     const client = await clientPromise;
     const db = client.db();
 
-    const limitNum = parseInt(limit);
     const results = {};
 
-    // Get trending posts (by likes and recent comments)
+    // Get trending posts (by likes, last 7 days)
     if (type === "all" || type === "posts") {
       const posts = await db
         .collection("posts")
@@ -89,6 +101,10 @@ export default async function handler(req, res) {
       results.communities = communities;
     }
 
+    // Cache results for 5 minutes
+    await cache.set(cacheKey, results, TRENDING_TTL);
+
+    res.setHeader("X-Cache", "MISS");
     res.status(200).json(results);
   } catch (error) {
     console.error("Trending API error:", error);

@@ -280,7 +280,7 @@ export default function PartialCreditSettings({ question, onChange }) {
             {question.type === "multiple-choice" && (
               <>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  "Close" Answer Options (partially correct)
+                  &quot;Close&quot; Answer Options (partially correct)
                 </label>
                 <div className="space-y-2">
                   {question.options

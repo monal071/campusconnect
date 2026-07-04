@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useUploadThing } from "../utils/uploadthing";
 
 export default function EditProfileModal({ open, onClose, user, onSave }) {
   const { update } = useSession();
@@ -22,6 +23,15 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
   const [success, setSuccess] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [pendingFile, setPendingFile] = useState(null);
+  
+  const { startUpload } = useUploadThing("imageUploader", {
+    onUploadError: (error) => {
+      setError(`Error uploading image: ${error.message}`);
+      setIsLoading(false);
+    },
+  });
 
   // Update form when user prop changes
   useEffect(() => {
@@ -35,59 +45,16 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (limit to 2MB for better performance)
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         setError(
-          "Image size should be less than 2MB. Please choose a smaller image.",
+          "Image size should be less than 5MB. Please choose a smaller image.",
         );
         return;
       }
 
-      // Clear any previous errors
       setError("");
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          // Create canvas to resize/compress image
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          // Set max dimensions
-          const maxWidth = 400;
-          const maxHeight = 400;
-          let width = img.width;
-          let height = img.height;
-
-          // Calculate new dimensions
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          // Draw and compress
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Convert to base64 with compression (0.7 quality)
-          const compressedImage = canvas.toDataURL("image/jpeg", 0.7);
-
-          setImagePreview(compressedImage);
-          setImage(compressedImage);
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
+      setPendingFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -100,8 +67,17 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
     try {
       console.log("Submitting profile update with data:", {
         name: name.trim(),
-        hasImage: !!image,
+        hasImage: !!image || !!pendingFile,
       });
+      
+      let finalImageUrl = image;
+      
+      if (pendingFile) {
+         const uploadResult = await startUpload([pendingFile]);
+         if (uploadResult && uploadResult.length > 0) {
+             finalImageUrl = uploadResult[0].url;
+         }
+      }
 
       const response = await fetch("/api/user/update", {
         method: "POST",
@@ -110,7 +86,7 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
         },
         body: JSON.stringify({
           name: name.trim(),
-          image: image,
+          image: finalImageUrl,
         }),
       });
 
@@ -131,7 +107,7 @@ export default function EditProfileModal({ open, onClose, user, onSave }) {
 
       // Call onSave callback with updated user data
       if (onSave) {
-        onSave({ ...user, name: name.trim(), image });
+        onSave({ ...user, name: name.trim(), image: finalImageUrl });
       }
 
       // Close modal after a short delay to show success message

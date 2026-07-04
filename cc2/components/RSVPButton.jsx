@@ -237,7 +237,7 @@ export default function RSVPButton({ eventId, event, onUpdate }) {
               >
                 <XCircleIcon className="w-5 h-5" />
                 <div className="flex-1 text-left">
-                  <div className="font-medium">Can't Go</div>
+                  <div className="font-medium">Can&apos;t Go</div>
                   <div className="text-xs opacity-75">
                     {attendeeCounts.not_going}{" "}
                     {attendeeCounts.not_going === 1 ? "person" : "people"}

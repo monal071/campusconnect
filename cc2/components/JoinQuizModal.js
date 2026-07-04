@@ -188,7 +188,7 @@ export default function JoinQuizModal({ isOpen, onClose, onQuizFound }) {
                     <div className="ml-3">
                       <p className="text-sm text-indigo-800 dark:text-indigo-200">
                         <strong>Tip:</strong> Ask your instructor for the quiz
-                        code. It will be a 6-character code like "ABC123".
+                        code. It will be a 6-character code like &quot;ABC123&quot;.
                       </p>
                     </div>
                   </div>

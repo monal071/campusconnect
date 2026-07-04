@@ -1,9 +1,9 @@
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]";
 import { connectToDatabase } from "../../../../utils/mongodb";
-import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -19,15 +19,22 @@ export default async function handler(req, res) {
       const skip = (page - 1) * limit;
 
       // Only allow users to see their own activities or if they're viewing another user's public profile
-      const targetUserId = userId || session.user.id;
+      // Users are stored by email, not ObjectId — use string-based lookup
+      const targetUserEmail = userId || session.user.email;
 
       // Fetch activities from various collections
       const activities = [];
 
-      // Posts
+      // Posts — try both email-based and string userId fields
       const posts = await db
         .collection("posts")
-        .find({ userId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { userEmail: targetUserEmail },
+            { "author.email": targetUserEmail },
+            { userId: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
@@ -48,7 +55,13 @@ export default async function handler(req, res) {
       // Resources
       const resources = await db
         .collection("resources")
-        .find({ userId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { userEmail: targetUserEmail },
+            { "author.email": targetUserEmail },
+            { userId: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
@@ -67,7 +80,13 @@ export default async function handler(req, res) {
       // Events
       const events = await db
         .collection("events")
-        .find({ userId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { userEmail: targetUserEmail },
+            { "author.email": targetUserEmail },
+            { userId: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
@@ -86,7 +105,13 @@ export default async function handler(req, res) {
       // Quizzes
       const quizzes = await db
         .collection("quizzes")
-        .find({ userId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { userEmail: targetUserEmail },
+            { createdBy: targetUserEmail },
+            { userId: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
@@ -107,8 +132,10 @@ export default async function handler(req, res) {
         .collection("connections")
         .find({
           $or: [
-            { userId: new ObjectId(targetUserId) },
-            { connectedUserId: new ObjectId(targetUserId) },
+            { userEmail: targetUserEmail },
+            { connectedUserEmail: targetUserEmail },
+            { userId: targetUserEmail },
+            { connectedUserId: targetUserEmail },
           ],
           status: "accepted",
         })
@@ -117,28 +144,33 @@ export default async function handler(req, res) {
         .toArray();
 
       for (const connection of connections) {
-        const otherUserId =
-          connection.userId.toString() === targetUserId
-            ? connection.connectedUserId
-            : connection.userId;
+        const otherUserEmail =
+          (connection.userEmail || connection.userId) === targetUserEmail
+            ? connection.connectedUserEmail || connection.connectedUserId
+            : connection.userEmail || connection.userId;
 
         const otherUser = await db
           .collection("users")
-          .findOne({ _id: new ObjectId(otherUserId) });
+          .findOne({ email: otherUserEmail });
 
         activities.push({
           _id: connection._id,
           type: "connection",
           description: `Connected with ${otherUser?.name || "someone"}`,
           timestamp: connection.acceptedAt || connection.createdAt,
-          link: `/connections/${otherUserId}`,
+          link: `/connections/${otherUserEmail}`,
         });
       }
 
       // Bookmarks
       const bookmarks = await db
         .collection("bookmarks")
-        .find({ userId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { userId: targetUserEmail },
+            { userEmail: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
@@ -160,22 +192,28 @@ export default async function handler(req, res) {
       // Follows
       const follows = await db
         .collection("follows")
-        .find({ followerId: new ObjectId(targetUserId) })
+        .find({
+          $or: [
+            { follower: targetUserEmail },
+            { followerId: targetUserEmail },
+          ],
+        })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray();
 
       for (const follow of follows) {
+        const followingId = follow.following || follow.followingId;
         const followedUser = await db
           .collection("users")
-          .findOne({ _id: new ObjectId(follow.followingId) });
+          .findOne({ email: followingId });
 
         activities.push({
           _id: follow._id,
           type: "follow",
           description: `Started following ${followedUser?.name || "someone"}`,
           timestamp: follow.createdAt,
-          link: `/connections/${follow.followingId}`,
+          link: `/connections/${followingId}`,
         });
       }
 

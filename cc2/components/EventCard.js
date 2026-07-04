@@ -1,25 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 
-import { useEffect } from 'react';
 export default function EventCard({ event, isAuthenticated, userId }) {
-  // Safety check for event prop
-  if (!event || typeof event !== 'object') {
-    return (
-      <div className="card p-4 mb-4 bg-gray-100 dark:bg-gray-800">
-        <p className="text-gray-500 dark:text-gray-400">Invalid event data</p>
-      </div>
-    );
-  }
-
+  // All hooks must be called unconditionally before any early return
   const [isExpanded, setIsExpanded] = useState(false);
-  const [joinedCount, setJoinedCount] = useState(Array.isArray(event.joined) ? event.joined.length : 0);
-  const [hasJoined, setHasJoined] = useState(Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false);
+  const [joinedCount, setJoinedCount] = useState(
+    event && Array.isArray(event.joined) ? event.joined.length : 0
+  );
+  const [hasJoined, setHasJoined] = useState(
+    event && Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false
+  );
   useEffect(() => {
-    // Skip polling if event ID is not available
-    if (!event._id) return;
+    // Skip polling if event or event ID is not available
+    if (!event || !event._id) return;
     
     // Poll for joined count every 5s
     let interval;
@@ -37,6 +32,15 @@ export default function EventCard({ event, isAuthenticated, userId }) {
     interval = setInterval(fetchJoined, 5000);
     return () => clearInterval(interval);
   }, [event._id, userId]);
+
+  // Safety check for event prop — placed AFTER hooks (React rules of hooks)
+  if (!event || typeof event !== 'object') {
+    return (
+      <div className="card p-4 mb-4 bg-gray-100 dark:bg-gray-800">
+        <p className="text-gray-500 dark:text-gray-400">Invalid event data</p>
+      </div>
+    );
+  }
 
   const handleJoin = async (e) => {
     e.stopPropagation();

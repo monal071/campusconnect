@@ -1,8 +1,9 @@
 import clientPromise from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
+import { withRateLimit } from "../../../lib/rateLimiter";
 
-export default async function handler(req, res) {
+async function searchHandler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -150,3 +151,6 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Search failed" });
   }
 }
+
+// Wrap with rate limiter — 100 requests per 15 minutes per IP
+export default withRateLimit(searchHandler, "api");

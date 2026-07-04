@@ -10,6 +10,25 @@ import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from "../../utils/mongodb";
 import { cache, cacheKeys, cacheTTL, invalidateCache } from "../../lib/redis";
 import { getPaginationParams, paginatedQuery } from "../../lib/pagination";
+import { z } from "zod";
+
+const eventSchema = z.object({
+  title: z.string().min(1, "Event title is required").max(200, "Title too long"),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(3000, "Description too long"),
+  date: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), { message: "Invalid event date" }),
+  location: z.string().optional(),
+  category: z.string().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  maxAttendees: z.number().int().positive().optional(),
+  isOnline: z.boolean().optional().default(false),
+  meetingUrl: z.string().url("Invalid meeting URL").optional().or(z.literal("")),
+  imageUrl: z.string().optional(),
+});
 
 const TABLE_NAME = "events";
 
@@ -71,7 +90,20 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const event = req.body;
+      // Validate request body with Zod
+      const parse = eventSchema.safeParse(req.body);
+      if (!parse.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          message: parse.error.errors[0].message,
+          details: parse.error.errors.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })),
+        });
+      }
+
+      const event = parse.data;
       const client = await clientPromise;
       const db = client.db();
 

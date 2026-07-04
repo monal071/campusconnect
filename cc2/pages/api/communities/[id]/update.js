@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     }
 
     const { id } = req.query;
-    const { name, description } = req.body;
+    const { name, description, image } = req.body;
 
     if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid community ID" });
@@ -58,6 +58,9 @@ export default async function handler(req, res) {
     }
     if (description !== undefined) {
       updates.description = description?.trim() || "";
+    }
+    if (image !== undefined) {
+      updates.image = image || null;
     }
     updates.updatedAt = new Date();
 
