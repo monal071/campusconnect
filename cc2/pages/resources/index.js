@@ -347,13 +347,19 @@ export default function Resources() {
 
   // Loading state
   if (status === "loading" || loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   // Error state
   if (error) {
     return (
-      <ErrorMessage message={error} onRetry={() => fetchResources(1, true)} />
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <ErrorMessage message={error} onRetry={() => fetchResources(1, true)} />
+      </div>
     );
   }
 
