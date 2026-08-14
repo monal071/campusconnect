@@ -1,19 +1,8 @@
-import {
-  addItem,
-  getAllItems,
-  updateItem,
-  deleteItem,
-  getItem,
-  DatabaseError,
-} from "../../utils/db";
-import { z } from "zod";
-import type { NextApiRequest, NextApiResponse } from "next";
-import type { ApiResponse, Post } from "../../types/api";
-import { withRateLimit } from "../../lib/rateLimiter";
+import { connectToDatabase } from "../../utils/mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth/[...nextauth]";
+import { ObjectId } from "mongodb";
 
-const TABLE_NAME = "Posts";
-
-// Configure API route to handle larger payloads (for images)
 export const config = {
   api: {
     bodyParser: {
@@ -22,222 +11,161 @@ export const config = {
   },
 };
 
-// Zod schema for post validation
-const postSchema = z
-  .object({
-    content: z
-      .string()
-      .min(1, "Content cannot be empty")
-      .max(1000, "Content must be less than 1000 characters")
-      .optional(),
-    author: z.object({
-      id: z.string().optional(),
-      name: z.string().min(1, "Author name is required"),
-      image: z.string().optional(),
-    }),
-    images: z.array(z.string()).max(4, "Maximum 4 images allowed").optional(),
-    tags: z.array(z.string()).optional(),
-  })
-  .refine((data) => data.content || (data.images && data.images.length > 0), {
-    message: "Post must have either content or at least one image",
-  });
+const COLLECTION = "posts";
 
-const commentSchema = z.object({
-  content: z
-    .string()
-    .min(1, "Comment cannot be empty")
-    .max(500, "Comment must be less than 500 characters"),
-  author: z.object({
-    id: z.string(),
-    name: z.string().min(1, "Author name is required"),
-    image: z.string().optional(),
-  }),
-});
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+export default async function handler(req, res) {
   try {
     switch (req.method) {
       case "GET":
         return await handleGet(req, res);
       case "POST":
-        // Rate-limit post creation: max 10 posts per 15 minutes per IP
-        return await withRateLimit(handlePost, "api")(req, res);
+        return await handlePost(req, res);
       case "PUT":
         return await handlePut(req, res);
       case "DELETE":
         return await handleDelete(req, res);
       default:
         res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
-        res.status(405).json({
-          success: false,
-          error: `Method ${req.method} Not Allowed`,
-        });
+        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
   } catch (error) {
-    console.error("Error in posts API:", error);
-    if (
-      error.message &&
-      error.message.includes("Failed to connect to MongoDB")
-    ) {
-      return res.status(503).json({
-        success: false,
-        error: "Database unavailable",
-        message: "Cannot connect to database. Please try again later.",
-      });
-    }
-    if (error instanceof DatabaseError) {
-      return res.status(500).json({
-        success: false,
-        error: "Database operation failed",
-        message: error.message,
-      });
-    }
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        message: error.errors[0].message,
-      });
-    }
-    return res.status(500).json({
-      success: false,
-      error: "Internal server error",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+    console.error("Posts API error:", error);
+    return res.status(500).json({ error: "Internal server error", message: error.message });
   }
 }
 
-async function handleGet(req: NextApiRequest, res: NextApiResponse) {
+async function handleGet(req, res) {
   const { page = "1", limit = "10", userId } = req.query;
-  const pageNum = parseInt(page as string);
-  const limitNum = parseInt(limit as string);
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
-  const options = {
-    limit: limitNum,
-    ...(userId && {
-      filterExpression: "author.id = :userId",
-      expressionValues: { ":userId": userId },
-    }),
-  };
+  const { db } = await connectToDatabase();
+  const filter = userId ? { "author.id": userId } : {};
 
-  const result = await getAllItems(TABLE_NAME, options);
+  const [posts, total] = await Promise.all([
+    db.collection(COLLECTION)
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .toArray(),
+    db.collection(COLLECTION).countDocuments(filter),
+  ]);
 
   return res.status(200).json({
     success: true,
-    data: result.data, // FIX: use result.data instead of result.items
+    data: posts,
     page: pageNum,
     pageSize: limitNum,
-    hasMore: result.hasMore,
+    total,
+    hasMore: pageNum * limitNum < total,
   });
 }
 
-async function handlePost(req: NextApiRequest, res: NextApiResponse) {
-  const parse = postSchema.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({
-      success: false,
-      error: "Invalid post data",
-      message: parse.error.errors[0].message,
-    });
+async function handlePost(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const post: Post = {
-    ...parse.data,
-    content: parse.data.content || "",
-    id: `post_${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  const { content, images, tags } = req.body;
+  if (!content && (!images || images.length === 0)) {
+    return res.status(400).json({ error: "Post must have content or at least one image" });
+  }
+
+  const { db } = await connectToDatabase();
+  const post = {
+    content: content || "",
+    images: images || [],
+    tags: tags || [],
+    author: {
+      id: session.user.id,
+      name: session.user.name,
+      image: session.user.image,
+    },
     likes: [],
     comments: [],
-    images: parse.data.images || [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
-  const result = await addItem(TABLE_NAME, post);
-  return res.status(201).json({ success: true, data: post });
+  const result = await db.collection(COLLECTION).insertOne(post);
+  return res.status(201).json({ success: true, data: { ...post, _id: result.insertedId } });
 }
 
-async function handlePut(req: NextApiRequest, res: NextApiResponse) {
-  const { id } = req.query;
-  if (!id || typeof id !== "string") {
-    return res.status(400).json({
-      success: false,
-      error: "Post ID is required",
-    });
+async function handlePut(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ error: "Post ID is required" });
+  }
+
+  const { db } = await connectToDatabase();
   const { action } = req.body;
+
   if (action === "like") {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required for liking a post",
-      });
-    }
+    const post = await db.collection(COLLECTION).findOne({ _id: new ObjectId(id) });
+    if (!post) return res.status(404).json({ error: "Post not found" });
 
-    const postResult = await getItem(TABLE_NAME, id);
-    const post = postResult.data as Post;
     const likes = new Set(post.likes || []);
-
+    const userId = session.user.id;
     if (likes.has(userId)) {
       likes.delete(userId);
     } else {
       likes.add(userId);
     }
-
-    await updateItem(TABLE_NAME, { id }, { likes: Array.from(likes) });
-    return res.status(200).json({
-      success: true,
-      data: { likes: Array.from(likes) },
-    });
+    const likesArray = Array.from(likes);
+    await db.collection(COLLECTION).updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { likes: likesArray, updatedAt: new Date() } }
+    );
+    return res.status(200).json({ success: true, data: { likes: likesArray } });
   }
 
   if (action === "comment") {
-    const parse = commentSchema.safeParse(req.body.comment);
-    if (!parse.success) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid comment data",
-        message: parse.error.errors[0].message,
-      });
-    }
+    const { content, author } = req.body.comment || {};
+    if (!content) return res.status(400).json({ error: "Comment content is required" });
 
-    const postResult = await getItem(TABLE_NAME, id);
-    const post = postResult.data as Post;
     const comment = {
-      ...parse.data,
-      id: `comment_${Date.now()}`,
+      id: new ObjectId().toString(),
+      content,
+      author: author || { id: session.user.id, name: session.user.name, image: session.user.image },
       createdAt: new Date().toISOString(),
     };
 
-    const comments = [...(post.comments || []), comment];
-    await updateItem(TABLE_NAME, { id }, { comments });
-    return res.status(200).json({
-      success: true,
-      data: { comments },
-    });
+    await db.collection(COLLECTION).updateOne(
+      { _id: new ObjectId(id) },
+      { $push: { comments: comment }, $set: { updatedAt: new Date() } }
+    );
+    const updated = await db.collection(COLLECTION).findOne({ _id: new ObjectId(id) });
+    return res.status(200).json({ success: true, data: { comments: updated.comments } });
   }
 
-  return res.status(400).json({
-    success: false,
-    error: "Invalid action",
-  });
+  return res.status(400).json({ error: "Invalid action" });
 }
 
-async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
-  let id = req.body.id || req.query.id;
-  if (!id || typeof id !== "string") {
-    return res.status(400).json({
-      success: false,
-      error: "Post ID is required",
-    });
+async function handleDelete(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
-  await deleteItem(TABLE_NAME, id);
-  return res.status(200).json({
-    success: true,
-    message: "Post deleted successfully",
-  });
+
+  const id = req.body?.id || req.query?.id;
+  if (!id) return res.status(400).json({ error: "Post ID is required" });
+
+  const { db } = await connectToDatabase();
+  const post = await db.collection(COLLECTION).findOne({ _id: new ObjectId(id) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+
+  // Only author or admin can delete
+  if (post.author?.id !== session.user.id && session.user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(id) });
+  return res.status(200).json({ success: true, message: "Post deleted" });
 }

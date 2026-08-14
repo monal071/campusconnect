@@ -1,61 +1,24 @@
-import * as Sentry from "@sentry/nextjs";
-
 /**
- * Sentry error reporting utilities
+ * Lightweight error reporting wrapper (Sentry-free).
+ * Drop-in replacement for the original @sentry/nextjs wrapper.
+ * All functions have the same API so callers don't need to change.
  */
 
-/**
- * Capture exception with context
- */
 export function captureException(error, context = {}) {
-  if (process.env.NODE_ENV === "production") {
-    Sentry.captureException(error, {
-      contexts: { custom: context },
-    });
-  } else {
-    console.error("Error:", error, "Context:", context);
-  }
+  console.error("[Error]", error, context);
 }
 
-/**
- * Capture message
- */
 export function captureMessage(message, level = "info", context = {}) {
-  if (process.env.NODE_ENV === "production") {
-    Sentry.captureMessage(message, {
-      level,
-      contexts: { custom: context },
-    });
-  } else {
-    console.log(`[${level.toUpperCase()}]`, message, context);
-  }
+  const fn = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  fn(`[${level.toUpperCase()}]`, message, context);
 }
 
-/**
- * Set user context
- */
-export function setUser(user) {
-  if (user) {
-    Sentry.setUser({
-      id: user.id,
-      email: user.email,
-      username: user.name,
-    });
-  } else {
-    Sentry.setUser(null);
-  }
+export function setUser(_user) {
+  // no-op without Sentry
 }
 
-/**
- * Add breadcrumb
- */
-export function addBreadcrumb(message, category = "custom", data = {}) {
-  Sentry.addBreadcrumb({
-    message,
-    category,
-    data,
-    level: "info",
-  });
+export function addBreadcrumb(message, _category, _data) {
+  // no-op without Sentry
 }
 
 /**
@@ -69,30 +32,23 @@ export function withErrorTracking(handler) {
       captureException(error, {
         url: req.url,
         method: req.method,
-        body: req.body,
       });
-
-      res.status(500).json({
-        error: "Internal server error",
-        message:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
-      });
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "Internal server error",
+          message: process.env.NODE_ENV === "development" ? error.message : undefined,
+        });
+      }
     }
   };
 }
 
-/**
- * Start transaction for performance monitoring
- */
-export function startTransaction(name, op = "http.server") {
-  return Sentry.startTransaction({ name, op });
+export function startTransaction(_name, _op) {
+  return { finish: () => {} };
 }
 
-/**
- * Create span for specific operation
- */
-export function createSpan(transaction, name, op) {
-  return transaction.startChild({ op, description: name });
+export function createSpan(transaction, _name, _op) {
+  return { finish: () => {} };
 }
 
 export default {

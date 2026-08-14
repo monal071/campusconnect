@@ -1,16 +1,10 @@
-import {
-  addItem,
-  getAllItems,
-  updateItem,
-  getItem,
-  deleteItem,
-} from "../../utils/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from "../../utils/mongodb";
 import { cache, cacheKeys, cacheTTL, invalidateCache } from "../../lib/redis";
 import { getPaginationParams, paginatedQuery } from "../../lib/pagination";
 import { z } from "zod";
+import { ObjectId } from "mongodb";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Event title is required").max(200, "Title too long"),
@@ -30,17 +24,15 @@ const eventSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-const TABLE_NAME = "events";
+const COLLECTION = "events";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
       const { page, limit } = getPaginationParams(req);
 
-      // Try to get from cache
       const cacheKey = cacheKeys.events(page, limit);
       const cached = await cache.get(cacheKey);
-
       if (cached) {
         return res.status(200).json(cached);
       }
@@ -49,18 +41,17 @@ export default async function handler(req, res) {
       const db = client.db();
 
       const queryResult = await paginatedQuery(
-        db.collection(TABLE_NAME),
+        db.collection(COLLECTION),
         { status: "approved" },
-        { page, limit, sort: { createdAt: -1 } },
+        { page, limit, sort: { createdAt: -1 } }
       );
 
-      // Filter out malformed events
       const validEvents = (queryResult.data || []).filter(
         (event) =>
           event &&
           typeof event === "object" &&
           event.title &&
-          event.description !== undefined,
+          event.description !== undefined
       );
 
       const response = {
@@ -75,22 +66,21 @@ export default async function handler(req, res) {
         },
       };
 
-      // Cache the response
       await cache.set(cacheKey, response, cacheTTL.events);
-
-      res.status(200).json(response);
+      return res.status(200).json(response);
     } catch (error) {
-      console.error("Events API error:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Events GET error:", error);
+      return res.status(500).json({ error: error.message });
     }
-  } else if (req.method === "POST") {
+  }
+
+  if (req.method === "POST") {
     try {
       const session = await getServerSession(req, res, authOptions);
       if (!session) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Validate request body with Zod
       const parse = eventSchema.safeParse(req.body);
       if (!parse.success) {
         return res.status(400).json({
@@ -108,17 +98,15 @@ export default async function handler(req, res) {
       const db = client.db();
 
       if (session.user.role === "admin") {
-        // Admins can directly add events
-        await addItem(TABLE_NAME, {
+        await db.collection(COLLECTION).insertOne({
           ...event,
           joined: [],
           createdBy: session.user.id,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(),
           status: "approved",
         });
-        res.status(201).json({ message: "Event added successfully" });
+        return res.status(201).json({ message: "Event added successfully" });
       } else {
-        // Regular users submit for approval
         await db.collection("pending_events").insertOne({
           ...event,
           joined: [],
@@ -132,11 +120,7 @@ export default async function handler(req, res) {
           },
         });
 
-        // Notify all admins about new pending event
-        const admins = await db
-          .collection("users")
-          .find({ role: "admin" })
-          .toArray();
+        const admins = await db.collection("users").find({ role: "admin" }).toArray();
         const notifications = admins.map((admin) => ({
           userId: admin._id.toString(),
           type: "event",
@@ -150,59 +134,68 @@ export default async function handler(req, res) {
           await db.collection("notifications").insertMany(notifications);
         }
 
-        res.status(201).json({
-          message:
-            "Event submitted for approval. You will be notified once reviewed.",
+        return res.status(201).json({
+          message: "Event submitted for approval. You will be notified once reviewed.",
           isPending: true,
         });
       }
     } catch (error) {
-      console.error("Event submission error:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Event POST error:", error);
+      return res.status(500).json({ error: error.message });
     }
-  } else if (req.method === "DELETE") {
+  }
+
+  if (req.method === "DELETE") {
     try {
+      const session = await getServerSession(req, res, authOptions);
+      if (!session) return res.status(401).json({ error: "Not authenticated" });
+
       const { id, eventId } = req.body;
       const deleteId = id || eventId;
       if (!deleteId) {
         return res.status(400).json({ error: "Missing event ID" });
       }
 
-      const result = await deleteItem(TABLE_NAME, deleteId);
+      const client = await clientPromise;
+      const db = client.db();
+      const result = await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(deleteId) });
 
-      if (result && result.success) {
-        res.status(200).json({ success: true, message: "Event deleted" });
+      if (result.deletedCount > 0) {
+        await invalidateCache.events?.();
+        return res.status(200).json({ success: true, message: "Event deleted" });
       } else {
-        res.status(404).json({ success: false, error: "Event not found" });
+        return res.status(404).json({ success: false, error: "Event not found" });
       }
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("Event DELETE error:", error);
+      return res.status(500).json({ error: error.message });
     }
-  } else if (req.method === "PUT") {
-    // Join event: expects { eventId, userId }
+  }
+
+  if (req.method === "PUT") {
     try {
       const { eventId, userId } = req.body;
       if (!eventId || !userId)
         return res.status(400).json({ error: "Missing eventId or userId" });
-      // Get event
-      const eventRes = await getItem(TABLE_NAME, eventId);
-      if (!eventRes.success || !eventRes.data)
-        return res.status(404).json({ error: "Event not found" });
-      const joined = Array.isArray(eventRes.data.joined)
-        ? eventRes.data.joined
-        : [];
+
+      const client = await clientPromise;
+      const db = client.db();
+      const event = await db.collection(COLLECTION).findOne({ _id: new ObjectId(eventId) });
+      if (!event) return res.status(404).json({ error: "Event not found" });
+
+      const joined = Array.isArray(event.joined) ? event.joined : [];
       if (!joined.includes(userId)) {
         joined.push(userId);
-        await updateItem(TABLE_NAME, eventId, { joined });
+        await db.collection(COLLECTION).updateOne(
+          { _id: new ObjectId(eventId) },
+          { $set: { joined } }
+        );
 
-        // Record user activity for joining event
         try {
-          const client = await clientPromise;
-          const db = client.db();
           await db.collection("userActivity").insertOne({
             userId,
             type: "event_join",
-            content: `Joined event: ${eventRes.data.title || eventId}`,
+            content: `Joined event: ${event.title || eventId}`,
             eventId,
             timestamp: new Date(),
             icon: "EventIcon",
@@ -211,21 +204,19 @@ export default async function handler(req, res) {
           console.error("Failed to record user activity for event join:", err);
         }
 
-        // Invalidate events cache so lists update immediately
         try {
-          if (invalidateCache && typeof invalidateCache.events === "function") {
-            await invalidateCache.events();
-          }
+          await invalidateCache.events?.();
         } catch (err) {
           console.error("Failed to invalidate events cache after join:", err);
         }
       }
 
-      res.status(200).json({ success: true, joinedCount: joined.length });
+      return res.status(200).json({ success: true, joinedCount: joined.length });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("Event PUT error:", error);
+      return res.status(500).json({ error: error.message });
     }
-  } else {
-    res.status(405).end();
   }
+
+  return res.status(405).end();
 }
