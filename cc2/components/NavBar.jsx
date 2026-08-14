@@ -49,16 +49,13 @@ export default function NavBar() {
       if (session?.user) {
         setUserName(session.user.name || "User");
         setUserImage(session.user.image || "");
-        // Get role from session first, then localStorage as fallback
-        const role =
-          session.user.role || localStorage.getItem("role") || null;
-        console.log(
-          "NavBar userRole debug:",
-          role,
-          "session role:",
-          session.user.role,
-        );
-        setUserRole(role);
+        // Get role from session first, update localStorage if present
+        const role = session.user.role || null;
+        if (role) {
+          localStorage.setItem("role", role);
+        }
+        const activeRole = role || localStorage.getItem("role") || null;
+        setUserRole(activeRole);
 
         // Fetch connection requests when logged in
         fetchConnectionRequests();
@@ -285,7 +282,7 @@ export default function NavBar() {
 
         {/* Desktop navigation links - Hide for admin users */}
         {userRole !== "admin" && (
-          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <div className="flex items-center space-x-1 lg:space-x-2">
             {[
               { href: "/dashboard", label: "Dashboard" },
               { href: "/events", label: "Events" },
