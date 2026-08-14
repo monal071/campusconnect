@@ -131,18 +131,14 @@ export default function Resources() {
 
   // Effects
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchResources(1, true);
-    }
+    fetchResources(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedType, selectedCategory, sortBy, authorRole, status]);
+  }, [selectedType, selectedCategory, sortBy, authorRole]);
 
   // Debounced search effect
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (status === "authenticated") {
-        fetchResources(1, true);
-      }
+      fetchResources(1, true);
     }, 400);
 
     return () => clearTimeout(handler);

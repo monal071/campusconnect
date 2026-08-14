@@ -1,4 +1,4 @@
-/**
+gdfzdfga/**
  * Lightweight error reporting wrapper (Sentry-free).
  * Drop-in replacement for the original @sentry/nextjs wrapper.
  * All functions have the same API so callers don't need to change.
@@ -44,11 +44,11 @@ export function withErrorTracking(handler) {
 }
 
 export function startTransaction(_name, _op) {
-  return { finish: () => {} };
+  return { finish: () => { } };
 }
 
 export function createSpan(transaction, _name, _op) {
-  return { finish: () => {} };
+  return { finish: () => { } };
 }
 
 export default {
