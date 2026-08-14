@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusConnect – Project Presentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #d97706;
+      --orange-light: #f59e0b;
+      --bg-dark: #0f0e17;
+      --bg-card: #1a1828;
+      --bg-card2: #231f35;
+      --text-primary: #fffffe;
+      --text-muted: #a7a9be;
+      --accent: #ff8906;
+      --accent2: #f25f4c;
+      --accent3: #e53170;
+      --green: #2cb67d;
+      --blue: #3da9fc;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+    .presentation { width: 100vw; height: 100vh; position: relative; }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.55s ease, transform 0.55s ease;
+      transform: translateX(60px);
+      overflow: hidden;
+      padding: 55px 80px;
+    }
+    .slide.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+    .slide-title-page {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+    .slide-conclusion {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    /* CONTROLS */
+    .controls {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 9px 18px;
+      border-radius: 50px;
+    }
+    .btn-nav {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .btn-nav:hover { transform: scale(1.15); background: var(--orange-light); }
+    .btn-nav:disabled { opacity: 0.3; cursor: default; transform: none; }
+    .slide-counter { font-size: 13px; font-weight: 600; color: var(--text-muted); min-width: 52px; text-align: center; }
+    .dot-nav { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+    .dot.active { background: var(--accent); transform: scale(1.4); }
+
+    /* GLOBAL ELEMENTS */
+    .slide-header { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3)); }
+    .slide-label { position: absolute; top: 16px; right: 28px; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); opacity: 0.65; }
+    .bg-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,137,6,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,137,6,0.035) 1px, transparent 1px);
+      background-size: 55px 55px;
+      pointer-events: none;
+    }
+    .blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+    .section-title { font-size: clamp(24px,3.5vw,40px); font-weight: 800; margin-bottom: 5px; }
+    .section-line { width: 55px; height: 4px; background: linear-gradient(90deg,var(--accent),var(--accent2)); border-radius: 2px; margin-bottom: 30px; }
+    .progress-top { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3)); transition: width 0.5s ease; z-index: 1000; }
+    .key-hint { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 13px; border-radius: 20px; z-index: 100; }
+    .key-hint kbd { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 10px; }
+    .highlight { color: var(--accent); font-weight: 700; }
+
+    /* SLIDE 1 - TITLE */
+    .title-badge { display: inline-block; background: rgba(255,137,6,0.15); border: 1px solid rgba(255,137,6,0.4); color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 5px 16px; border-radius: 30px; margin-bottom: 22px; }
+    .title-main { font-size: clamp(50px,7vw,84px); font-weight: 900; line-height: 1; margin-bottom: 10px; }
+    .title-gradient { background: linear-gradient(135deg,#fff 30%,var(--accent) 70%,var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .title-sub { font-size: clamp(14px,1.8vw,20px); color: var(--text-muted); margin-bottom: 36px; }
+    .title-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .tag { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: var(--text-muted); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+
+    /* SLIDE 2 - TOC */
+    .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .toc-item { display: flex; align-items: center; gap: 14px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px 20px; transition: border-color 0.3s, transform 0.3s; cursor: default; }
+    .toc-item:hover { border-color: rgba(255,137,6,0.4); transform: translateX(5px); }
+    .toc-num { width: 34px; height: 34px; background: linear-gradient(135deg,var(--accent),var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+    .toc-text { font-size: 14px; font-weight: 600; }
+    .toc-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* SLIDE 3 - INTRO */
+    .intro-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 36px; align-items: center; }
+    .intro-text p { font-size: 15px; line-height: 1.8; color: #ccc; margin-bottom: 18px; }
+    .intro-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .icon-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 18px 14px; text-align: center; transition: transform 0.3s; }
+    .icon-card:hover { transform: translateY(-4px); }
+    .icon-card .ic { font-size: 28px; margin-bottom: 7px; }
+    .icon-card h4 { font-size: 12px; font-weight: 700; color: var(--accent); }
+    .icon-card p { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+    /* SLIDE 4 - SYSTEM ANALYSIS */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+    .problem-list { list-style: none; }
+    .problem-list li { display: flex; gap: 12px; align-items: flex-start; background: var(--bg-card); border-left: 3px solid var(--accent2); border-radius: 0 10px 10px 0; padding: 12px 16px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+    .pnum { width: 22px; height: 22px; border-radius: 50%; background: var(--accent2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+    .solution-card { background: linear-gradient(135deg,rgba(44,182,125,0.1),rgba(61,169,252,0.08)); border: 1px solid rgba(44,182,125,0.25); border-radius: 16px; padding: 22px; }
+    .solution-card h3 { color: var(--green); font-size: 15px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .solution-card p { font-size: 13px; color: #ccc; line-height: 1.7; margin-bottom: 10px; }
+    .sol-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #aaa; }
+    .sol-item .dot2 { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* SLIDE 5 - FEATURES */
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .feature-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px 18px; transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; position: relative; overflow: hidden; }
+    .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 3px 3px 0 0; }
+    .feature-card.c1::before { background: linear-gradient(90deg,#ff8906,#f25f4c); }
+    .feature-card.c2::before { background: linear-gradient(90deg,#3da9fc,#2cb67d); }
+    .feature-card.c3::before { background: linear-gradient(90deg,#e53170,#ff8906); }
+    .feature-card.c4::before { background: linear-gradient(90deg,#2cb67d,#3da9fc); }
+    .feature-card.c5::before { background: linear-gradient(90deg,#9b5de5,#e53170); }
+    .feature-card.c6::before { background: linear-gradient(90deg,#f25f4c,#9b5de5); }
+    .feature-card:hover { transform: translateY(-5px); border-color: rgba(255,137,6,0.3); box-shadow: 0 16px 36px rgba(0,0,0,0.3); }
+    .feature-icon { font-size: 26px; margin-bottom: 8px; }
+    .feature-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 7px; }
+    .feature-card p { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+    .ftag { background: rgba(255,137,6,0.1); color: var(--accent); font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 8px; }
+
+    /* SLIDE 6 - TECH STACK */
+    .tech-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+    .tech-category { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
+    .tech-category h3 { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+    .tech-category h3 span { font-size: 16px; }
+    .tech-item { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 7px; margin-bottom: 5px; background: rgba(255,255,255,0.04); font-size: 12px; font-weight: 500; }
+    .tech-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .tech-desc { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+    .t-orange { background: var(--accent); }
+    .t-blue { background: var(--blue); }
+    .t-green { background: var(--green); }
+    .t-red { background: var(--accent2); }
+    .t-purple { background: #9b5de5; }
+    .t-pink { background: var(--accent3); }
+
+    /* SLIDE 7 - ARCHITECTURE */
+    #slide-7 { padding: 38px 55px; }
+    .arch-container { display: flex; gap: 14px; align-items: stretch; height: calc(100vh - 170px); }
+    .arch-col { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .arch-box { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; }
+    .arch-box h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+    .arch-box ul { list-style: none; }
+    .arch-box ul li { font-size: 11px; color: #aaa; padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+    .arch-box ul li::before { content: '›'; color: var(--accent); font-size: 14px; }
+    .arch-arrow { display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 20px; padding: 0 2px; align-self: center; }
+    .arch-center { flex: 1.5; display: flex; flex-direction: column; gap: 12px; }
+    .core-modules { background: var(--bg-card2); border: 1px solid rgba(255,137,6,0.2); border-radius: 14px; padding: 16px; flex: 1; }
+    .core-modules h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); margin-bottom: 10px; }
+    .module-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 11px; }
+    .module-badge { background: var(--accent); color: #000; font-weight: 700; font-size: 9px; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+    .module-badge.b2 { background: var(--blue); }
+    .module-badge.b3 { background: var(--green); }
+    .module-badge.b4 { background: var(--accent3); }
+    .module-badge.b5 { background: #9b5de5; }
+    .module-sub { color: var(--text-muted); font-size: 10px; }
+
+    /* SLIDE 8 - TESTING */
+    .testing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .test-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
+    .test-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 9px; }
+    .tic { font-size: 18px; }
+    .test-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+    .test-item:last-child { border-bottom: none; }
+    .pass { color: var(--green); font-weight: 700; font-size: 11px; }
+    .test-bar { height: 5px; flex: 1; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+    .test-bar-fill { height: 100%; background: linear-gradient(90deg,var(--green),var(--blue)); border-radius: 3px; }
+
+    /* SLIDE 9 - RESULTS */
+    .results-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+    .metric-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 22px; text-align: center; }
+    .metric-num { font-size: clamp(32px,4vw,48px); font-weight: 900; background: linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .metric-label { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+    .result-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .result-list li { display: flex; align-items: center; gap: 9px; background: rgba(44,182,125,0.08); border: 1px solid rgba(44,182,125,0.15); border-radius: 9px; padding: 10px 14px; font-size: 12px; color: #ccc; }
+    .result-list li::before { content: '✓'; color: var(--green); font-weight: 800; }
+
+    /* SLIDE 10 - CHALLENGES */
+    .challenges-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+    .challenge-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px; display: flex; gap: 12px; }
+    .challenge-icon { font-size: 26px; flex-shrink: 0; }
+    .challenge-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 5px; color: var(--accent); }
+    .challenge-card p { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+    .solution-tag { display: inline-flex; align-items: center; gap: 4px; background: rgba(61,169,252,0.12); color: var(--blue); font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 9px; margin-top: 7px; }
+
+    /* SLIDE 11 - FUTURE */
+    .future-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 13px; }
+    .future-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 17px; transition: transform 0.3s, border-color 0.3s; }
+    .future-card:hover { transform: translateY(-4px); border-color: rgba(155,93,229,0.4); }
+    .future-card .fi { font-size: 24px; margin-bottom: 8px; }
+    .future-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .future-card p { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+    .phase-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 7px; margin-top: 8px; }
+    .ph1 { background: rgba(255,137,6,0.15); color: var(--accent); }
+    .ph2 { background: rgba(61,169,252,0.15); color: var(--blue); }
+    .ph3 { background: rgba(155,93,229,0.15); color: #9b5de5; }
+
+    /* SLIDE 12 - CONCLUSION */
+    .conclusion-title { font-size: clamp(32px,5vw,56px); font-weight: 900; margin-bottom: 14px; }
+    .conclusion-sub { font-size: 16px; color: var(--text-muted); max-width: 580px; margin: 0 auto 30px; line-height: 1.7; }
+    .team-grid { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
+    .team-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 20px; min-width: 130px; text-align: center; }
+    .team-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; margin: 0 auto 9px; }
+    .team-name { font-size: 12px; font-weight: 700; }
+    .team-role { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .thank-you { font-size: clamp(26px,4vw,42px); font-weight: 900; background: linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: pulse 3s ease infinite; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  </style>
+</head>
+<body>
+
+<div class="progress-top" id="progressBar"></div>
+<div class="key-hint">Navigate: <kbd>←</kbd> <kbd>→</kbd> arrow keys or buttons below</div>
+
+<div class="presentation" id="pres">
+
+  <!-- SLIDE 1 - TITLE -->
+  <div class="slide slide-title-page active" id="slide-1">
+    <div class="bg-grid"></div>
+    <div class="blob" style="width:480px;height:480px;background:rgba(217,119,6,0.16);top:-160px;right:-160px;"></div>
+    <div class="blob" style="width:380px;height:380px;background:rgba(229,49,112,0.11);bottom:-120px;left:-100px;"></div>
+    <div style="position:relative;z-index:1;">
+      <div style="font-size:80px;margin-bottom:18px;">🎓</div>
+      <div class="title-badge">Final Year Project Presentation</div>
+      <h1 class="title-main title-gradient">CampusConnect</h1>
+      <p class="title-sub">A Smart Campus Networking &amp; Collaboration Platform</p>
+      <div class="title-tags">
+        <span class="tag">⚛️ Next.js 13</span>
+        <span class="tag">🍃 MongoDB</span>
+        <span class="tag">🔐 NextAuth</span>
+        <span class="tag">☁️ Vercel</span>
+        <span class="tag">📡 Redis</span>
+        <span class="tag">🛡️ Sentry</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 - TABLE OF CONTENTS -->
+  <div class="slide" id="slide-2">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">Contents</div>
+    <h2 class="section-title">Presentation Overview</h2>
+    <div class="section-line"></div>
+    <div class="toc-grid">
+      <div class="toc-item"><div class="toc-num">01</div><div><div class="toc-text">Introduction</div><div class="toc-sub">Project overview &amp; motivation</div></div></div>
+      <div class="toc-item"><div class="toc-num">02</div><div><div class="toc-text">System Analysis</div><div class="toc-sub">Problem statement &amp; proposed solution</div></div></div>
+      <div class="toc-item"><div class="toc-num">03</div><div><div class="toc-text">Key Features</div><div class="toc-sub">Core modules &amp; capabilities</div></div></div>
+      <div class="toc-item"><div class="toc-num">04</div><div><div class="toc-text">Technology Stack</div><div class="toc-sub">Frontend, backend, database &amp; tools</div></div></div>
+      <div class="toc-item"><div class="toc-num">05</div><div><div class="toc-text">System Architecture</div><div class="toc-sub">Layered design &amp; data flow</div></div></div>
+      <div class="toc-item"><div class="toc-num">06</div><div><div class="toc-text">Testing &amp; QA</div><div class="toc-sub">Functional, performance &amp; security</div></div></div>
+      <div class="toc-item"><div class="toc-num">07</div><div><div class="toc-text">Results</div><div class="toc-sub">Outcomes &amp; achievements</div></div></div>
+      <div class="toc-item"><div class="toc-num">08</div><div><div class="toc-text">Challenges &amp; Future Scope</div><div class="toc-sub">Lessons learned &amp; roadmap</div></div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 - INTRODUCTION -->
+  <div class="slide" id="slide-3">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">01 / Introduction</div>
+    <h2 class="section-title">Introduction</h2>
+    <div class="section-line"></div>
+    <div class="intro-grid">
+      <div class="intro-text">
+        <p><span class="highlight">CampusConnect</span> is a web-based platform designed to simplify <span class="highlight">communication, networking, and collaboration</span> within educational institutions. It bridges the gap among students, faculty, and administrators by providing a centralized platform for sharing jobs, resources, and events.</p>
+        <p>The platform includes secure logins via <span class="highlight">NextAuth.js</span> (Google Sign-In), connection requests, a role-based dashboard, a real-time quiz engine, community management, and file resources — all under one roof.</p>
+        <p>Built with <span class="highlight">React, Next.js, Node.js, and MongoDB</span>, it aims to remove communication gaps by bringing all campus information together in one place, helping students, teachers, and administrators stay connected easily.</p>
+      </div>
+      <div class="intro-cards">
+        <div class="icon-card"><div class="ic">👩‍🎓</div><h4>Students</h4><p>Jobs, resources, quizzes &amp; events</p></div>
+        <div class="icon-card"><div class="ic">👨‍🏫</div><h4>Faculty</h4><p>Post jobs, create quizzes, mentor</p></div>
+        <div class="icon-card"><div class="ic">🏛️</div><h4>Admins</h4><p>Content moderation &amp; analytics</p></div>
+        <div class="icon-card"><div class="ic">🌐</div><h4>Community</h4><p>Groups, connections &amp; chat</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 - SYSTEM ANALYSIS -->
+  <div class="slide" id="slide-4">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">02 / System Analysis</div>
+    <h2 class="section-title">System Analysis</h2>
+    <div class="section-line"></div>
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--accent2);">⚠️ Problem Statement</h3>
+        <ul class="problem-list">
+          <li><span class="pnum">1</span><span><strong>Email Overload &amp; Poor Classification:</strong> Campus updates and opportunities get lost in crowded inboxes or spam folders.</span></li>
+          <li><span class="pnum">2</span><span><strong>Campus Isolation:</strong> Students and faculty struggle to connect and share information within their institute.</span></li>
+          <li><span class="pnum">3</span><span><strong>Lack of Verified Job Platform:</strong> Students rely on unverified WhatsApp groups where fake job postings are common.</span></li>
+          <li><span class="pnum">4</span><span><strong>Resource Fragmentation:</strong> Study materials are scattered with no central access point.</span></li>
+        </ul>
+      </div>
+      <div class="solution-card">
+        <h3>✅ Proposed Solution</h3>
+        <p>CampusConnect provides a <strong style="color:var(--green)">central communication platform</strong> with clearly separated sections for jobs, resources, and events.</p>
+        <div class="sol-item"><div class="dot2"></div>Student-to-student connections &amp; networking</div>
+        <div class="sol-item"><div class="dot2"></div>Verified faculty mentorship &amp; profiles</div>
+        <div class="sol-item"><div class="dot2"></div>Role-based dashboards (Student / Faculty / Admin)</div>
+        <div class="sol-item"><div class="dot2"></div>Real-time notifications &amp; chat</div>
+        <div class="sol-item"><div class="dot2"></div>Secure file upload &amp; resource management</div>
+        <div class="sol-item"><div class="dot2"></div>Quiz creation with instant analytics</div>
+        <div class="sol-item"><div class="dot2"></div>Community groups with invite codes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 - KEY FEATURES -->
+  <div class="slide" id="slide-5">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">03 / Key Features</div>
+    <h2 class="section-title">Key Features</h2>
+    <div class="section-line"></div>
+    <div class="features-grid">
+      <div class="feature-card c1"><div class="feature-icon">💼</div><h3>Job Portal</h3><p>Faculty &amp; admins post verified jobs/internships. Students browse, filter, and track applications.</p><div class="feature-tags"><span class="ftag">Job Listings</span><span class="ftag">Filters</span><span class="ftag">Application Tracking</span></div></div>
+      <div class="feature-card c2"><div class="feature-icon">📚</div><h3>Resource Center</h3><p>Upload, rate, comment, and version-control study materials with CDN-backed storage via UploadThing.</p><div class="feature-tags"><span class="ftag">File Upload</span><span class="ftag">Rating</span><span class="ftag">Categories</span></div></div>
+      <div class="feature-card c3"><div class="feature-icon">🎉</div><h3>Event Management</h3><p>Create, RSVP, and track campus events with calendar view, recurring events, and analytics.</p><div class="feature-tags"><span class="ftag">Calendar</span><span class="ftag">RSVP</span><span class="ftag">Analytics</span></div></div>
+      <div class="feature-card c4"><div class="feature-icon">🧠</div><h3>Quiz Platform</h3><p>Faculty create quizzes with question banks, timers, randomisation, and partial credit grading.</p><div class="feature-tags"><span class="ftag">Real-time</span><span class="ftag">Analytics</span><span class="ftag">Leaderboard</span></div></div>
+      <div class="feature-card c5"><div class="feature-icon">🤝</div><h3>Social Networking</h3><p>Send/accept connections, follow users, real-time chat, mention system, emoji reactions &amp; bookmarks.</p><div class="feature-tags"><span class="ftag">Chat</span><span class="ftag">Connections</span><span class="ftag">Feed</span></div></div>
+      <div class="feature-card c6"><div class="feature-icon">🛡️</div><h3>Admin Dashboard</h3><p>Full platform analytics, user management, content moderation, and role assignment capabilities.</p><div class="feature-tags"><span class="ftag">Analytics</span><span class="ftag">Moderation</span><span class="ftag">Roles</span></div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6 - TECH STACK -->
+  <div class="slide" id="slide-6">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">04 / Technology Stack</div>
+    <h2 class="section-title">Technology Stack</h2>
+    <div class="section-line"></div>
+    <div class="tech-grid">
+      <div class="tech-category">
+        <h3 style="color:var(--accent);"><span>⚛️</span> Frontend</h3>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>Next.js 13<span class="tech-desc">SSR / SSG</span></div>
+        <div class="tech-item"><span class="tech-dot t-blue"></span>React 18<span class="tech-desc">UI Library</span></div>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>Tailwind CSS<span class="tech-desc">Styling</span></div>
+        <div class="tech-item"><span class="tech-dot t-purple"></span>Framer Motion<span class="tech-desc">Animations</span></div>
+        <div class="tech-item"><span class="tech-dot t-red"></span>MUI<span class="tech-desc">Components</span></div>
+        <div class="tech-item"><span class="tech-dot t-green"></span>Recoil<span class="tech-desc">State Mgmt</span></div>
+      </div>
+      <div class="tech-category">
+        <h3 style="color:var(--blue);"><span>🚀</span> Backend &amp; Database</h3>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>Next.js API Routes<span class="tech-desc">Server</span></div>
+        <div class="tech-item"><span class="tech-dot t-green"></span>MongoDB Atlas<span class="tech-desc">Database</span></div>
+        <div class="tech-item"><span class="tech-dot t-red"></span>Redis (ioredis)<span class="tech-desc">Cache &amp; Rate Limit</span></div>
+        <div class="tech-item"><span class="tech-dot t-blue"></span>UploadThing<span class="tech-desc">File CDN</span></div>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>bcryptjs<span class="tech-desc">Password Hashing</span></div>
+        <div class="tech-item"><span class="tech-dot t-purple"></span>JWT<span class="tech-desc">Token Auth</span></div>
+      </div>
+      <div class="tech-category">
+        <h3 style="color:var(--green);"><span>🔧</span> Tools &amp; Services</h3>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>NextAuth.js<span class="tech-desc">Authentication</span></div>
+        <div class="tech-item"><span class="tech-dot t-purple"></span>Sentry<span class="tech-desc">Error Monitoring</span></div>
+        <div class="tech-item"><span class="tech-dot t-blue"></span>Vercel<span class="tech-desc">Deployment</span></div>
+        <div class="tech-item"><span class="tech-dot t-orange"></span>GitHub Actions<span class="tech-desc">CI/CD</span></div>
+        <div class="tech-item"><span class="tech-dot t-green"></span>Chart.js<span class="tech-desc">Analytics Charts</span></div>
+        <div class="tech-item"><span class="tech-dot t-red"></span>Zod<span class="tech-desc">Validation</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7 - ARCHITECTURE -->
+  <div class="slide" id="slide-7">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">05 / Architecture</div>
+    <h2 class="section-title" style="margin-bottom:5px;">System Architecture</h2>
+    <div class="section-line" style="margin-bottom:16px;"></div>
+    <div class="arch-container">
+      <div class="arch-col" style="flex:0.8;">
+        <div class="arch-box" style="border-color:rgba(255,137,6,0.3);">
+          <h3>🖥️ Client Layer</h3>
+          <ul><li>React Components</li><li>Tailwind CSS</li><li>Framer Motion</li><li>Recoil State</li></ul>
+        </div>
+        <div class="arch-box" style="border-color:rgba(61,169,252,0.3);">
+          <h3>🔐 Auth Layer</h3>
+          <ul><li>NextAuth.js</li><li>Google OAuth 2.0</li><li>JWT Sessions</li><li>Role Management</li></ul>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-col" style="flex:0.85;">
+        <div class="arch-box" style="border-color:rgba(44,182,125,0.3);">
+          <h3>⚙️ Application Layer</h3>
+          <ul><li>Next.js API Routes</li><li>Middleware (Auth + RBAC)</li><li>Rate Limiter (Redis)</li><li>Zod Validation</li></ul>
+        </div>
+        <div class="arch-box" style="border-color:rgba(229,49,112,0.3);">
+          <h3>🗄️ Data Layer</h3>
+          <ul><li>MongoDB Atlas</li><li>Redis Cache</li><li>UploadThing CDN</li><li>Collections: Users, Posts, Events, Jobs, Quizzes</li></ul>
+        </div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-center">
+        <div class="core-modules">
+          <h3>⚡ Core Modules</h3>
+          <div class="module-row"><span class="module-badge">Resource Center</span><span class="module-sub">→ Upload → Categorize → Search</span></div>
+          <div class="module-row"><span class="module-badge b2">Job Portal</span><span class="module-sub">→ Listings → Create → Track</span></div>
+          <div class="module-row"><span class="module-badge b3">Event Mgmt</span><span class="module-sub">→ Calendar → RSVP → Analytics</span></div>
+          <div class="module-row"><span class="module-badge b4">Quiz Platform</span><span class="module-sub">→ Create → Real-time → Results</span></div>
+          <div class="module-row"><span class="module-badge b5">Social Features</span><span class="module-sub">→ Profiles → Chat → Connections</span></div>
+        </div>
+        <div class="arch-box" style="border-color:rgba(155,93,229,0.3);">
+          <h3>🏛️ Admin Panel</h3>
+          <ul><li>System Analytics (Chart.js)</li><li>User Management</li><li>Content Moderation</li><li>Sentry Error Monitoring</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8 - TESTING -->
+  <div class="slide" id="slide-8">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">06 / Testing</div>
+    <h2 class="section-title">Testing &amp; Quality Assurance</h2>
+    <div class="section-line"></div>
+    <div class="testing-grid">
+      <div class="test-card">
+        <h3><span class="tic">🧪</span> Functional Testing</h3>
+        <div class="test-item"><span>User Registration &amp; Login</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Google OAuth Sign-In</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Job Post / Apply Flow</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Resource Upload &amp; Download</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Quiz Create &amp; Take</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Event RSVP System</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Real-time Chat</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Admin Dashboard</span><span class="pass">✓ PASS</span></div>
+      </div>
+      <div class="test-card">
+        <h3><span class="tic">⚡</span> Performance Testing</h3>
+        <div class="test-item"><span>Page Load (Home)</span><div class="test-bar"><div class="test-bar-fill" style="width:90%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">&lt;1.2s</span></div>
+        <div class="test-item"><span>API Response</span><div class="test-bar"><div class="test-bar-fill" style="width:88%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">&lt;200ms</span></div>
+        <div class="test-item"><span>File Upload (10MB)</span><div class="test-bar"><div class="test-bar-fill" style="width:78%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">&lt;3s</span></div>
+        <div class="test-item"><span>Concurrent Users</span><div class="test-bar"><div class="test-bar-fill" style="width:95%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">100+</span></div>
+        <div class="test-item"><span>Quiz Real-time Sync</span><div class="test-bar"><div class="test-bar-fill" style="width:88%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">&lt;50ms</span></div>
+        <div class="test-item"><span>Rate Limit (Redis)</span><div class="test-bar"><div class="test-bar-fill" style="width:100%"></div></div><span style="color:var(--green);font-size:11px;font-weight:700;">Active</span></div>
+      </div>
+      <div class="test-card">
+        <h3><span class="tic">🔐</span> Security Testing</h3>
+        <div class="test-item"><span>NoSQL Injection Prevention</span><span class="pass">BLOCKED</span></div>
+        <div class="test-item"><span>CSRF Protection</span><span class="pass">ENABLED</span></div>
+        <div class="test-item"><span>Rate Limiting (Redis)</span><span class="pass">ACTIVE</span></div>
+        <div class="test-item"><span>Password Hashing (bcrypt)</span><span class="pass">ACTIVE</span></div>
+        <div class="test-item"><span>Role-Based Access Control</span><span class="pass">ENFORCED</span></div>
+        <div class="test-item"><span>Session Expiry</span><span class="pass">30 days</span></div>
+      </div>
+      <div class="test-card">
+        <h3><span class="tic">📱</span> Compatibility</h3>
+        <div class="test-item"><span>Chrome / Edge</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Firefox</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Safari (macOS)</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Mobile Responsive</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>PWA Install Prompt</span><span class="pass">✓ PASS</span></div>
+        <div class="test-item"><span>Dark / Light Theme</span><span class="pass">✓ PASS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9 - RESULTS -->
+  <div class="slide" id="slide-9">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">07 / Results</div>
+    <h2 class="section-title">Results &amp; Achievements</h2>
+    <div class="section-line"></div>
+    <div class="results-grid">
+      <div class="metric-card"><div class="metric-num">12+</div><div class="metric-label">Core Modules Delivered</div></div>
+      <div class="metric-card"><div class="metric-num">81</div><div class="metric-label">React Components Built</div></div>
+      <div class="metric-card"><div class="metric-num">30+</div><div class="metric-label">REST API Endpoints</div></div>
+      <div class="metric-card"><div class="metric-num">3</div><div class="metric-label">User Roles Implemented</div></div>
+      <div class="metric-card"><div class="metric-num">100%</div><div class="metric-label">Test Cases Passed</div></div>
+      <div class="metric-card"><div class="metric-num">⚡</div><div class="metric-label">Deployed on Vercel + Azure</div></div>
+    </div>
+    <ul class="result-list">
+      <li>Fully role-based access control implemented</li>
+      <li>Real-time quiz engine with leaderboard</li>
+      <li>Google OAuth seamless login</li>
+      <li>CDN-backed file storage system</li>
+      <li>Redis rate-limiting &amp; caching active</li>
+      <li>Sentry error monitoring integrated</li>
+      <li>PWA-ready with install prompt</li>
+      <li>CI/CD pipeline via GitHub Actions</li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 10 - CHALLENGES -->
+  <div class="slide" id="slide-10">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">08 / Challenges</div>
+    <h2 class="section-title">Challenges Faced</h2>
+    <div class="section-line"></div>
+    <div class="challenges-grid">
+      <div class="challenge-card"><div class="challenge-icon">⏱️</div><div><h3>Real-Time Quiz Synchronization</h3><p>Keeping quiz state consistent across concurrent participants without WebSockets in a serverless environment.</p><span class="solution-tag">✓ Redis + polling strategy</span></div></div>
+      <div class="challenge-card"><div class="challenge-icon">🔐</div><div><h3>Role-Based Access Control</h3><p>Implementing granular permissions for all 3 roles across 30+ API endpoints with middleware chains.</p><span class="solution-tag">✓ Next.js Middleware + JWT claims</span></div></div>
+      <div class="challenge-card"><div class="challenge-icon">📂</div><div><h3>Large File Upload Handling</h3><p>Uploading large files reliably without blocking threads or timing out on Vercel's edge functions.</p><span class="solution-tag">✓ UploadThing CDN integration</span></div></div>
+      <div class="challenge-card"><div class="challenge-icon">📊</div><div><h3>Scalable Database Design</h3><p>Designing MongoDB schemas for nested relationships without N+1 query issues.</p><span class="solution-tag">✓ Aggregation pipelines + indexing</span></div></div>
+      <div class="challenge-card"><div class="challenge-icon">🚦</div><div><h3>API Rate Limiting</h3><p>Preventing abuse on public endpoints while not degrading legitimate user experience during peak hours.</p><span class="solution-tag">✓ Redis sliding window limiter</span></div></div>
+      <div class="challenge-card"><div class="challenge-icon">🎨</div><div><h3>Consistent UI Across Themes</h3><p>Maintaining visual consistency across dark/light mode and mobile/desktop across 80+ components.</p><span class="solution-tag">✓ next-themes + Tailwind vars</span></div></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11 - FUTURE IMPROVEMENTS -->
+  <div class="slide" id="slide-11">
+    <div class="bg-grid"></div>
+    <div class="slide-header"></div>
+    <div class="slide-label">09 / Future Scope</div>
+    <h2 class="section-title">Future Improvements &amp; Roadmap</h2>
+    <div class="section-line"></div>
+    <div class="future-grid">
+      <div class="future-card"><div class="fi">🤖</div><h3>AI-Powered Recommendations</h3><p>Personalized job, resource, and event recommendations using ML models trained on user behaviour.</p><span class="phase-badge ph1">Phase 1</span></div>
+      <div class="future-card"><div class="fi">📱</div><h3>Native Mobile App</h3><p>React Native / Expo mobile app for iOS and Android with push notifications and offline support.</p><span class="phase-badge ph1">Phase 1</span></div>
+      <div class="future-card"><div class="fi">🎥</div><h3>Video Conferencing</h3><p>Integrated video rooms for faculty-student mentorship and virtual events using WebRTC.</p><span class="phase-badge ph2">Phase 2</span></div>
+      <div class="future-card"><div class="fi">🏅</div><h3>Gamification &amp; Badges</h3><p>Achievement badges, XP points, leaderboards, and streaks to boost student engagement.</p><span class="phase-badge ph2">Phase 2</span></div>
+      <div class="future-card"><div class="fi">🏛️</div><h3>Multi-Institution Support</h3><p>Expand to multiple colleges with separate namespaced environments and shared job pools.</p><span class="phase-badge ph2">Phase 2</span></div>
+      <div class="future-card"><div class="fi">🧩</div><h3>LMS Integration</h3><p>Integration with Moodle, Google Classroom for seamless assignment and course flow.</p><span class="phase-badge ph3">Phase 3</span></div>
+      <div class="future-card"><div class="fi">💳</div><h3>Alumni Network &amp; Payments</h3><p>Alumni portal for mentorship, referrals, and paid premium event tickets via Razorpay/Stripe.</p><span class="phase-badge ph3">Phase 3</span></div>
+      <div class="future-card"><div class="fi">📊</div><h3>Advanced Analytics</h3><p>Institution-wide dashboards with predictive analytics on student engagement and placement rates.</p><span class="phase-badge ph3">Phase 3</span></div>
+      <div class="future-card"><div class="fi">🌐</div><h3>Localization &amp; Accessibility</h3><p>Multi-language support (i18n), WCAG 2.1 AA compliance for inclusivity.</p><span class="phase-badge ph3">Phase 3</span></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 12 - CONCLUSION -->
+  <div class="slide slide-conclusion" id="slide-12">
+    <div class="bg-grid"></div>
+    <div class="blob" style="width:380px;height:380px;background:rgba(255,137,6,0.11);top:-100px;left:-100px;"></div>
+    <div class="blob" style="width:300px;height:300px;background:rgba(229,49,112,0.09);bottom:-80px;right:-80px;"></div>
+    <div class="slide-label" style="position:static;margin-bottom:10px;display:inline-block;">10 / Conclusion</div>
+    <h2 class="conclusion-title title-gradient">Conclusion</h2>
+    <p class="conclusion-sub">CampusConnect successfully delivers a <strong>scalable, secure, and feature-rich</strong> campus networking platform that bridges communication gaps between students, faculty, and administration. It is production-ready, deployed on Vercel, and monitored with Sentry.</p>
+    <div class="team-grid">
+      <div class="team-card"><div class="team-avatar">K</div><div class="team-name">Krishan</div><div class="team-role">Full Stack Dev</div></div>
+      <div class="team-card"><div class="team-avatar" style="background:linear-gradient(135deg,#3da9fc,#2cb67d);">T</div><div class="team-name">Team Member</div><div class="team-role">Backend &amp; DB</div></div>
+      <div class="team-card"><div class="team-avatar" style="background:linear-gradient(135deg,#e53170,#9b5de5);">T</div><div class="team-name">Team Member</div><div class="team-role">UI/UX Design</div></div>
+      <div class="team-card"><div class="team-avatar" style="background:linear-gradient(135deg,#2cb67d,#3da9fc);">T</div><div class="team-name">Team Member</div><div class="team-role">QA &amp; Testing</div></div>
+    </div>
+    <div class="thank-you">Thank You! 🎓</div>
+    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);">Questions &amp; Feedback Welcome</p>
+    <div style="display:flex;gap:14px;margin-top:20px;flex-wrap:wrap;justify-content:center;">
+      <span class="tag">🔗 github.com/Krishan1155/campusconnect</span>
+      <span class="tag">⚡ Next.js + MongoDB + Vercel</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <button class="btn-nav" id="btnPrev" onclick="changeSlide(-1)" disabled>←</button>
+  <div class="dot-nav" id="dotNav"></div>
+  <span class="slide-counter" id="slideCounter">1 / 12</span>
+  <button class="btn-nav" id="btnNext" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+  const TOTAL = 12;
+  let current = 1;
+  let isAnimating = false;
+
+  const dotNav = document.getElementById('dotNav');
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotNav.appendChild(d);
+  }
+
+  function updateProgress() {
+    document.getElementById('progressBar').style.width = (current / TOTAL * 100) + '%';
+    document.getElementById('slideCounter').textContent = current + ' / ' + TOTAL;
+    document.getElementById('btnPrev').disabled = current === 1;
+    document.getElementById('btnNext').disabled = current === TOTAL;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 === current));
+  }
+
+  function goTo(n) {
+    if (isAnimating || n === current || n < 1 || n > TOTAL) return;
+    isAnimating = true;
+    const dir = n > current ? 1 : -1;
+    const prev = document.getElementById('slide-' + current);
+    const next = document.getElementById('slide-' + n);
+
+    prev.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
+    prev.style.transform = 'translateX(' + (-70 * dir) + 'px)';
+    prev.style.opacity = '0';
+    prev.style.pointerEvents = 'none';
+
+    next.style.transition = 'none';
+    next.style.transform = 'translateX(' + (70 * dir) + 'px)';
+    next.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        next.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
+        next.style.transform = 'translateX(0)';
+        next.style.opacity = '1';
+        next.style.pointerEvents = 'all';
+      });
+    });
+
+    setTimeout(() => {
+      prev.classList.remove('active');
+      prev.style.cssText = '';
+      next.classList.add('active');
+      next.style.transition = '';
+      current = n;
+      updateProgress();
+      isAnimating = false;
+    }, 480);
+  }
+
+  function changeSlide(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') changeSlide(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
+  });
+
+  updateProgress();
+</script>
+</body>
+</html>
