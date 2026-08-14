@@ -312,12 +312,24 @@
   }
   
   .dark .nav-link {
-    color: theme('colors.slate.300');
+    color: theme('colors.slate.200');
   }
   
   .dark .nav-link:hover {
     color: theme('colors.indigo.400');
     background-color: theme('colors.indigo.950');
+  }
+
+  .nav-link-active {
+    color: theme('colors.indigo.600');
+    background-color: theme('colors.indigo.50');
+    font-weight: 600;
+  }
+  
+  .dark .nav-link-active {
+    color: theme('colors.indigo.400');
+    background-color: theme('colors.indigo.950');
+    font-weight: 600;
   }
   
   @media (min-width: 640px) {
@@ -332,35 +344,6 @@
       padding-left: 2rem;
       padding-right: 2rem;
     }
-  }
-  
-  .nav-link {
-    padding: 0.5rem 0.75rem;
-    color: theme('colors.slate.600');
-    font-weight: 500;
-    transition-property: color;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-  }
-  
-  .nav-link:hover {
-    color: theme('colors.indigo.600');
-  }
-  
-  .dark .nav-link {
-    color: theme('colors.slate.300');
-  }
-  
-  .dark .nav-link:hover {
-    color: theme('colors.indigo.400');
-  }
-  
-  .nav-link-active {
-    color: theme('colors.indigo.600');
-  }
-  
-  .dark .nav-link-active {
-    color: theme('colors.indigo.400');
   }
   
   /* Layout */

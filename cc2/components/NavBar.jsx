@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import ConnectModal from "./ConnectModal";
@@ -22,6 +23,7 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CloseIcon from "@mui/icons-material/Close";
 
 export default function NavBar() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [isGuest, setIsGuest] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -283,45 +285,54 @@ export default function NavBar() {
 
         {/* Desktop navigation links - Hide for admin users */}
         {userRole !== "admin" && (
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-6">
-              <Link href="/dashboard" className="nav-link">
-                Dashboard
-              </Link>
-              <Link href="/events" className="nav-link">
-                Events
-              </Link>
-              <Link href="/resources" className="nav-link">
-                Resources
-              </Link>
-              <Link href="/jobs" className="nav-link">
-                Jobs
-              </Link>
-              <Link href="/communities" className="nav-link">
-                Communities
-              </Link>
-              <Link href="/connections" className="nav-link relative">
-                Connect
-                {pendingRequests > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                    {pendingRequests}
-                  </span>
-                )}
-              </Link>
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            {[
+              { href: "/dashboard", label: "Dashboard" },
+              { href: "/events", label: "Events" },
+              { href: "/resources", label: "Resources" },
+              { href: "/jobs", label: "Jobs" },
+              { href: "/communities", label: "Communities" },
+              { href: "/connections", label: "Connect", badge: pendingRequests },
+            ].map((item) => {
+              const isActive =
+                router.pathname === item.href ||
+                (item.href !== "/dashboard" && router.pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
+                    isActive
+                      ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 font-semibold"
+                      : "text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  }`}
+                >
+                  {item.label}
+                  {item.badge > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
 
-              {/* Quiz link - only for faculty and students */}
-              {session &&
-                (userRole === "faculty" || userRole === "student") && (
-                  <Link
-                    href="/quiz"
-                    className="nav-link flex items-center"
-                    title="Quiz"
-                  >
-                    <QuizIcon className="w-5 h-5 mr-1" />
-                    Quiz
-                  </Link>
-                )}
-            </div>
+            {/* Quiz link - only for faculty and students */}
+            {session &&
+              (userRole === "faculty" || userRole === "student") && (
+                <Link
+                  href="/quiz"
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
+                    router.pathname.startsWith("/quiz")
+                      ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 font-semibold"
+                      : "text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  }`}
+                  title="Quiz"
+                >
+                  <QuizIcon className="w-4 h-4 mr-1" />
+                  Quiz
+                </Link>
+              )}
           </div>
         )}
 
@@ -335,38 +346,6 @@ export default function NavBar() {
               </span>
             </div>
           </div>
-        )}
-
-        {/* Mobile Menu Button - Hide for admin */}
-        {userRole !== "admin" && (
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Toggle mobile menu"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
-          </button>
         )}
 
         {/* Right side buttons */}
@@ -713,53 +692,37 @@ export default function NavBar() {
               {/* Show regular links only for non-admin users */}
               {userRole !== "admin" && (
                 <>
-                  <Link
-                    href="/dashboard"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/events"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Events
-                  </Link>
-                  <Link
-                    href="/resources"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Resources
-                  </Link>
-                  <Link
-                    href="/jobs"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Jobs
-                  </Link>
-                  <Link
-                    href="/communities"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Communities
-                  </Link>
-                  <Link
-                    href="/connections"
-                    className="block px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium relative"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Connect
-                    {pendingRequests > 0 && (
-                      <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                        {pendingRequests}
-                      </span>
-                    )}
-                  </Link>
+                  {[
+                    { href: "/dashboard", label: "Dashboard" },
+                    { href: "/events", label: "Events" },
+                    { href: "/resources", label: "Resources" },
+                    { href: "/jobs", label: "Jobs" },
+                    { href: "/communities", label: "Communities" },
+                    { href: "/connections", label: "Connect", badge: pendingRequests },
+                  ].map((item) => {
+                    const isActive =
+                      router.pathname === item.href ||
+                      (item.href !== "/dashboard" && router.pathname.startsWith(item.href));
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span>{item.label}</span>
+                        {item.badge > 0 && (
+                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
                 </>
               )}
 
@@ -768,13 +731,15 @@ export default function NavBar() {
                 (userRole === "faculty" || userRole === "student") && (
                   <Link
                     href="/quiz"
-                    className="block w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md font-medium"
+                    className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      router.pathname.startsWith("/quiz")
+                        ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold"
+                        : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <div className="flex items-center">
-                      <QuizIcon className="w-4 h-4 mr-2" />
-                      Quiz
-                    </div>
+                    <QuizIcon className="w-4 h-4 mr-2" />
+                    Quiz
                   </Link>
                 )}
 
