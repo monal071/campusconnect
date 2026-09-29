@@ -1,6 +1,7 @@
-import NavBar from "./NavBar";
+import dynamic from "next/dynamic";
+const NavBar = dynamic(() => import("./NavBar"));
+const noNavBarPages = ["/", "/login", "/signup", "/auth/signin"];
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
@@ -9,7 +10,6 @@ const Layout = ({ children }) => {
   const { data: session, status } = useSession();
 
   // Pages where we don't show the NavBar or footer
-  const noNavBarPages = ["/", "/login", "/signup"];
   const showNavBar = !noNavBarPages.includes(router.pathname);
 
   const isLoggedIn = status === "authenticated" && !!session;
@@ -34,7 +34,7 @@ const Layout = ({ children }) => {
         }
       }
     }
-  }, [status, session, hasValidRole, isProfileComplete, isAdmin, router.pathname]);
+  }, [status, session, hasValidRole, isProfileComplete, isAdmin, router]);
 
   // If user has incomplete profile on a protected page, show loading while redirecting
   if (
@@ -79,16 +79,14 @@ const Layout = ({ children }) => {
       {showNavBar && (
         <NavBar isLoggedIn={isLoggedIn} isGuest={false} isAdmin={isAdmin} />
       )}
-      <motion.main
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <main id="main-content"
         className={
-          showNavBar ? "flex-1 container pt-16 w-full" : "flex-1 w-full"
+          showNavBar ? "flex-1 pt-16 w-full max-w-screen-2xl mx-auto" : "flex-1 w-full"
         }
       >
         {children}
-      </motion.main>
+      </main>
       {showNavBar && !isAdmin && (
         <footer className="border-t border-slate-200 dark:border-slate-800 py-6 mt-8">
           <div className="container-main py-0">

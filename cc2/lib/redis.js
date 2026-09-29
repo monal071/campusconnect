@@ -14,6 +14,9 @@ export function getRedisClient() {
     }
 
     redis = new Redis(redisUrl, {
+      enableOfflineQueue: false,
+      connectTimeout: 1000,
+      commandTimeout: 1000,
       maxRetriesPerRequest: 1,
       retryStrategy: (times) => {
         if (times > 1) {
@@ -55,7 +58,7 @@ export const cache = {
   async get(key) {
     try {
       const client = getRedisClient();
-      if (!client) return null;
+      if (!client || client.status !== "ready") return null;
       const value = await client.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
@@ -112,10 +115,12 @@ export const cache = {
     try {
       const client = getRedisClient();
       if (!client) return false;
-      const keys = await client.keys(pattern);
-      if (keys.length > 0) {
-        await client.del(...keys);
-      }
+      let cursor = "0";
+      do {
+        const result = await client.scan(cursor, "MATCH", pattern, "COUNT", 100);
+        cursor = result[0];
+        if (result[1].length) await client.del(...result[1]);
+      } while (cursor !== "0");
       return true;
     } catch (error) {
       if (error.message !== 'Connection is closed.') {

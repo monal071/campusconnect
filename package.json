@@ -3,5 +3,14 @@
     "@hello-pangea/dnd": "^18.0.1",
     "chart.js": "^4.5.1",
     "react-chartjs-2": "^5.3.1"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix cc2 run dev",
+    "build": "npm --prefix cc2 run build",
+    "start": "npm --prefix cc2 run start",
+    "lint": "npm --prefix cc2 run lint",
+    "typecheck": "npm --prefix cc2 run typecheck",
+    "test": "npm --prefix cc2 run test"
   }
 }

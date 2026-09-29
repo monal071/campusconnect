@@ -21,3 +21,7 @@ dist/
 
 # vercel
 .vercel
+
+# Local dependency cache and TypeScript build metadata
+.pnpm-store/
+*.tsbuildinfo

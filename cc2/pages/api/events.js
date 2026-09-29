@@ -105,6 +105,7 @@ export default async function handler(req, res) {
           createdAt: new Date(),
           status: "approved",
         });
+        await invalidateCache.events();
         return res.status(201).json({ message: "Event added successfully" });
       } else {
         await db.collection("pending_events").insertOne({
@@ -174,22 +175,22 @@ export default async function handler(req, res) {
 
   if (req.method === "PUT") {
     try {
-      const { eventId, userId } = req.body;
-      if (!eventId || !userId)
-        return res.status(400).json({ error: "Missing eventId or userId" });
+      const session = await getServerSession(req, res, authOptions);
+      if (!session?.user?.id) return res.status(401).json({ error: "Not authenticated" });
+      const { eventId } = req.body;
+      const userId = session.user.id;
+      if (typeof eventId !== "string" || !ObjectId.isValid(eventId))
+        return res.status(400).json({ error: "Invalid event ID" });
 
       const client = await clientPromise;
       const db = client.db();
       const event = await db.collection(COLLECTION).findOne({ _id: new ObjectId(eventId) });
       if (!event) return res.status(404).json({ error: "Event not found" });
 
-      const joined = Array.isArray(event.joined) ? event.joined : [];
-      if (!joined.includes(userId)) {
-        joined.push(userId);
-        await db.collection(COLLECTION).updateOne(
-          { _id: new ObjectId(eventId) },
-          { $set: { joined } }
-        );
+      const result = await db.collection(COLLECTION).updateOne(
+        { _id: new ObjectId(eventId) }, { $addToSet: { joined: userId } }
+      );
+      if (result.modifiedCount > 0) {
 
         try {
           await db.collection("userActivity").insertOne({
@@ -211,7 +212,8 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.status(200).json({ success: true, joinedCount: joined.length });
+      const updated = await db.collection(COLLECTION).findOne({ _id: new ObjectId(eventId) }, { projection: { joined: 1 } });
+      return res.status(200).json({ success: true, joinedCount: updated?.joined?.length || 0 });
     } catch (error) {
       console.error("Event PUT error:", error);
       return res.status(500).json({ error: error.message });

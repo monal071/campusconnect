@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { fetchJSON } from "../../utils/fetch-json";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,7 +25,9 @@ import {
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const redirecting = useRef(false);
+  const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const retry = useCallback(() => setRefreshKey((key) => key + 1), []);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     connections: 0,
@@ -40,127 +43,44 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
-  // Check if user is authenticated and set up real-time updates
+  const userId = session?.user?.id;
+  const profileComplete = session?.user?.isProfileComplete;
+  const role = session?.user?.role;
+
   useEffect(() => {
-    // Only redirect if definitely unauthenticated (not loading) and not already redirecting
-    if (status === "unauthenticated" && !redirecting.current) {
-      redirecting.current = true;
-      router.replace("/login");
-    } else if (status === "authenticated" && session?.user) {
-      // Check if profile is complete - if not, redirect to signup
-      if (!session.user.role || !session.user.isProfileComplete) {
-        if (!redirecting.current) {
-          redirecting.current = true;
-          router.replace("/signup");
-        }
-        return;
-      }
-
-      fetchDashboardData();
-
-      // Set up real-time updates every 30 seconds
-      const interval = setInterval(() => {
-        fetchDashboardData();
-      }, 30000);
-
-      // Refresh when page becomes visible
-      const handleVisibilityChange = () => {
-        if (!document.hidden) {
-          fetchDashboardData();
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-
-      return () => {
-        clearInterval(interval);
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange,
-        );
-      };
+    if (status === "unauthenticated") {
+      router.replace("/login?callbackUrl=%2Fdashboard");
+      return;
     }
-  }, [status, router]);
-
-  // Fetch all dashboard data
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      // Fetch user stats with cache busting
-      const statsRes = await fetch(`/api/dashboard/stats?_t=${Date.now()}`, {
-        cache: "no-cache",
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      });
-      const statsData = await statsRes.json();
-      if (statsRes.ok && statsData.data) {
-        console.log("Dashboard stats received:", statsData.data);
-        setStats(statsData.data);
-      } else {
-        console.error("Failed to fetch stats:", statsData);
-        setStats({
-          connections: 0,
-          posts: 0,
-          events: 0,
-          resources: 0,
-          jobs: 0,
-          quizzes: {
-            totalQuizzes: 0,
-            activeQuizzes: 0,
-          },
-        });
-      }
-
-      // Fetch recent activity
-      const activityRes = await fetch("/api/dashboard/activity");
-      const activityData = await activityRes.json();
-      if (activityRes.ok && activityData.data) {
-        setRecentActivity(activityData.data || []);
-      } else {
-        setRecentActivity([]);
-      }
-
-      // Fetch upcoming events that user has joined
-      const eventsRes = await fetch("/api/events");
-      const eventsData = await eventsRes.json();
-      if (eventsRes.ok && session?.user?.id) {
-        // events API returns { success, events, pagination }
-        const eventsArray =
-          eventsData.events || eventsData.data || eventsData || [];
-        // Filter events where user has joined and are upcoming
-        const userEvents = (
-          Array.isArray(eventsArray) ? eventsArray : []
-        ).filter((event) => {
-          const isJoined =
-            event.joined && event.joined.includes(session.user.id);
-          const isUpcoming = event.date
-            ? new Date(event.date) > new Date()
-            : false;
-          return isJoined && isUpcoming;
-        });
-        setUpcomingEvents(userEvents.slice(0, 3));
-      } else {
-        setUpcomingEvents([]);
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      // Set empty arrays instead of dummy data
-      setStats({
-        connections: 0,
-        posts: 0,
-        events: 0,
-        resources: 0,
-        jobs: 0,
-      });
-      setRecentActivity([]);
-      setUpcomingEvents([]);
-    } finally {
+    if (status !== "authenticated" || !userId || !profileComplete || !role) return;
+    const controller = new AbortController();
+    let pending = false;
+    const refresh = async () => {
+      if (pending || document.hidden) return;
+      pending = true;
+      const results = await Promise.allSettled([
+        fetchJSON("/api/dashboard/stats", { signal: controller.signal }),
+        fetchJSON("/api/dashboard/activity", { signal: controller.signal }),
+        fetchJSON("/api/dashboard/upcoming", { signal: controller.signal }),
+      ]);
+      if (controller.signal.aborted) return;
+      if (results[0].status === "fulfilled") setStats(results[0].value.data);
+      if (results[1].status === "fulfilled") setRecentActivity(results[1].value.data || []);
+      if (results[2].status === "fulfilled") setUpcomingEvents(results[2].value.data || []);
+      setError(results.some((result) => result.status === "rejected")
+        ? "Some dashboard information could not be loaded. Please try again." : "");
       setLoading(false);
-    }
-  };
-
-  // All dummy data generation functions have been removed to only use real-time data
+      pending = false;
+    };
+    refresh();
+    const interval = setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [status, userId, profileComplete, role, router, refreshKey]);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -228,6 +148,9 @@ export default function Dashboard() {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      {error && <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <p>{error}</p><button onClick={retry} className="font-semibold underline">Try again</button>
+      </div>}
       <div className="grid grid-cols-1 gap-8">
         {/* Welcome Section */}
         <motion.section

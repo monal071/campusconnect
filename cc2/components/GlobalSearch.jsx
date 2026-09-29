@@ -1,3 +1,4 @@
+import { fetchJSON } from "../utils/fetch-json";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { Dialog, Transition } from "@headlessui/react";
@@ -35,61 +36,47 @@ const SEARCH_TYPES = {
 export default function GlobalSearch({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState("all");
   const [recentSearches, setRecentSearches] = useState([]);
   const inputRef = useRef(null);
   const router = useRouter();
 
+  const readRecent = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("recentSearches") || "[]");
+      return Array.isArray(stored) ? stored.filter((value) => typeof value === "string").slice(0, 10) : [];
+    } catch { return []; }
+  };
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-      loadRecentSearches();
-    }
+    if (isOpen) setRecentSearches(readRecent().slice(0, 5));
   }, [isOpen]);
 
   useEffect(() => {
-    if (searchQuery.length > 2) {
-      const delayDebounceFn = setTimeout(() => {
-        performSearch();
-      }, 300);
-
-      return () => clearTimeout(delayDebounceFn);
-    } else {
-      setResults([]);
-    }
-  }, [searchQuery, selectedType]);
-
-  const loadRecentSearches = () => {
-    const recent = JSON.parse(localStorage.getItem("recentSearches") || "[]");
-    setRecentSearches(recent.slice(0, 5));
-  };
+    setResults([]);
+    setError("");
+    setLoading(false);
+    if (!isOpen || searchQuery.trim().length < 3) return;
+    const controller = new AbortController();
+    setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ q: searchQuery.trim(), type: selectedType });
+        const data = await fetchJSON(`/api/search/global?${params}`, { signal: controller.signal });
+        if (!controller.signal.aborted) setResults(data.results || []);
+      } catch (error) {
+        if (!controller.signal.aborted) setError(error.message);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 300);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [isOpen, searchQuery, selectedType]);
 
   const saveRecentSearch = (query) => {
-    const recent = JSON.parse(localStorage.getItem("recentSearches") || "[]");
-    const updated = [query, ...recent.filter((q) => q !== query)].slice(0, 10);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
-  };
-
-  const performSearch = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        q: searchQuery,
-        type: selectedType,
-      });
-
-      const response = await fetch(`/api/search/global?${params}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setResults(data.results || []);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-      setLoading(false);
-    }
+    try { localStorage.setItem("recentSearches", JSON.stringify([query, ...readRecent().filter((item) => item !== query)].slice(0, 10))); }
+    catch { /* Search remains usable when storage is disabled. */ }
   };
 
   const handleResultClick = (result) => {
@@ -124,13 +111,14 @@ export default function GlobalSearch({ isOpen, onClose }) {
   };
 
   const clearRecentSearches = () => {
-    localStorage.removeItem("recentSearches");
+    try { localStorage.removeItem("recentSearches"); } catch {}
     setRecentSearches([]);
   };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={onClose} initialFocus={inputRef}>
+        <Dialog.Title className="sr-only">Search CampusConnect</Dialog.Title>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -161,6 +149,8 @@ export default function GlobalSearch({ isOpen, onClose }) {
                   <input
                     ref={inputRef}
                     type="text"
+                    aria-label="Search CampusConnect"
+                    maxLength={100}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search everything... (posts, resources, quizzes, events, jobs, communities)"
@@ -168,6 +158,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
                   />
                   {searchQuery && (
                     <button
+                      aria-label="Clear search"
                       onClick={() => setSearchQuery("")}
                       className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
@@ -212,7 +203,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
                         Searching...
                       </p>
                     </div>
-                  ) : searchQuery.length > 2 ? (
+                  ) : error ? (<p role="alert" className="p-6 text-center text-red-600 dark:text-red-400">{error}</p>) : searchQuery.trim().length > 2 ? (
                     results.length > 0 ? (
                       <div className="space-y-2">
                         {results.map((result, index) => {
@@ -222,13 +213,14 @@ export default function GlobalSearch({ isOpen, onClose }) {
                             SEARCH_TYPES[result.type]?.color || "text-gray-600";
 
                           return (
-                            <motion.div
+                            <motion.button
+                              type="button"
                               key={`${result.type}-${result._id}`}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.05 }}
                               onClick={() => handleResultClick(result)}
-                              className="flex items-start p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                              className="w-full text-left flex items-start p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                             >
                               <div className={`flex-shrink-0 ${colorClass}`}>
                                 <TypeIcon className="h-5 w-5" />
@@ -254,13 +246,13 @@ export default function GlobalSearch({ isOpen, onClose }) {
                                         •
                                       </span>
                                       <span className="text-xs text-gray-400">
-                                        {result.author}
+                                        {typeof result.author === "string" ? result.author : result.author.name}
                                       </span>
                                     </>
                                   )}
                                 </div>
                               </div>
-                            </motion.div>
+                            </motion.button>
                           );
                         })}
                       </div>

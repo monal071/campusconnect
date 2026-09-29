@@ -1,12 +1,13 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
 import ThemeSwitcher from "./ThemeSwitcher";
-import ConnectModal from "./ConnectModal";
-import ChatList from "./ChatList";
-import EditProfileModal from "./EditProfileModal";
+const ConnectModal = dynamic(() => import("./ConnectModal"), { ssr: false });
+const ChatList = dynamic(() => import("./ChatList"), { ssr: false });
+const EditProfileModal = dynamic(() => import("./EditProfileModal"), { ssr: false });
 import { motion, AnimatePresence } from "framer-motion";
 
 // Icons
@@ -45,7 +46,7 @@ export default function NavBar() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const guest = localStorage.getItem("guest");
-      setIsGuest(!!guest);
+      setIsGuest(!session?.user && guest === "true");
       if (session?.user) {
         setUserName(session.user.name || "User");
         setUserImage(session.user.image || "");
@@ -54,7 +55,7 @@ export default function NavBar() {
         if (role) {
           localStorage.setItem("role", role);
         }
-        const activeRole = role || localStorage.getItem("role") || null;
+        const activeRole = role;
         setUserRole(activeRole);
 
         // Fetch connection requests when logged in
@@ -63,7 +64,7 @@ export default function NavBar() {
         fetchNotifications();
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
-        setUserRole(localStorage.getItem("role") || null);
+        setUserRole(null);
       }
     }
   }, [session]);
@@ -75,7 +76,7 @@ export default function NavBar() {
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
-        const unread = data.notifications.filter((n) => !n.read).length;
+        const unread = (data.notifications || []).filter((n) => !n.read).length;
         setUnreadNotifications(unread);
       }
     } catch (error) {
@@ -105,7 +106,7 @@ export default function NavBar() {
       const response = await fetch("/api/connection-requests");
       if (response.ok) {
         const data = await response.json();
-        setPendingRequests(data.receivedRequests.length);
+        setPendingRequests((data.receivedRequests || []).length);
       }
     } catch (error) {
       console.error("Error fetching connection requests:", error);
@@ -129,6 +130,7 @@ export default function NavBar() {
   useEffect(() => {
     if (session?.user) {
       const interval = setInterval(() => {
+        if (document.hidden) return;
         fetchConnectionRequests();
         fetchUnreadMessages();
         fetchNotifications();
@@ -140,7 +142,7 @@ export default function NavBar() {
   useEffect(() => {
     const syncAuth = () => {
       const guest = localStorage.getItem("guest");
-      setIsGuest(!!guest);
+      setIsGuest(!session?.user && guest === "true");
       if (session?.user) {
         setUserName(session.user.name || "User");
       } else {
@@ -775,16 +777,16 @@ export default function NavBar() {
         )}
       </AnimatePresence>
 
-      <ConnectModal
+      {showConnectModal && <ConnectModal
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
-      />
-      <ChatList
+      />}
+      {showChatList && <ChatList
         isOpen={showChatList}
         onClose={() => setShowChatList(false)}
         onUnreadCountChange={(count) => setUnreadMessages(count)}
-      />
-      <EditProfileModal
+      />}
+      {showEditProfile && <EditProfileModal
         open={showEditProfile}
         onClose={() => setShowEditProfile(false)}
         user={{
@@ -802,7 +804,7 @@ export default function NavBar() {
           // Force session update by reloading
           window.location.reload();
         }}
-      />
+      />}
     </nav>
   );
 }

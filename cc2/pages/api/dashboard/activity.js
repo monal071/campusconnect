@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     const userId = session.user.id;
     
     // Get the limit from query params or default to 5
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 5));
 
     // Fetch user activity from the activity collection
     // This collection would store all activity like connections, posts, likes, etc.

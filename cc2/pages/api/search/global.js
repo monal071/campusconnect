@@ -4,153 +4,44 @@ import { authOptions } from "../auth/[...nextauth]";
 import { withRateLimit } from "../../../lib/rateLimiter";
 
 async function searchHandler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+  res.setHeader("Cache-Control", "private, no-store");
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   try {
     const session = await getServerSession(req, res, authOptions);
-    if (!session) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    const { q: query, type = "all" } = req.query;
-
-    if (!query || query.length < 3) {
-      return res
-        .status(400)
-        .json({ error: "Search query must be at least 3 characters" });
-    }
-
+    if (!session?.user) return res.status(401).json({ error: "Please sign in to search." });
+    const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const type = req.query.type || "all";
+    if (query.length < 3 || query.length > 100) return res.status(400).json({ error: "Use between 3 and 100 characters." });
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    const specs = [
+      { type: "posts", fields: ["content", "tags"] },
+      { type: "resources", fields: ["title", "description", "tags"], filter: { isPublic: { $ne: false } } },
+      // Students join by code; faculty can search only their own quizzes.
+      { type: "quizzes", fields: ["quizName", "description"], filter: { createdBy: { $in: [session.user.id, session.user.email] } } },
+      { type: "events", fields: ["title", "description"], filter: { status: "approved" } },
+      { type: "jobs", fields: ["title", "description", "company"], filter: { status: "approved" } },
+      { type: "communities", fields: ["name", "description"], filter: { $or: [{ isPrivate: false }, { isPrivate: { $exists: false } }, { members: session.user.id }] } },
+    ];
+    if (type !== "all" && !specs.some((spec) => spec.type === type)) return res.status(400).json({ error: "Invalid search category" });
     const client = await clientPromise;
     const db = client.db();
-
-    const searchRegex = new RegExp(query, "i");
-    let results = [];
-
-    // Search in different collections based on type
-    if (type === "all" || type === "posts") {
-      const posts = await db
-        .collection("posts")
-        .find({
-          $or: [{ content: searchRegex }, { tags: searchRegex }],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...posts.map((post) => ({
-          ...post,
-          type: "posts",
-          title:
-            post.content.substring(0, 100) +
-            (post.content.length > 100 ? "..." : ""),
-        }))
-      );
-    }
-
-    if (type === "all" || type === "resources") {
-      const resources = await db
-        .collection("resources")
-        .find({
-          $or: [
-            { title: searchRegex },
-            { description: searchRegex },
-            { tags: searchRegex },
-          ],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...resources.map((resource) => ({
-          ...resource,
-          type: "resources",
-        }))
-      );
-    }
-
-    if (type === "all" || type === "quizzes") {
-      const quizzes = await db
-        .collection("quizzes")
-        .find({
-          $or: [{ quizName: searchRegex }, { description: searchRegex }],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...quizzes.map((quiz) => ({
-          ...quiz,
-          type: "quizzes",
-        }))
-      );
-    }
-
-    if (type === "all" || type === "events") {
-      const events = await db
-        .collection("events")
-        .find({
-          $or: [{ title: searchRegex }, { description: searchRegex }],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...events.map((event) => ({
-          ...event,
-          type: "events",
-        }))
-      );
-    }
-
-    if (type === "all" || type === "jobs") {
-      const jobs = await db
-        .collection("jobs")
-        .find({
-          $or: [
-            { title: searchRegex },
-            { description: searchRegex },
-            { company: searchRegex },
-          ],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...jobs.map((job) => ({
-          ...job,
-          type: "jobs",
-        }))
-      );
-    }
-
-    if (type === "all" || type === "communities") {
-      const communities = await db
-        .collection("communities")
-        .find({
-          $or: [{ name: searchRegex }, { description: searchRegex }],
-        })
-        .limit(5)
-        .toArray();
-
-      results.push(
-        ...communities.map((community) => ({
-          ...community,
-          type: "communities",
-        }))
-      );
-    }
-
-    // Sort by relevance (you can implement better scoring)
-    results = results.slice(0, 20);
-
-    res.status(200).json({ results });
+    const groups = await Promise.all(specs.filter((spec) => type === "all" || spec.type === type).map(async (spec) => {
+      const documents = await db.collection(spec.type).find({
+        $and: [spec.filter || {}, { $or: spec.fields.map((field) => ({ [field]: regex })) }],
+      }, { projection: { title: 1, name: 1, quizName: 1, content: 1, description: 1, "author.name": 1 } })
+        .sort({ createdAt: -1 }).limit(5).maxTimeMS(3000).toArray();
+      // Explicit summary fields keep quiz answers, codes, and membership data private.
+      return documents.map((document) => ({
+        _id: document._id, type: spec.type,
+        title: document.title || document.quizName || document.name || (document.content || "").slice(0, 100),
+        description: (document.description || "").slice(0, 180),
+        author: document.author?.name || "",
+      }));
+    }));
+    return res.status(200).json({ results: groups.flat().slice(0, 20) });
   } catch (error) {
-    console.error("Global search error:", error);
-    res.status(500).json({ error: "Search failed" });
+    console.error("Global search failed:", error.message);
+    return res.status(500).json({ error: "Search is temporarily unavailable. Please try again." });
   }
 }
-
-// Wrap with rate limiter — 100 requests per 15 minutes per IP
 export default withRateLimit(searchHandler, "api");

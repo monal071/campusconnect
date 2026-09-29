@@ -8,10 +8,10 @@ export default function Document() {
         <link rel="manifest" href="/manifest.json" />
 
         {/* Theme Color */}
-        <meta name="theme-color" content="#3b82f6" />
+        <meta name="theme-color" content="#173b32" />
 
         {/* Apple Touch Icon */}
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/campusconnect-logo.svg" />
 
         {/* PWA Meta Tags */}
         <meta name="application-name" content="CampusConnect" />

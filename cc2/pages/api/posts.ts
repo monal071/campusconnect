@@ -36,8 +36,8 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   const { page = "1", limit = "10", userId } = req.query;
-  const pageNum = Math.max(1, parseInt(page));
-  const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
 
   const { db } = await connectToDatabase();
   const filter = userId ? { "author.id": userId } : {};

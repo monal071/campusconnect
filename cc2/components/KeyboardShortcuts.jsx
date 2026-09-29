@@ -1,3 +1,5 @@
+import dynamic from "next/dynamic";
+const GlobalSearch = dynamic(() => import("./GlobalSearch"), { ssr: false });
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,11 +23,15 @@ const SHORTCUTS = [
 ];
 
 export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
+  const [searchOpen, setSearchOpen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const handleKeyPress = (e) => {
+      if (e.defaultPrevented || e.repeat || e.altKey) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() !== "k") return;
+      if (document.querySelector('[role="dialog"]') && !((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) return;
       // Ignore if user is typing in an input/textarea
       if (
         e.target.tagName === "INPUT" ||
@@ -36,6 +42,7 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
         if ((e.ctrlKey || e.metaKey) && e.key === "k") {
           e.preventDefault();
           if (onSearchOpen) onSearchOpen();
+          else setSearchOpen(true);
         }
         return;
       }
@@ -46,6 +53,7 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             if (onSearchOpen) onSearchOpen();
+          else setSearchOpen(true);
           }
           break;
         case "n":
@@ -55,6 +63,7 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
           } else {
             e.preventDefault();
             if (onNewPostOpen) onNewPostOpen();
+            else router.push("/posts");
           }
           break;
         case "e":
@@ -111,6 +120,7 @@ export default function KeyboardShortcuts({ onSearchOpen, onNewPostOpen }) {
 
   return (
     <>
+      {searchOpen && <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />}
       {/* Help Button */}
       <button
         onClick={() => setShowHelp(true)}

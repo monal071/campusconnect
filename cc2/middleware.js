@@ -1,96 +1,36 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+const publicPages = new Set(["/", "/login", "/signup", "/auth/signin", "/events", "/resources", "/jobs", "/posts"]);
+const publicReads = new Set(["/api/events", "/api/resources", "/api/jobs", "/api/posts"]);
+
 export async function middleware(req) {
-  const pathname = req.nextUrl.pathname;
-
-  // Skip logging for static assets
-  const shouldLog =
-    !pathname.startsWith("/_next") &&
-    !pathname.includes(".svg") &&
-    !pathname.includes(".png");
-
-  // Public pages (no auth required)
-  const publicPaths = [
-    "/login",
-    "/signup",
-    "/dashboard",
-    "/events",
-    "/resources",
-    "/jobs",
-    "/posts",
-    "/connections",
-    "/quiz",
-  ];
-
-  // Public API routes
-  const publicApiPaths = [
-    "/api/events",
-    "/api/resources",
-    "/api/jobs",
-    "/api/posts",
-    "/api/dashboard/stats",
-    "/api/uploadthing", // Required for UploadThing webhooks
-  ];
-
-  // Allow public paths, auth routes, and static assets
-  if (
-    publicPaths.includes(pathname) ||
-    publicApiPaths.includes(pathname) ||
-    pathname === "/" ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/_next") ||
-    pathname.includes("favicon") ||
-    pathname.includes(".svg") ||
-    pathname.includes(".png") ||
-    pathname.includes(".jpg") ||
-    pathname.includes(".jpeg") ||
-    pathname.includes(".gif") ||
-    pathname.includes(".ico")
-  ) {
+  const path = req.nextUrl.pathname;
+  if (publicPages.has(path) || path.startsWith("/api/auth/") || path === "/api/uploadthing" ||
+      (req.method === "GET" && publicReads.has(path))) {
     return NextResponse.next();
   }
 
+  const isApi = path.startsWith("/api/");
+  let token;
   try {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-
-    // Not authenticated - redirect to login
-    if (!token) {
-      if (shouldLog) {
-        console.log(
-          `Unauthenticated access to ${pathname}. Redirecting to login.`,
-        );
-      }
-      const url = req.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
-
-    // User has no role - redirect to signup (except for signup & profile paths)
-    const userRole = token?.role;
-    if (
-      !userRole &&
-      pathname !== "/signup" &&
-      !pathname.startsWith("/api/auth/") &&
-      !pathname.startsWith("/profile")
-    ) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/signup";
-      return NextResponse.redirect(url);
-    }
-  } catch (error) {
-    console.error("Middleware error:", error);
+    token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  } catch {
+    token = null;
   }
-
+  if (!token) {
+    if (isApi) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 });
+    const url = new URL("/login", req.url);
+    url.searchParams.set("callbackUrl", path + req.nextUrl.search);
+    return NextResponse.redirect(url);
+  }
+  if (!token.role && !path.startsWith("/profile")) {
+    if (isApi) return NextResponse.json({ error: "Please complete your registration." }, { status: 403 });
+    return NextResponse.redirect(new URL("/signup", req.url));
+  }
   return NextResponse.next();
 }
 
-// Only run middleware on specific paths (faster - skips static files automatically)
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.ico$|sw\\.js$|manifest\\.json$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.ico$|sw\\.js$|offline\\.html$|manifest\\.json$).*)"],
 };

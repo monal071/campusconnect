@@ -18,10 +18,17 @@ export default function Login() {
       setErrorMsg(
         "Only Charusat university emails (@charusat.edu.in) are allowed.",
       );
+    } else if (router.query.error === "DatabaseUnavailable") {
+      setErrorMsg("We could not connect to the campus server. Please try again shortly.");
+    } else if (router.query.error) {
+      setErrorMsg("Sign in could not be completed. Please try again.");
     } else if (router.query.message) {
       setErrorMsg(router.query.message);
     }
   }, [router.query]);
+
+  const requestedPath = typeof router.query.callbackUrl === "string" ? router.query.callbackUrl : "";
+  const callbackUrl = requestedPath.startsWith("/") && !requestedPath.startsWith("//") && !requestedPath.includes("\\") && !/^\/(login|signup|api)(\/|\?|$)/.test(requestedPath) ? requestedPath : "/dashboard";
 
   // Redirect authenticated users
   useEffect(() => {
@@ -30,16 +37,16 @@ export default function Login() {
       if (!session.user.role || !session.user.isProfileComplete) {
         router.replace("/signup");
       } else {
-        router.replace("/dashboard");
+        router.replace(session.user.role === "admin" ? "/admin" : callbackUrl);
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, callbackUrl]);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
     setErrorMsg("");
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl });
     } catch (error) {
       console.error("Sign in error:", error);
       setErrorMsg("Sign in failed. Please try again.");

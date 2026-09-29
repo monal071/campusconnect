@@ -3,10 +3,10 @@
  */
 
 export function getPaginationParams(req) {
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(
     100,
-    Math.max(1, parseInt(req.query.limit || "20", 10)),
+    Math.max(1, parseInt(req.query.limit, 10) || 20),
   );
   const skip = (page - 1) * limit;
 
@@ -40,7 +40,6 @@ export async function paginatedQuery(collection, filter = {}, options = {}) {
   const skip = (page - 1) * limit;
 
   // Get total count (for pagination info)
-  const total = await collection.countDocuments(filter);
 
   // Get paginated data
   let cursor = collection.find(filter);
@@ -53,7 +52,10 @@ export async function paginatedQuery(collection, filter = {}, options = {}) {
     cursor = cursor.sort(sort);
   }
 
-  const data = await cursor.skip(skip).limit(limit).toArray();
+  const [total, data] = await Promise.all([
+    collection.countDocuments(filter),
+    cursor.skip(skip).limit(limit).toArray(),
+  ]);
 
   return {
     data,

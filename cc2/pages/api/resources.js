@@ -44,8 +44,8 @@ export default async function handler(req, res) {
         authorRole,
       } = req.query;
 
-      const limitNum = parseInt(limit) || 20;
-      const pageNum = parseInt(page) || 1;
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const skipNum = (pageNum - 1) * limitNum;
 
       // Build filter query
@@ -94,56 +94,23 @@ export default async function handler(req, res) {
         sortQuery = { updatedAt: -1 };
       }
 
-      // Get total count for pagination
-      const totalCount = await db
-        .collection("resources")
-        .countDocuments(filterQuery);
-
-      const resources = await db
-        .collection("resources")
-        .find(filterQuery)
-        .sort(sortQuery)
-        .skip(skipNum)
-        .limit(limitNum)
-        .toArray();
-
-      // Add user details for each resource
-      const resourcesWithUsers = await Promise.all(
-        resources.map(async (resource) => {
-          if (resource.userId) {
-            try {
-              const user = await db
-                .collection("users")
-                .findOne(
-                  { _id: new ObjectId(resource.userId) },
-                  { projection: { name: 1, email: 1, image: 1, role: 1 } },
-                );
-              return {
-                ...resource,
-                author: user?.name || "Unknown User",
-                authorEmail: user?.email || "",
-                authorImage: user?.image || null,
-                authorRole: user?.role || "student",
-              };
-            } catch (error) {
-              return {
-                ...resource,
-                author: "Unknown User",
-                authorEmail: "",
-                authorImage: null,
-                authorRole: "student",
-              };
-            }
-          }
-          return {
-            ...resource,
-            author: resource.author || "Unknown User",
-            authorEmail: "",
-            authorImage: null,
-            authorRole: "student",
-          };
-        }),
-      );
+      const [totalCount, resources] = await Promise.all([
+        db.collection("resources").countDocuments(filterQuery),
+        db.collection("resources").find(filterQuery).sort(sortQuery).skip(skipNum).limit(limitNum).toArray(),
+      ]);
+      // One batch lookup replaces a separate database request per resource.
+      const userIds = [...new Set(resources.map((resource) => resource.userId?.toString()).filter((id) => id && ObjectId.isValid(id)))];
+      const users = userIds.length ? await db.collection("users").find(
+        { _id: { $in: userIds.map((id) => new ObjectId(id)) } },
+        { projection: { name: 1, email: 1, image: 1, role: 1 } },
+      ).toArray() : [];
+      const usersById = new Map(users.map((user) => [user._id.toString(), user]));
+      const resourcesWithUsers = resources.map((resource) => {
+        const user = usersById.get(resource.userId?.toString());
+        return { ...resource, author: user?.name || resource.author || "Unknown User",
+          authorEmail: user?.email || "", authorImage: user?.image || null,
+          authorRole: user?.role || resource.authorRole || "student" };
+      });
 
       res.status(200).json({
         data: resourcesWithUsers,

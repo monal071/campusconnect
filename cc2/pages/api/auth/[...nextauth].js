@@ -8,7 +8,7 @@ const ALLOWED_DOMAINS = ["charusat.edu.in", "charusat.ac.in"];
 function isAllowedEmail(email) {
   if (!email) return false;
   const domain = email.toLowerCase().split("@")[1];
-  return ALLOWED_DOMAINS.some((d) => domain === d || domain.endsWith("." + d));
+  return !!domain && ALLOWED_DOMAINS.some((d) => domain === d || domain.endsWith("." + d));
 }
 
 // Detect role from email pattern
@@ -33,6 +33,7 @@ function extractDeptFromEmail(email) {
   return null;
 }
 
+/** @type {import("next-auth").NextAuthOptions} */
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -113,7 +114,7 @@ export const authOptions = {
         return true;
       } catch (error) {
         console.error("SignIn callback error:", error);
-        return true; // Allow sign in even if DB fails
+        return "/login?error=DatabaseUnavailable";
       }
     },
 

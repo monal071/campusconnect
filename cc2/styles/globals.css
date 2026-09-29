@@ -1254,3 +1254,10 @@
 .feature-card:hover::before {
   left: 100%;
 }
+/* Accessible shared controls and a quiet experience for reduced motion. */
+.skip-link { position: fixed; top: -80px; left: 16px; z-index: 9999; padding: 12px 18px; background: #fff; color: #173b32; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+:focus-visible { outline: 2px solid #818cf8; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
