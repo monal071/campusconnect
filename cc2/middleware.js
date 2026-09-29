@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const publicPages = new Set(["/", "/login", "/signup", "/auth/signin", "/events", "/resources", "/jobs", "/posts"]);
+const publicPages = new Set(["/", "/login", "/signup", "/auth/signin", "/events", "/resources", "/jobs", "/posts", "/privacy", "/terms"]);
 const publicReads = new Set(["/api/events", "/api/resources", "/api/jobs", "/api/posts"]);
 
 export async function middleware(req) {
