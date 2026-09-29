@@ -25,7 +25,7 @@ export default function Terms() {
         </section>
         <section>
           <h2>Availability and changes</h2>
-          <p>This is a college project and features may change or be unavailable at times. If you find a problem, contact <a href="mailto:pmonal071@gmail.com">pmonal071@gmail.com</a>.</p>
+          <p>This is a college project and features may change or be unavailable at times. If you find a problem, use the support contact shown during Google sign-in.</p>
         </section>
         <section>
           <h2>Privacy</h2>

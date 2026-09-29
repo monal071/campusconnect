@@ -26,7 +26,7 @@ export default function Privacy() {
         </section>
         <section>
           <h2>Your choices</h2>
-          <p>You can edit some profile details and remove some content in the app. For questions or requests about your account and data, email <a href="mailto:pmonal071@gmail.com">pmonal071@gmail.com</a>. Do not upload information that you do not want to share with the intended audience.</p>
+          <p>You can edit some profile details and remove some content in the app. For questions or requests about your account and data, use the support contact shown during Google sign-in. Do not upload information that you do not want to share with the intended audience.</p>
         </section>
         <section>
           <h2>Changes</h2>
