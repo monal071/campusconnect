@@ -50,7 +50,7 @@ export default function Home() {
         <div><p className={styles.eyebrow}>YOU BELONG HERE</p><h2>Your campus.<br />Your people.<br /><em>Your place to grow.</em></h2><p>Sign in with your CHARUSAT Google account, set up your profile, and start exploring.</p><Link href="/signup" className={styles.primary}>Let&apos;s get you connected <ArrowRightIcon /></Link></div>
         <ol className={styles.steps}><li><span>01</span><div><h3>Make yourself at home</h3><p>Create your student or faculty profile with your university account.</p></div></li><li><span>02</span><div><h3>Follow your curiosity</h3><p>Discover resources, campus events, quizzes, and communities.</p></div></li><li><span>03</span><div><h3>Bring something to the table</h3><p>Share a resource, start a conversation, or connect with a classmate.</p></div></li></ol>
       </section>
-      <footer className={styles.footer}><Link href="/" className={styles.brand}><AcademicCapIcon />campusconnect.</Link><p>A closer campus starts with a connection.</p><Link href="/login">Join the conversation <ChatBubbleLeftRightIcon /></Link></footer>
+      <footer className={styles.footer}><Link href="/" className={styles.brand}><AcademicCapIcon />campusconnect.</Link><p>A closer campus starts with a connection.</p><nav aria-label="Legal information" className={styles.footerLinks}><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav><Link href="/login">Join the conversation <ChatBubbleLeftRightIcon /></Link></footer>
     </div>
   );
 }

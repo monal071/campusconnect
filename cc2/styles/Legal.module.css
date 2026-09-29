@@ -1,0 +1,64 @@
+.page {
+  min-height: 100vh;
+  background: #f7f8f4;
+  color: #202b25;
+}
+
+.header,
+.main,
+.footer {
+  width: min(100% - 40px, 800px);
+  margin-inline: auto;
+}
+
+.header {
+  padding: 32px 0;
+}
+
+.header a,
+.footer a {
+  color: #24634a;
+  font-weight: 700;
+}
+
+.main {
+  padding: 28px 0 64px;
+}
+
+.main h1 {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin: 0 0 14px;
+}
+
+.updated {
+  color: #596b61;
+  margin-bottom: 42px;
+}
+
+.main section {
+  margin-top: 32px;
+}
+
+.main h2 {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.main p,
+.main li {
+  line-height: 1.7;
+}
+
+.main a {
+  color: #24634a;
+  text-decoration: underline;
+}
+
+.footer {
+  display: flex;
+  gap: 24px;
+  border-top: 1px solid #dae2d9;
+  padding: 24px 0 36px;
+}

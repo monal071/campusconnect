@@ -543,6 +543,16 @@
   color:var(--muted);
 }
 
+.footerLinks {
+  display:flex;
+  gap:18px;
+  font-size:12px;
+}
+
+.footerLinks a:hover {
+  text-decoration:underline;
+}
+
 .footer>a:last-child {
   font-size:11px;
   display:flex;
