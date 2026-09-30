@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
@@ -12,26 +13,11 @@ export default function EventCard({ event, isAuthenticated, userId }) {
   const [hasJoined, setHasJoined] = useState(
     event && Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false
   );
+  const [joining, setJoining] = useState(false);
   useEffect(() => {
-    // Skip polling if event or event ID is not available
-    if (!event || !event._id) return;
-    
-    // Poll for joined count every 5s
-    let interval;
-    const fetchJoined = async () => {
-      try {
-        const res = await fetch(`/api/events`);
-        const data = await res.json();
-        const found = Array.isArray(data) ? data.find(e => e._id === event._id) : Array.isArray(data.data) ? data.data.find(e => e._id === event._id) : null;
-        if (found && Array.isArray(found.joined)) {
-          setJoinedCount(found.joined.length);
-          if (userId) setHasJoined(found.joined.includes(userId));
-        }
-      } catch {}
-    };
-    interval = setInterval(fetchJoined, 5000);
-    return () => clearInterval(interval);
-  }, [event._id, userId]);
+    setJoinedCount(Array.isArray(event?.joined) ? event.joined.length : 0);
+    setHasJoined(Boolean(userId && event?.joined?.includes(userId)));
+  }, [event?.joined, userId]);
 
   // Safety check for event prop — placed AFTER hooks (React rules of hooks)
   if (!event || typeof event !== 'object') {
@@ -44,7 +30,8 @@ export default function EventCard({ event, isAuthenticated, userId }) {
 
   const handleJoin = async (e) => {
     e.stopPropagation();
-    if (!userId || !event._id) return;
+    if (!userId || !event._id || joining) return;
+    setJoining(true);
     try {
       const res = await fetch('/api/events', {
         method: 'PUT',
@@ -52,13 +39,16 @@ export default function EventCard({ event, isAuthenticated, userId }) {
         body: JSON.stringify({ eventId: event._id, userId }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not join this event");
       if (data.success) {
         setHasJoined(true);
-        setJoinedCount(data.joinedCount || joinedCount + 1);
+        setJoinedCount(data.joinedCount ?? joinedCount + 1);
+        window.dispatchEvent(new Event("campus:data-changed"));
+        toast.success("Event joined");
       }
     } catch (error) {
-      console.error('Error joining event:', error);
-    }
+      toast.error(error.message);
+    } finally { setJoining(false); }
   };
 
   const formatDate = (dateString) => {
@@ -178,6 +168,7 @@ export default function EventCard({ event, isAuthenticated, userId }) {
               <button
                 className="btn btn-success btn-sm hover-lift"
                 onClick={handleJoin}
+                disabled={joining}
               >
                 Join Event
               </button>

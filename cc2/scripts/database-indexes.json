@@ -1,0 +1,282 @@
+{
+  "core": {
+    "users": [
+      {
+        "key": {
+          "email": 1
+        },
+        "unique": true
+      },
+      {
+        "key": {
+          "requests": 1
+        }
+      }
+    ],
+    "events": [
+      {
+        "key": {
+          "status": 1,
+          "createdAt": -1
+        }
+      },
+      {
+        "key": {
+          "joined": 1,
+          "date": 1
+        }
+      }
+    ],
+    "rsvps": [
+      {
+        "key": {
+          "eventId": 1,
+          "userId": 1
+        },
+        "unique": true
+      },
+      {
+        "key": {
+          "userId": 1,
+          "status": 1
+        }
+      }
+    ],
+    "notifications": [
+      {
+        "key": {
+          "userId": 1,
+          "createdAt": -1
+        }
+      },
+      {
+        "key": {
+          "userId": 1,
+          "type": 1,
+          "senderId": 1
+        }
+      }
+    ],
+    "userActivity": [
+      {
+        "key": {
+          "userId": 1,
+          "timestamp": -1
+        }
+      }
+    ],
+    "connections": [
+      {
+        "key": {
+          "user1Id": 1
+        }
+      },
+      {
+        "key": {
+          "user2Id": 1
+        }
+      }
+    ],
+    "connectionRequests": [
+      {
+        "key": {
+          "receiverId": 1,
+          "status": 1
+        }
+      },
+      {
+        "key": {
+          "senderId": 1,
+          "status": 1
+        }
+      }
+    ],
+    "friendships": [
+      {
+        "key": {
+          "user1Id": 1,
+          "user2Id": 1
+        }
+      }
+    ],
+    "posts": [
+      {
+        "key": {
+          "createdAt": -1
+        }
+      },
+      {
+        "key": {
+          "author.id": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "resources": [
+      {
+        "key": {
+          "createdAt": -1
+        }
+      },
+      {
+        "key": {
+          "userId": 1
+        }
+      }
+    ],
+    "conversations": [
+      {
+        "key": {
+          "participants": 1,
+          "lastMessageAt": -1
+        }
+      }
+    ],
+    "messages": [
+      {
+        "key": {
+          "conversationId": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "jobs": [
+      {
+        "key": {
+          "status": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "communities": [
+      {
+        "key": {
+          "members": 1
+        }
+      }
+    ],
+    "communityPosts": [
+      {
+        "key": {
+          "communityId": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "rateLimits": [
+      {
+        "key": {
+          "expiresAt": 1
+        },
+        "expireAfterSeconds": 0
+      }
+    ],
+    "resourceComments": [
+      {
+        "key": {
+          "resourceId": 1,
+          "parentId": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "resourceRatings": [
+      {
+        "key": {
+          "resourceId": 1,
+          "userId": 1
+        },
+        "unique": true
+      }
+    ],
+    "resourceReviews": [
+      {
+        "key": {
+          "resourceId": 1,
+          "userId": 1
+        },
+        "unique": true
+      }
+    ],
+    "resourceVersions": [
+      {
+        "key": {
+          "resourceId": 1,
+          "version": -1
+        }
+      }
+    ],
+    "resourceCollections": [
+      {
+        "key": {
+          "userId": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "commentLikes": [
+      {
+        "key": {
+          "commentId": 1,
+          "userId": 1
+        },
+        "unique": true
+      }
+    ],
+    "pending_events": [
+      {
+        "key": {
+          "status": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "pending_jobs": [
+      {
+        "key": {
+          "status": 1,
+          "createdAt": -1
+        }
+      }
+    ],
+    "news": [
+      {
+        "key": {
+          "status": 1,
+          "publishedAt": -1
+        }
+      }
+    ]
+  },
+  "quiz": {
+    "quizzes": [
+      {
+        "key": {
+          "createdBy": 1,
+          "createdAt": -1
+        }
+      },
+      {
+        "key": {
+          "quizCode": 1
+        },
+        "unique": true,
+        "sparse": true
+      }
+    ],
+    "quizSubmissions": [
+      {
+        "key": {
+          "quizId": 1,
+          "userId": 1
+        }
+      },
+      {
+        "key": {
+          "userId": 1,
+          "submittedAt": -1
+        }
+      }
+    ]
+  }
+}

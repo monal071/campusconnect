@@ -1,91 +1,21 @@
-import clientPromise from "../../../utils/mongodb";
-import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-
+import clientPromise from "../../../utils/mongodb";
+import { ObjectId } from "mongodb";
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
+  if (req.method !== "POST") return res.status(405).json({ message: "Method not allowed" });
   try {
-    // Get the user's session
     const session = await getServerSession(req, res, authOptions);
-
-    if (!session) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const { resourceId } = req.body;
-    const userId = session.user.id;
-
-    if (!resourceId) {
-      return res.status(400).json({ message: "Resource ID is required" });
-    }
-
+    if (!session?.user?.id) return res.status(401).json({ message: "Not authenticated" });
+    const { resourceId } = req.body || {};
+    if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) return res.status(400).json({ message: "Invalid resource ID" });
     const client = await clientPromise;
-    const db = client.db();
-
-    // Get the resource
-    const resource = await db.collection("resources").findOne({
-      _id: new ObjectId(resourceId),
-    });
-
-    if (!resource) {
-      return res.status(404).json({ message: "Resource not found" });
-    }
-
-    // Check if user already liked this resource
-    const likedBy = resource.likedBy || [];
-    const dislikedBy = resource.dislikedBy || [];
-    const hasLiked = likedBy.includes(userId);
-    const hasDisliked = dislikedBy.includes(userId);
-
-    if (hasLiked) {
-      // Unlike the resource
-      await db.collection("resources").updateOne(
-        { _id: new ObjectId(resourceId) },
-        {
-          $pull: { likedBy: userId },
-          $inc: { likes: -1 },
-        },
-      );
-
-      return res.status(200).json({
-        message: "Resource unliked",
-        liked: false,
-        likes: Math.max(0, (resource.likes || 0) - 1),
-        dislikes: resource.dislikes || 0,
-      });
-    } else {
-      // Like the resource and remove dislike if exists
-      const updateOps = {
-        $addToSet: { likedBy: userId },
-        $inc: { likes: 1 },
-      };
-
-      // If user had disliked, remove the dislike
-      if (hasDisliked) {
-        updateOps.$pull = { dislikedBy: userId };
-        updateOps.$inc.dislikes = -1;
-      }
-
-      await db
-        .collection("resources")
-        .updateOne({ _id: new ObjectId(resourceId) }, updateOps);
-
-      return res.status(200).json({
-        message: "Resource liked",
-        liked: true,
-        likes: (resource.likes || 0) + 1,
-        dislikes: hasDisliked
-          ? Math.max(0, (resource.dislikes || 0) - 1)
-          : resource.dislikes || 0,
-        disliked: false,
-      });
-    }
-  } catch (error) {
-    console.error("Error handling resource like:", error);
-    return res.status(500).json({ message: "Failed to process like" });
-  }
+    const id = session.user.id;
+    const resource = await client.db().collection("resources").findOneAndUpdate({ _id: new ObjectId(resourceId) }, [
+      { $set: { likedBy: { $cond: [{ $in: [id, { $ifNull: ["$likedBy", []] }] }, { $setDifference: ["$likedBy", [id]] }, { $setUnion: [{ $ifNull: ["$likedBy", []] }, [id]] }] }, dislikedBy: { $setDifference: [{ $ifNull: ["$dislikedBy", []] }, [id]] } } },
+      { $set: { likes: { $size: "$likedBy" }, dislikes: { $size: "$dislikedBy" } } },
+    ], { returnDocument: "after" });
+    if (!resource) return res.status(404).json({ message: "Resource not found" });
+    return res.status(200).json({ liked: resource.likedBy.includes(id), disliked: resource.dislikedBy.includes(id), likes: resource.likes, dislikes: resource.dislikes });
+  } catch { return res.status(500).json({ message: "Failed to update resource reaction" }); }
 }

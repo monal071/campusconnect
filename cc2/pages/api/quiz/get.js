@@ -1,27 +1,9 @@
-import { MongoClient } from "mongodb";
+import { studentQuestions } from "../../../lib/quiz-questions";
+import { getQuizDb } from "../../../utils/mongodb";
+import clientPromise from "../../../utils/mongodb";
+
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client;
-let clientPromise;
-
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please add your Mongo URI to .env.local");
-}
-
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
 
 export default async function handler(req, res) {
   try {
@@ -34,10 +16,10 @@ export default async function handler(req, res) {
     }
 
     const { code } = req.query;
-    if (!code) return res.status(400).json({ message: "Quiz code required" });
+    if (typeof code !== "string" || !code.trim() || code.length > 20) return res.status(400).json({ message: "Quiz code required" });
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     // Search for quiz by code (case-insensitive)
     const quiz = await db.collection("quizzes").findOne({
@@ -45,7 +27,7 @@ export default async function handler(req, res) {
     });
 
     if (!quiz) {
-      console.log("Quiz not found for code:", code);
+
       return res
         .status(404)
         .json({
@@ -65,7 +47,7 @@ export default async function handler(req, res) {
       _id: quiz._id,
       quizName: quiz.quizName,
       description: quiz.description,
-      questions: quiz.questions,
+      questions: studentQuestions(quiz, session.user.id),
       totalQuestions: quiz.totalQuestions,
       totalPoints: quiz.totalPoints,
       timeLimit: quiz.timeLimit,

@@ -69,6 +69,13 @@ export default function NavBar() {
     }
   }, [session]);
 
+  useEffect(() => {
+    if (!session?.user) return;
+    const refresh = () => { fetchConnectionRequests(); fetchUnreadMessages(); fetchNotifications(); };
+    window.addEventListener("campus:data-changed", refresh);
+    return () => window.removeEventListener("campus:data-changed", refresh);
+  }, [session?.user?.id]);
+
   // Fetch notifications
   const fetchNotifications = async () => {
     try {

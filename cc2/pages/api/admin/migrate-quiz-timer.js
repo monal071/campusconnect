@@ -1,4 +1,6 @@
-import clientPromise from '../../../utils/mongodb';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+import clientPromise, { getQuizDb } from '../../../utils/mongodb';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,10 +8,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const session = await getServerSession(req, res, authOptions);
+    if (session?.user?.role !== "admin") return res.status(403).json({ message: "Admin access required" });
     console.log('🔄 Starting quiz migration...');
     
     const client = await clientPromise;
-    const db = client.db('campusconnect');
+    const db = getQuizDb(client);
 
     // Count existing quizzes
     const totalQuizzes = await db.collection('quizzes').countDocuments({});

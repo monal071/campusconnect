@@ -1,3 +1,4 @@
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import clientPromise from '../../../utils/mongodb';
@@ -17,17 +18,17 @@ export default async function handler(req, res) {
 
     const { quizId } = req.body;
 
-    if (!quizId) {
+    if (typeof quizId !== "string" || !ObjectId.isValid(quizId)) {
       return res.status(400).json({ message: 'Quiz ID is required' });
     }
 
     const client = await clientPromise;
-    const db = client.db('campusconnect');
+    const db = getQuizDb(client);
 
     // Verify the quiz exists and belongs to the teacher
     const quiz = await db.collection('quizzes').findOne({
       _id: new ObjectId(quizId),
-      createdBy: session.user.id
+      createdBy: { $in: [session.user.id, new ObjectId(session.user.id)] }
     });
 
     if (!quiz) {
@@ -56,8 +57,6 @@ export default async function handler(req, res) {
     if (result.modifiedCount === 0) {
       return res.status(500).json({ message: 'Failed to activate quiz' });
     }
-
-    console.log(`✅ Quiz "${quiz.quizName}" activated by ${session.user.name}`);
 
     res.status(200).json({ 
       message: 'Quiz activated successfully',

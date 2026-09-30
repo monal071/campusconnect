@@ -1,9 +1,12 @@
-import { getSession } from "next-auth/react";
+import { normalizedSubmission } from "../../../../lib/quiz-submissions";
+import { getQuizDb } from "../../../../utils/mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]";
 import clientPromise from "../../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -11,11 +14,12 @@ export default async function handler(req, res) {
 
   const { quizId } = req.query;
   const { range = "all" } = req.query;
+  if (typeof quizId !== "string" || !ObjectId.isValid(quizId)) return res.status(400).json({ error: "Invalid quiz ID" });
 
   if (req.method === "GET") {
     try {
       const client = await clientPromise;
-      const db = client.db();
+      const db = getQuizDb(client);
 
       // Get quiz
       const quiz = await db.collection("quizzes").findOne({
@@ -28,7 +32,7 @@ export default async function handler(req, res) {
 
       // Check if user has permission (creator or admin)
       if (
-        quiz.userId.toString() !== session.user.id &&
+        String(quiz.createdBy ?? quiz.userId) !== session.user.id &&
         session.user.role !== "admin"
       ) {
         return res
@@ -37,11 +41,13 @@ export default async function handler(req, res) {
       }
 
       // Get all submissions for this quiz
-      const submissions = await db
+      const rawSubmissions = await db
         .collection("quizSubmissions")
         .find({ quizId: new ObjectId(quizId) })
         .sort({ submittedAt: -1 })
         .toArray();
+
+      const submissions = rawSubmissions.map(sub => { const normalized = normalizedSubmission(sub, quiz); return { ...normalized, score: normalized.percentageScore, answers: normalized.detailedResults, userName: sub.studentName }; });
 
       // Filter by time range
       let filteredSubmissions = submissions;
@@ -84,7 +90,7 @@ export default async function handler(req, res) {
       const averageTime =
         totalAttempts > 0
           ? filteredSubmissions.reduce((sum, s) => {
-              if (s.timeSpent) return sum + s.timeSpent;
+              if (s.timeSpent) return sum + s.timeSpent / 60;
               if (s.submittedAt && s.startedAt) {
                 return (
                   sum +
@@ -124,7 +130,7 @@ export default async function handler(req, res) {
           .filter((a) => a !== undefined);
 
         const correctResponses = questionResponses.filter(
-          (a) => a === question.correctAnswer
+          (a) => a.isCorrect
         ).length;
 
         const successRate =

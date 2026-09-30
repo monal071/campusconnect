@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -13,6 +14,8 @@ export default async function handler(req, res) {
 
   try {
     const { db } = await connectToDatabase();
+    const existingResource = await db.collection("resources").findOne({ _id: new ObjectId(resourceId) });
+    if (!existingResource) return res.status(404).json({ error: "Resource not found" });
 
     if (req.method === "GET") {
       // Get overall rating and user's rating
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
 
       const { rating } = req.body;
 
-      if (!rating || rating < 1 || rating > 5) {
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
         return res
           .status(400)
           .json({ error: "Rating must be between 1 and 5" });
@@ -107,7 +110,7 @@ export default async function handler(req, res) {
 
       // Update resource with average rating
       await db.collection("resources").updateOne(
-        { _id: resourceId },
+        { _id: new ObjectId(resourceId) },
         {
           $set: {
             averageRating: average,

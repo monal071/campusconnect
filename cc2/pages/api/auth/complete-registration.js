@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       req.body;
 
     // Validate required fields
-    if (!fullName || !fullName.trim()) {
+    if (typeof fullName !== "string" || !fullName.trim()) {
       return res.status(400).json({ message: "Full name is required" });
     }
     if (!role || !["student", "faculty", "admin"].includes(role)) {
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
           .status(400)
           .json({ message: "Semester is required for students" });
       }
-      if (!studentId || !studentId.trim()) {
+      if (typeof studentId !== "string" || !studentId.trim()) {
         return res.status(400).json({ message: "Student ID is required" });
       }
     }
@@ -50,6 +50,11 @@ export default async function handler(req, res) {
     const db = client.db();
 
     const email = session.user.email.toLowerCase();
+
+    const existing = await db.collection("users").findOne({ email });
+    if (!existing) return res.status(404).json({ message: "Sign in again before registering" });
+    const allowedRole = existing.role || existing.detectedRole || (/^\d{2}[a-z]{2,4}\d{2,4}$/.test(email.split("@")[0]) ? "student" : "faculty");
+    if (role !== allowedRole) return res.status(403).json({ message: "Your account role cannot be changed during registration" });
 
     // Build update data
     const updateData = {
@@ -60,7 +65,7 @@ export default async function handler(req, res) {
       semester: role === "student" ? semester : null,
       studentId: role === "student" ? studentId.trim().toUpperCase() : null,
       enrollmentNo: role === "student" ? studentId.trim().toUpperCase() : null,
-      bio: bio?.trim() || "",
+      bio: typeof bio === "string" ? bio.trim().slice(0, 3000) : "",
       isProfileComplete: true,
       updatedAt: new Date(),
     };

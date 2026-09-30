@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
     const { name, image, bio, department, institute, semester } = req.body;
 
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name.trim() || name.length > 100) {
       return res.status(400).json({ message: "Name is required" });
     }
 
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     // Only update optional fields if provided
     if (image) updateData.image = image;
-    if (bio !== undefined) updateData.bio = bio.trim();
+    if (bio !== undefined) updateData.bio = typeof bio === "string" ? bio.trim().slice(0, 3000) : "";
     if (department) updateData.department = department;
     if (institute) updateData.institute = institute;
     if (semester !== undefined) updateData.semester = semester;

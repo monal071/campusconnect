@@ -89,7 +89,8 @@ export default function Events() {
       }
 
       const data = await response.json();
-      setEvents((prev) => [data, ...prev]);
+      if (data.event) setEvents((prev) => [data.event, ...prev]);
+      toast.success(data.message);
       setShowEventModal(false);
     } catch (error) {
       console.error("Error creating event:", error);
@@ -170,7 +171,7 @@ export default function Events() {
       }
 
       const newEvent = await response.json();
-      setEvents([...events, newEvent]);
+      if (newEvent.event) setEvents(prev => [...prev, newEvent.event]);
       setShowAddForm(false);
       setFormData({
         title: "",
@@ -187,7 +188,7 @@ export default function Events() {
           contact: "",
         },
       });
-      toast.success("Event created successfully!");
+      toast.success(newEvent.message || "Event submitted");
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -223,7 +224,8 @@ export default function Events() {
         console.log("Event submitted for approval");
       } else {
         // Admin user - event published directly
-        setEvents((prev) => [data, ...prev]);
+        if (data.event) setEvents((prev) => [data.event, ...prev]);
+      toast.success(data.message);
       }
 
       setShowAddModal(false);

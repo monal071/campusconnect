@@ -1,38 +1,37 @@
+import { studentQuestions } from "../../../lib/quiz-questions";
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
-  console.log("🔍 Quiz API called:", req.method, "Quiz ID:", req.query.quizId);
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    console.log("🔍 Session user:", session?.user?.role, session?.user?.id);
 
     if (!session) {
-      console.log("❌ No session found");
+
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const { quizId } = req.query;
-    console.log("🔍 Processing quiz ID:", quizId);
 
     if (!quizId || !ObjectId.isValid(quizId)) {
-      console.log("❌ Invalid quiz ID:", quizId);
+
       return res.status(400).json({ message: "Valid quiz ID is required" });
     }
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     if (req.method === "GET") {
-      console.log("🔍 GET request for quiz");
+
       // Handle GET request for both faculty and students
       let quiz;
 
       if (session.user.role === "faculty") {
-        console.log("🎓 Faculty user fetching quiz");
+
         // Faculty can only access their own quizzes for editing
         quiz = await db.collection("quizzes").findOne({
           _id: new ObjectId(quizId),
@@ -42,40 +41,33 @@ export default async function handler(req, res) {
           ],
         });
       } else if (session.user.role === "student") {
-        console.log("🎒 Student user fetching quiz");
+
         // Students can access any quiz for taking
         quiz = await db
           .collection("quizzes")
           .findOne({ _id: new ObjectId(quizId) });
-        console.log(
-          "🔍 Found quiz for student:",
-          quiz ? quiz.quizName : "Not found",
-        );
+
       }
 
       if (!quiz) {
-        console.log("❌ Quiz not found or access denied");
+
         return res
           .status(404)
           .json({ message: "Quiz not found or access denied" });
       }
 
-      console.log("✅ Quiz found:", quiz.quizName, "isActive:", quiz.isActive);
-
       // Check if quiz is active (manual teacher control)
-      if (quiz.isActive === false) {
-        console.log("❌ Quiz is not active");
+      if (session.user.role === "student" && quiz.isActive === false) {
+
         return res.status(400).json({ message: "Quiz is not active" });
       }
-
-      console.log("✅ Quiz is active, preparing response data");
 
       // Return appropriate data based on role
       const responseData = {
         _id: quiz._id,
         quizName: quiz.quizName,
         description: quiz.description,
-        questions: quiz.questions,
+        questions: session.user.role === "student" ? studentQuestions(quiz, session.user.id) : quiz.questions,
         totalQuestions: quiz.totalQuestions,
         totalPoints: quiz.totalPoints,
         timeLimit: quiz.timeLimit,
@@ -91,11 +83,10 @@ export default async function handler(req, res) {
       if (session.user.role === "faculty") {
         responseData.createdAt = quiz.createdAt;
         responseData.updatedAt = quiz.updatedAt;
-        responseData.submissions = quiz.submissions;
+        responseData.submissions = await db.collection("quizSubmissions").find({ quizId: quiz._id }).project({ studentId: 1, studentName: 1, totalScore: 1, percentageScore: 1, submittedAt: 1, grade: 1 }).toArray();
         responseData.stats = quiz.stats;
       }
 
-      console.log("✅ Returning quiz data to", session.user.role);
       return res.status(200).json(responseData);
     }
 
@@ -107,13 +98,6 @@ export default async function handler(req, res) {
     }
 
     // Verify quiz ownership for faculty operations
-    console.log("Session user:", session.user);
-    console.log(
-      "Looking for quiz with ID:",
-      quizId,
-      "and createdBy:",
-      session.user.id,
-    );
 
     // Try to find quiz with both string and ObjectId createdBy formats
     const quiz = await db.collection("quizzes").findOne({
@@ -123,18 +107,6 @@ export default async function handler(req, res) {
         { createdBy: new ObjectId(session.user.id) }, // ObjectId format
       ],
     });
-
-    console.log("Found quiz:", quiz ? "Yes" : "No");
-    if (quiz) {
-      console.log("Quiz createdBy:", quiz.createdBy);
-      console.log("Session user ID:", session.user.id);
-      console.log(
-        "Types - Quiz createdBy:",
-        typeof quiz.createdBy,
-        "Session ID:",
-        typeof session.user.id,
-      );
-    }
 
     if (!quiz) {
       return res
@@ -169,7 +141,7 @@ export default async function handler(req, res) {
       // No deadline validation needed - using manual teacher control instead
 
       // Check if quiz has submissions - restrict certain updates
-      const hasSubmissions = quiz.submissions && quiz.submissions.length > 0;
+      const hasSubmissions = Boolean(await db.collection("quizSubmissions").findOne({ quizId: quiz._id }, { projection: { _id: 1 } }));
 
       const updateData = {
         quizName: quizName.trim(),
@@ -189,7 +161,7 @@ export default async function handler(req, res) {
           question: q.question.trim(),
           type: q.type || "multiple-choice",
           options: q.options || [],
-          correctAnswer: q.correctAnswer || "",
+          correctAnswer: q.correctAnswer ?? "",
           points: q.points || 1,
           explanation: q.explanation || "",
         }));
@@ -219,7 +191,7 @@ export default async function handler(req, res) {
       // Allow deletion if quiz is inactive, regardless of submissions
       // Or if quiz has no submissions
 
-      const hasSubmissions = quiz.submissions && quiz.submissions.length > 0;
+      const hasSubmissions = Boolean(await db.collection("quizSubmissions").findOne({ quizId: quiz._id }, { projection: { _id: 1 } }));
       const isInactive = quiz.isActive === false;
 
       // Block deletion only if quiz has submissions AND is still active

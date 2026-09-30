@@ -21,12 +21,13 @@ export default async function handler(req, res) {
   if (req.method === 'PATCH') {
     try {
       const { read } = req.body;
+      if (typeof read !== "boolean") return res.status(400).json({ error: "Invalid read status" });
 
       // Update notification as read/unread
       const result = await db
         .collection('notifications')
         .updateOne(
-          { _id: new ObjectId(id), userId: session.user.id },
+          { _id: new ObjectId(id), userId: { $in: [session.user.id, new ObjectId(session.user.id)] } },
           { 
             $set: { 
               read: read,
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
       // Delete notification
       const result = await db
         .collection('notifications')
-        .deleteOne({ _id: new ObjectId(id), userId: session.user.id });
+        .deleteOne({ _id: new ObjectId(id), userId: { $in: [session.user.id, new ObjectId(session.user.id)] } });
 
       if (result.deletedCount === 0) {
         return res.status(404).json({ error: 'Notification not found' });

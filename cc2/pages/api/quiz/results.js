@@ -1,3 +1,5 @@
+import { normalizedSubmission } from "../../../lib/quiz-submissions";
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import clientPromise from '../../../utils/mongodb';
@@ -17,7 +19,7 @@ export default async function handler(req, res) {
 
     const { quizId } = req.query;
 
-    if (!quizId) {
+    if (typeof quizId !== "string" || !ObjectId.isValid(quizId)) {
       return res.status(400).json({ message: 'Quiz ID is required' });
     }
 
@@ -27,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db('campusconnect');
+    const db = getQuizDb(client);
 
     // Check if quiz exists and user is the creator
     const quiz = await db.collection('quizzes').findOne({ 
@@ -39,35 +41,21 @@ export default async function handler(req, res) {
     }
 
     // Check if user is the quiz creator or an admin
-    if (quiz.createdBy !== session.user.id && session.user.role !== 'admin') {
+    if (String(quiz.createdBy) !== session.user.id && session.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. You can only view results for your own quizzes.' });
     }
 
     // Fetch all submissions for this quiz
-    const submissions = await db.collection('quizSubmissions')
+    const rawSubmissions = await db.collection('quizSubmissions')
       .find({ quizId: new ObjectId(quizId) })
       .sort({ submittedAt: -1 })
       .toArray();
+    const submissions = rawSubmissions.map(sub => normalizedSubmission(sub, quiz));
 
     // Process and format the results
     const processedResults = submissions.map(submission => {
       // Calculate detailed results for each question
-      const detailedResults = submission.answers.map((answer, index) => {
-        const question = quiz.questions[index];
-        const correctAnswer = question.correctAnswer;
-        const isCorrect = answer === correctAnswer;
-        
-        return {
-          questionId: question._id || index,
-          question: question.question,
-          studentAnswer: answer,
-          correctAnswer: correctAnswer,
-          isCorrect: isCorrect,
-          points: isCorrect ? (question.points || 1) : 0,
-          maxPoints: question.points || 1,
-          explanation: question.explanation || null
-        };
-      });
+      const detailedResults = submission.detailedResults;
 
       return {
         userId: submission.userId,
@@ -97,14 +85,14 @@ export default async function handler(req, res) {
       averageTimeSpent = Math.round(totalTime / totalSubmissions);
 
       submissions.forEach(sub => {
-        if (gradeDistribution.hasOwnProperty(sub.grade)) {
-          gradeDistribution[sub.grade]++;
+        if (gradeDistribution.hasOwnProperty(sub.grade?.[0])) {
+          gradeDistribution[sub.grade[0]]++;
         }
       });
     }
 
-    const highestScore = totalSubmissions > 0 ? Math.max(...submissions.map(s => s.percentage)) : 0;
-    const lowestScore = totalSubmissions > 0 ? Math.min(...submissions.map(s => s.percentage)) : 0;
+    const highestScore = totalSubmissions > 0 ? Math.max(...submissions.map(s => s.percentageScore)) : 0;
+    const lowestScore = totalSubmissions > 0 ? Math.min(...submissions.map(s => s.percentageScore)) : 0;
 
     const statistics = {
       totalSubmissions,
@@ -116,22 +104,6 @@ export default async function handler(req, res) {
       completionRate: quiz.statistics?.totalAttempts ? 
         Math.round((totalSubmissions / quiz.statistics.totalAttempts) * 100) : 100
     };
-
-    // Update quiz statistics
-    await db.collection('quizzes').updateOne(
-      { _id: new ObjectId(quizId) },
-      {
-        $set: {
-          'statistics.submissions': totalSubmissions,
-          'statistics.averageScore': averageScore,
-          'statistics.highestScore': highestScore,
-          'statistics.lowestScore': lowestScore,
-          'statistics.averageTimeSpent': averageTimeSpent,
-          'statistics.gradeDistribution': gradeDistribution,
-          'statistics.lastUpdated': new Date()
-        }
-      }
-    );
 
     res.status(200).json({
       success: true,

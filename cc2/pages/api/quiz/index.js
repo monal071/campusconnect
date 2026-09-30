@@ -1,27 +1,8 @@
+import { getQuizDb } from "../../../utils/mongodb";
+import clientPromise from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-import { MongoClient, ObjectId } from "mongodb";
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client;
-let clientPromise;
-
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please add your Mongo URI to .env.local");
-}
-
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
+import { ObjectId } from "mongodb";
 
 // Generate a unique 6-character alphanumeric quiz code
 function generateQuizCode() {
@@ -41,7 +22,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     if (req.method === "POST") {
       // Create new quiz (Faculty only)
@@ -84,7 +65,9 @@ export default async function handler(req, res) {
         questions,
         timeLimit,
         quizCode,
-        createdBy: new ObjectId(session.user.id),
+        createdBy: session.user.id,
+        totalQuestions: questions.length,
+        totalPoints: questions.reduce((sum, q) => sum + (q.points || 1), 0),
         createdByName: session.user.name,
         createdAt: new Date(),
         isActive: true,
@@ -105,7 +88,7 @@ export default async function handler(req, res) {
         const quizzes = await db
           .collection("quizzes")
           .find({
-            createdBy: new ObjectId(session.user.id),
+            createdBy: { $in: [session.user.id, new ObjectId(session.user.id)] },
             isActive: true,
           })
           .project({
@@ -129,14 +112,14 @@ export default async function handler(req, res) {
 
       const { quizId } = req.query;
 
-      if (!quizId) {
+      if (typeof quizId !== "string" || !ObjectId.isValid(quizId)) {
         return res.status(400).json({ message: "Quiz ID is required" });
       }
 
       const result = await db.collection("quizzes").updateOne(
         {
           _id: new ObjectId(quizId),
-          createdBy: new ObjectId(session.user.id),
+          createdBy: { $in: [session.user.id, new ObjectId(session.user.id)] },
         },
         {
           $set: { isActive: false, deletedAt: new Date() },

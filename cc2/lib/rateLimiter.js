@@ -1,193 +1,52 @@
-import { cache } from "./redis";
+import { createHash } from "crypto";
+import clientPromise from "../utils/mongodb";
+const configs = { api: { windowMs: 900000, maxRequests: 100 }, auth: { windowMs: 900000, maxRequests: 5 }, upload: { windowMs: 3600000, maxRequests: 20 }, heavy: { windowMs: 3600000, maxRequests: 10 } };
 
-/**
- * Rate limiter configuration
- */
-const rateLimitConfig = {
-  // API endpoints
-  api: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
-  },
-  // Authentication endpoints
-  auth: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5,
-  },
-  // File upload endpoints
-  upload: {
-    windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 20,
-  },
-  // Heavy operations
-  heavy: {
-    windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 10,
-  },
-};
-
-/**
- * Rate limiter middleware for API routes
- */
-export async function rateLimit(req, identifier, limitType = "api") {
-  const config = rateLimitConfig[limitType] || rateLimitConfig.api;
-  const key = `ratelimit:${limitType}:${identifier}`;
-
+// Atomic MongoDB counters work across Vercel instances without a Redis account.
+async function consume(identifier, maxRequests, windowMs, scope) {
+  const now = Date.now();
+  const window = Math.floor(now / windowMs);
+  const resetAt = (window + 1) * windowMs;
+  const digest = createHash("sha256").update(String(identifier)).digest("hex");
+  const client = await clientPromise;
+  const counters = client.db().collection("rateLimits");
+  const key = `${scope}:${windowMs}:${window}:${digest}`;
+  let counter;
   try {
-    // Get current count
-    const current = await cache.get(key);
-
-    if (!current) {
-      // First request in window
-      await cache.set(
-        key,
-        { count: 1, resetAt: Date.now() + config.windowMs },
-        config.windowMs / 1000
-      );
-      return {
-        success: true,
-        limit: config.maxRequests,
-        remaining: config.maxRequests - 1,
-        resetAt: Date.now() + config.windowMs,
-      };
-    }
-
-    // Check if limit exceeded
-    if (current.count >= config.maxRequests) {
-      const resetIn = Math.ceil((current.resetAt - Date.now()) / 1000);
-      return {
-        success: false,
-        limit: config.maxRequests,
-        remaining: 0,
-        resetAt: current.resetAt,
-        retryAfter: resetIn,
-      };
-    }
-
-    // Increment counter
-    current.count += 1;
-    await cache.set(
-      key,
-      current,
-      Math.ceil((current.resetAt - Date.now()) / 1000)
-    );
-
-    return {
-      success: true,
-      limit: config.maxRequests,
-      remaining: config.maxRequests - current.count,
-      resetAt: current.resetAt,
-    };
+    counter = await counters.findOneAndUpdate({ _id: key }, { $inc: { count: 1 }, $setOnInsert: { expiresAt: new Date(resetAt) } }, { upsert: true, returnDocument: "after" });
   } catch (error) {
-    console.error("Rate limit error:", error);
-    // Allow request if Redis fails (fail open)
-    return {
-      success: true,
-      limit: config.maxRequests,
-      remaining: config.maxRequests,
-    };
+    if (error.code !== 11000) throw error;
+    counter = await counters.findOneAndUpdate({ _id: key }, { $inc: { count: 1 } }, { returnDocument: "after" });
   }
+  return { success: counter.count <= maxRequests, limit: maxRequests, remaining: Math.max(0, maxRequests - counter.count), resetAt, retryAfter: Math.max(1, Math.ceil((resetAt - now) / 1000)) };
 }
-
-/**
- * Middleware wrapper for Next.js API routes
- */
+export function rateLimit(req, identifier, limitType = "api") {
+  const config = configs[limitType] || configs.api;
+  return consume(identifier, config.maxRequests, config.windowMs, limitType);
+}
+const ip = req => String(req.headers?.["x-forwarded-for"] || req.socket?.remoteAddress || "anonymous").split(",")[0].trim();
 export function withRateLimit(handler, limitType = "api") {
   return async (req, res) => {
-    // Get identifier (IP or user ID)
-    const identifier =
-      req.headers["x-forwarded-for"] ||
-      req.connection.remoteAddress ||
-      req.session?.user?.id ||
-      "anonymous";
-
-    const result = await rateLimit(req, identifier, limitType);
-
-    // Set rate limit headers
+    let result;
+    try { result = await rateLimit(req, ip(req), limitType); }
+    catch { return res.status(503).json({ error: "Service temporarily unavailable. Please try again." }); }
     res.setHeader("X-RateLimit-Limit", result.limit);
     res.setHeader("X-RateLimit-Remaining", result.remaining);
-    if (result.resetAt) {
-      res.setHeader(
-        "X-RateLimit-Reset",
-        new Date(result.resetAt).toISOString()
-      );
-    }
-
+    res.setHeader("X-RateLimit-Reset", new Date(result.resetAt).toISOString());
     if (!result.success) {
       res.setHeader("Retry-After", result.retryAfter);
-      return res.status(429).json({
-        error: "Too many requests",
-        message: `Rate limit exceeded. Try again in ${result.retryAfter} seconds.`,
-        retryAfter: result.retryAfter,
-      });
+      return res.status(429).json({ error: "Too many requests. Please try again later.", retryAfter: result.retryAfter });
     }
-
     return handler(req, res);
   };
 }
-
-/**
- * Rate limit by user ID
- */
-export async function rateLimitByUser(userId, limitType = "api") {
-  return await rateLimit({}, userId, limitType);
+export const rateLimitByUser = (userId, type = "api") => rateLimit({}, userId, type);
+export const rateLimitByIP = (req, type = "api") => rateLimit(req, ip(req), type);
+export const customRateLimit = (identifier, maxRequests, windowMs) => consume(identifier, maxRequests, windowMs, "custom");
+export async function resetRateLimit(identifier, type = "api") {
+  const config = configs[type] || configs.api;
+  const key = `${type}:${config.windowMs}:${Math.floor(Date.now() / config.windowMs)}:${createHash("sha256").update(String(identifier)).digest("hex")}`;
+  const client = await clientPromise;
+  await client.db().collection("rateLimits").deleteOne({ _id: key });
 }
-
-/**
- * Rate limit by IP address
- */
-export async function rateLimitByIP(req, limitType = "api") {
-  const ip =
-    req.headers["x-forwarded-for"] || req.connection.remoteAddress || "unknown";
-  return await rateLimit(req, ip, limitType);
-}
-
-/**
- * Custom rate limit with specific config
- */
-export async function customRateLimit(identifier, maxRequests, windowMs) {
-  const key = `ratelimit:custom:${identifier}`;
-
-  try {
-    const current = await cache.get(key);
-
-    if (!current) {
-      await cache.set(
-        key,
-        { count: 1, resetAt: Date.now() + windowMs },
-        windowMs / 1000
-      );
-      return { success: true, remaining: maxRequests - 1 };
-    }
-
-    if (current.count >= maxRequests) {
-      return {
-        success: false,
-        remaining: 0,
-        retryAfter: Math.ceil((current.resetAt - Date.now()) / 1000),
-      };
-    }
-
-    current.count += 1;
-    await cache.set(
-      key,
-      current,
-      Math.ceil((current.resetAt - Date.now()) / 1000)
-    );
-
-    return { success: true, remaining: maxRequests - current.count };
-  } catch (error) {
-    console.error("Custom rate limit error:", error);
-    return { success: true };
-  }
-}
-
-/**
- * Reset rate limit for identifier
- */
-export async function resetRateLimit(identifier, limitType = "api") {
-  const key = `ratelimit:${limitType}:${identifier}`;
-  await cache.del(key);
-}
-
 export default withRateLimit;

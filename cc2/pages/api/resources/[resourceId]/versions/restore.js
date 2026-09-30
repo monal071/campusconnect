@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -23,20 +24,20 @@ export default async function handler(req, res) {
     const { db } = await connectToDatabase();
     const { versionId } = req.body;
 
-    if (!versionId) {
+    if (typeof versionId !== "string" || !ObjectId.isValid(versionId)) {
       return res.status(400).json({ error: "Version ID is required" });
     }
 
     // Verify resource ownership
     const resource = await db
       .collection("resources")
-      .findOne({ _id: resourceId });
+      .findOne({ _id: new ObjectId(resourceId) });
 
     if (!resource) {
       return res.status(404).json({ error: "Resource not found" });
     }
 
-    if (resource.createdBy !== session.user.id) {
+    if (String(resource.userId ?? resource.createdBy) !== session.user.id) {
       return res
         .status(403)
         .json({ error: "Unauthorized - not resource owner" });
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
     // Get the version to restore
     const versionToRestore = await db
       .collection("resourceVersions")
-      .findOne({ _id: versionId });
+      .findOne({ _id: new ObjectId(versionId), resourceId });
 
     if (!versionToRestore) {
       return res.status(404).json({ error: "Version not found" });
@@ -78,7 +79,7 @@ export default async function handler(req, res) {
 
     // Restore the resource to the selected version
     await db.collection("resources").updateOne(
-      { _id: resourceId },
+      { _id: new ObjectId(resourceId) },
       {
         $set: {
           title: versionToRestore.title,

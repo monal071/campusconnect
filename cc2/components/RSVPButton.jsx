@@ -71,6 +71,7 @@ export default function RSVPButton({ eventId, event, onUpdate }) {
         setRsvpStatus(status);
         setAttendeeCounts(data.counts);
         onUpdate?.(data);
+        window.dispatchEvent(new Event("campus:data-changed"));
 
         toast.success(
           status === RSVP_STATUS.GOING
@@ -80,10 +81,11 @@ export default function RSVPButton({ eventId, event, onUpdate }) {
             : "RSVP updated"
         );
       } else {
-        throw new Error("Failed to update RSVP");
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update RSVP");
       }
     } catch (error) {
-      toast.error("Failed to update RSVP");
+      toast.error(error.message || "Failed to update RSVP");
       console.error(error);
     } finally {
       setLoading(false);

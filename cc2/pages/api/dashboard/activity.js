@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     // Fetch user activity from the activity collection
     // This collection would store all activity like connections, posts, likes, etc.
     let activity = await db.collection("userActivity")
-      .find({ userId })
+      .find({ userId: { $in: [userId, session.user.email] } })
       .sort({ timestamp: -1 })
       .limit(limit)
       .toArray();

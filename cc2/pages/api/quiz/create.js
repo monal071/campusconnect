@@ -1,3 +1,4 @@
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
@@ -38,20 +39,22 @@ export default async function handler(req, res) {
     } = req.body;
 
     // Validation
-    if (!quizName?.trim()) {
+    if (typeof quizName !== "string" || !quizName.trim() || quizName.length > 200) {
       return res.status(400).json({ message: "Quiz name is required" });
     }
 
-    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+    if (!questions || !Array.isArray(questions) || questions.length === 0 || questions.length > 200) {
       return res
         .status(400)
         .json({ message: "At least one question is required" });
     }
 
+    if (timeLimit !== undefined && (!Number.isFinite(timeLimit) || timeLimit < 1 || timeLimit > 600)) return res.status(400).json({ message: "Time limit must be 1–600 minutes" });
+    if (questions.some(q => !q || (q.points !== undefined && (!Number.isFinite(q.points) || q.points <= 0)))) return res.status(400).json({ message: "Question points must be positive numbers" });
     // Validate questions structure
     for (let i = 0; i < questions.length; i++) {
       const question = questions[i];
-      if (!question.question?.trim()) {
+      if (typeof question.question !== "string" || !question.question.trim()) {
         return res
           .status(400)
           .json({ message: `Question ${i + 1} text is required` });
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
               message: `Question ${i + 1} must have at least 2 options`,
             });
         }
-        if (!question.correctAnswer) {
+        if (question.correctAnswer === undefined || question.correctAnswer === null || question.correctAnswer === "") {
           return res
             .status(400)
             .json({ message: `Question ${i + 1} must have a correct answer` });
@@ -74,7 +77,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     // Generate unique quiz code (ensure it doesn't already exist)
     let quizCode;
@@ -93,7 +96,7 @@ export default async function handler(req, res) {
         question: q.question.trim(),
         type: q.type || "multiple-choice",
         options: q.options || [],
-        correctAnswer: q.correctAnswer || "",
+        correctAnswer: q.correctAnswer ?? "",
         points: q.points || 1,
         explanation: q.explanation || "",
       })),

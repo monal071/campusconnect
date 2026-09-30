@@ -1,4 +1,4 @@
-import clientPromise from "../../../utils/mongodb";
+import clientPromise, { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import { withRateLimit } from "../../../lib/rateLimiter";
@@ -26,7 +26,7 @@ async function searchHandler(req, res) {
     const client = await clientPromise;
     const db = client.db();
     const groups = await Promise.all(specs.filter((spec) => type === "all" || spec.type === type).map(async (spec) => {
-      const documents = await db.collection(spec.type).find({
+      const documents = await (spec.type === "quizzes" ? getQuizDb(client) : db).collection(spec.type).find({
         $and: [spec.filter || {}, { $or: spec.fields.map((field) => ({ [field]: regex })) }],
       }, { projection: { title: 1, name: 1, quizName: 1, content: 1, description: 1, "author.name": 1 } })
         .sort({ createdAt: -1 }).limit(5).maxTimeMS(3000).toArray();

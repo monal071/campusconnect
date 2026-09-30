@@ -100,7 +100,7 @@ async function handlePut(req, res) {
   }
 
   const { id } = req.query;
-  if (!id) {
+  if (typeof id !== "string" || !ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Post ID is required" });
   }
 
@@ -111,19 +111,13 @@ async function handlePut(req, res) {
     const post = await db.collection(COLLECTION).findOne({ _id: new ObjectId(id) });
     if (!post) return res.status(404).json({ error: "Post not found" });
 
-    const likes = new Set(post.likes || []);
     const userId = session.user.id;
-    if (likes.has(userId)) {
-      likes.delete(userId);
-    } else {
-      likes.add(userId);
-    }
-    const likesArray = Array.from(likes);
-    await db.collection(COLLECTION).updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { likes: likesArray, updatedAt: new Date() } }
+    const updated = await db.collection(COLLECTION).findOneAndUpdate(
+      { _id: post._id },
+      [{ $set: { likes: { $cond: [{ $in: [userId, { $ifNull: ["$likes", []] }] }, { $setDifference: ["$likes", [userId]] }, { $setUnion: [{ $ifNull: ["$likes", []] }, [userId]] }] }, updatedAt: "$$NOW" } }],
+      { returnDocument: "after" }
     );
-    return res.status(200).json({ success: true, data: { likes: likesArray } });
+    return res.status(200).json({ success: true, data: { likes: updated.likes } });
   }
 
   if (action === "comment") {
@@ -133,7 +127,7 @@ async function handlePut(req, res) {
     const comment = {
       id: new ObjectId().toString(),
       content,
-      author: author || { id: session.user.id, name: session.user.name, image: session.user.image },
+      author: { id: session.user.id, name: session.user.name, image: session.user.image },
       createdAt: new Date().toISOString(),
     };
 
@@ -155,7 +149,7 @@ async function handleDelete(req, res) {
   }
 
   const id = req.body?.id || req.query?.id;
-  if (!id) return res.status(400).json({ error: "Post ID is required" });
+  if (typeof id !== "string" || !ObjectId.isValid(id)) return res.status(400).json({ error: "Post ID is required" });
 
   const { db } = await connectToDatabase();
   const post = await db.collection(COLLECTION).findOne({ _id: new ObjectId(id) });

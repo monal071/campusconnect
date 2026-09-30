@@ -1,3 +1,5 @@
+import { setEventAttendance } from "../../lib/event-attendance";
+import { sendApiError } from "../../lib/api-errors";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from "../../utils/mongodb";
@@ -6,7 +8,7 @@ import { getPaginationParams, paginatedQuery } from "../../lib/pagination";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 
-const eventSchema = z.object({
+export const eventSchema = z.object({
   title: z.string().min(1, "Event title is required").max(200, "Title too long"),
   description: z
     .string()
@@ -15,10 +17,12 @@ const eventSchema = z.object({
   date: z
     .string()
     .refine((d) => !isNaN(Date.parse(d)), { message: "Invalid event date" }),
-  location: z.string().optional(),
+  location: z.string().max(300).optional(),
+  type: z.string().max(50).optional(),
+  link: z.string().url().optional().or(z.literal("")),
   category: z.string().optional(),
-  tags: z.array(z.string()).optional().default([]),
-  maxAttendees: z.number().int().positive().optional(),
+  tags: z.preprocess(value => typeof value === "string" ? value.split(",").map(tag => tag.trim()).filter(Boolean) : value, z.array(z.string().max(50)).max(20).optional().default([])),
+  maxAttendees: z.preprocess(value => value === "" || value == null ? undefined : Number(value), z.number().int().positive().optional()),
   isOnline: z.boolean().optional().default(false),
   meetingUrl: z.string().url("Invalid meeting URL").optional().or(z.literal("")),
   imageUrl: z.string().optional(),
@@ -70,7 +74,7 @@ export default async function handler(req, res) {
       return res.status(200).json(response);
     } catch (error) {
       console.error("Events GET error:", error);
-      return res.status(500).json({ error: error.message });
+      return sendApiError(res, error);
     }
   }
 
@@ -98,15 +102,16 @@ export default async function handler(req, res) {
       const db = client.db();
 
       if (session.user.role === "admin") {
-        await db.collection(COLLECTION).insertOne({
+        const createdEvent = {
           ...event,
           joined: [],
           createdBy: session.user.id,
           createdAt: new Date(),
           status: "approved",
-        });
+        };
+        const inserted = await db.collection(COLLECTION).insertOne(createdEvent);
         await invalidateCache.events();
-        return res.status(201).json({ message: "Event added successfully" });
+        return res.status(201).json({ message: "Event added successfully", event: { ...createdEvent, _id: inserted.insertedId } });
       } else {
         await db.collection("pending_events").insertOne({
           ...event,
@@ -142,7 +147,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error("Event POST error:", error);
-      return res.status(500).json({ error: error.message });
+      return sendApiError(res, error);
     }
   }
 
@@ -153,13 +158,17 @@ export default async function handler(req, res) {
 
       const { id, eventId } = req.body;
       const deleteId = id || eventId;
-      if (!deleteId) {
+      if (typeof deleteId !== "string" || !ObjectId.isValid(deleteId)) {
         return res.status(400).json({ error: "Missing event ID" });
       }
 
       const client = await clientPromise;
       const db = client.db();
-      const result = await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(deleteId) });
+      const event = await db.collection(COLLECTION).findOne({ _id: new ObjectId(deleteId) });
+      if (!event) return res.status(404).json({ error: "Event not found" });
+      if (session.user.role !== "admin" && String(event.createdBy) !== session.user.id) return res.status(403).json({ error: "Permission denied" });
+      const result = await db.collection(COLLECTION).deleteOne({ _id: event._id });
+      await db.collection("rsvps").deleteMany({ eventId: deleteId });
 
       if (result.deletedCount > 0) {
         await invalidateCache.events?.();
@@ -169,7 +178,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error("Event DELETE error:", error);
-      return res.status(500).json({ error: error.message });
+      return sendApiError(res, error);
     }
   }
 
@@ -184,39 +193,12 @@ export default async function handler(req, res) {
 
       const client = await clientPromise;
       const db = client.db();
-      const event = await db.collection(COLLECTION).findOne({ _id: new ObjectId(eventId) });
-      if (!event) return res.status(404).json({ error: "Event not found" });
-
-      const result = await db.collection(COLLECTION).updateOne(
-        { _id: new ObjectId(eventId) }, { $addToSet: { joined: userId } }
-      );
-      if (result.modifiedCount > 0) {
-
-        try {
-          await db.collection("userActivity").insertOne({
-            userId,
-            type: "event_join",
-            content: `Joined event: ${event.title || eventId}`,
-            eventId,
-            timestamp: new Date(),
-            icon: "EventIcon",
-          });
-        } catch (err) {
-          console.error("Failed to record user activity for event join:", err);
-        }
-
-        try {
-          await invalidateCache.events?.();
-        } catch (err) {
-          console.error("Failed to invalidate events cache after join:", err);
-        }
-      }
-
-      const updated = await db.collection(COLLECTION).findOne({ _id: new ObjectId(eventId) }, { projection: { joined: 1 } });
-      return res.status(200).json({ success: true, joinedCount: updated?.joined?.length || 0 });
+      const result = await setEventAttendance(client, db, eventId, session.user, "going");
+      await invalidateCache.events();
+      return res.status(200).json(result);
     } catch (error) {
-      console.error("Event PUT error:", error);
-      return res.status(500).json({ error: error.message });
+      if (!error.status) console.error("Event PUT error:", error.message);
+      return sendApiError(res, error);
     }
   }
 

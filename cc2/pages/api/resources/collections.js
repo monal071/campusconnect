@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
@@ -41,15 +42,14 @@ export default async function handler(req, res) {
             collection.resources?.map((r) => r.resourceId) || [];
           const resources = await db
             .collection("resources")
-            .find({ _id: { $in: resourceIds } })
+            .find({ _id: { $in: resourceIds.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id)) } })
             .project({ title: 1, type: 1 })
             .toArray();
 
           // Get creator info
           const creator = await db
             .collection("users")
-            .findOne({ _id: collection.userId })
-            .project({ name: 1, image: 1 });
+            .findOne({ _id: ObjectId.isValid(collection.userId) ? new ObjectId(collection.userId) : null }, { projection: { name: 1, image: 1 } });
 
           return {
             ...collection,
@@ -115,13 +115,13 @@ export default async function handler(req, res) {
       const { collectionId, name, description, resources, tags, isPublic } =
         req.body;
 
-      if (!collectionId) {
+      if (typeof collectionId !== "string" || !ObjectId.isValid(collectionId)) {
         return res.status(400).json({ error: "Collection ID is required" });
       }
 
       // Verify ownership
       const collection = await db.collection("resourceCollections").findOne({
-        _id: collectionId,
+        _id: new ObjectId(collectionId),
         userId: session.user.id,
       });
 
@@ -149,7 +149,7 @@ export default async function handler(req, res) {
 
       await db
         .collection("resourceCollections")
-        .updateOne({ _id: collectionId }, { $set: updates });
+        .updateOne({ _id: new ObjectId(collectionId) }, { $set: updates });
 
       return res.status(200).json({
         success: true,
@@ -164,13 +164,13 @@ export default async function handler(req, res) {
       // Delete collection
       const { collectionId } = req.query;
 
-      if (!collectionId) {
+      if (typeof collectionId !== "string" || !ObjectId.isValid(collectionId)) {
         return res.status(400).json({ error: "Collection ID is required" });
       }
 
       // Verify ownership
       const result = await db.collection("resourceCollections").deleteOne({
-        _id: collectionId,
+        _id: new ObjectId(collectionId),
         userId: session.user.id,
       });
 

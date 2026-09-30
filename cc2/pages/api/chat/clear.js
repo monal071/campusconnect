@@ -16,12 +16,12 @@ export default async function handler(req, res) {
 
     const { conversationId } = req.query;
     
-    if (!conversationId) {
+    if (typeof conversationId !== "string" || !ObjectId.isValid(conversationId)) {
       return res.status(400).json({ message: 'Conversation ID is required' });
     }
 
     const { db } = await connectToDatabase();
-    const userId = new ObjectId(session.user.id);
+    const userId = session.user.id;
     const convId = new ObjectId(conversationId);
 
     // Verify the user is part of this conversation
@@ -44,6 +44,7 @@ export default async function handler(req, res) {
       { _id: convId },
       {
         $set: {
+          unreadCounts: Object.fromEntries(conversation.participants.map(id => [String(id), 0])),
           lastMessage: null,
           lastMessageAt: new Date(),
           updatedAt: new Date()

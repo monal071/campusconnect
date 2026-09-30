@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -29,6 +30,7 @@ export default async function handler(req, res) {
         .json({ error: "Comment ID and reason are required" });
     }
 
+    if (typeof commentId !== "string" || !ObjectId.isValid(commentId) || !await db.collection("resourceComments").findOne({ _id: new ObjectId(commentId), resourceId })) return res.status(404).json({ error: "Comment not found" });
     // Check if already reported
     const existingReport = await db.collection("commentReports").findOne({
       commentId,
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
     // Get comment details for notification
     const comment = await db
       .collection("resourceComments")
-      .findOne({ _id: commentId });
+      .findOne({ _id: new ObjectId(commentId) });
 
     // Notify admins
     const admins = await db

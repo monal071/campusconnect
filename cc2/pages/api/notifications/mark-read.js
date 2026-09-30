@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from '../../../utils/mongodb';
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
 
     // Mark all user's notifications as read
     await db.collection('notifications').updateMany(
-      { userId: session.user.id, read: false },
+      { userId: { $in: [session.user.id, new ObjectId(session.user.id)] }, read: false },
       { $set: { read: true, readAt: new Date() } }
     );
 

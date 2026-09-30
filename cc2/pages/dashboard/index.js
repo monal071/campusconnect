@@ -73,11 +73,15 @@ export default function Dashboard() {
       pending = false;
     };
     refresh();
+    window.addEventListener("campus:data-changed", refresh);
+    window.addEventListener("focus", refresh);
     const interval = setInterval(refresh, 60000);
     document.addEventListener("visibilitychange", refresh);
     return () => {
       controller.abort();
       clearInterval(interval);
+      window.removeEventListener("campus:data-changed", refresh);
+      window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [status, userId, profileComplete, role, router, refreshKey]);
@@ -335,7 +339,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  My Joined Events
+                  My Joined Events ({stats.events || 0})
                 </h2>
                 <CalendarIcon className="h-5 w-5 text-indigo-500" />
               </div>
@@ -354,7 +358,7 @@ export default function Dashboard() {
                       </p>
                       <div className="mt-2 flex items-center text-xs text-gray-500 dark:text-gray-400">
                         <span className="font-medium text-indigo-600 dark:text-indigo-400 mr-2">
-                          {formatDate(event.date)}
+                          {formatDate(event.date)}{event.upcoming === false ? " · Past event" : ""}
                         </span>
                         <span>• {event.location}</span>
                       </div>

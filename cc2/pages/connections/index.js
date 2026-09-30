@@ -156,6 +156,7 @@ export default function ConnectionsPage() {
       });
 
       if (res.ok) {
+        window.dispatchEvent(new Event('campus:data-changed'));
         toast.success("Connection request sent!");
         setSentRequests((prev) => new Set([...prev, toUserId]));
         fetchRecommendations();
@@ -182,6 +183,7 @@ export default function ConnectionsPage() {
       });
 
       if (res.ok) {
+        window.dispatchEvent(new Event('campus:data-changed'));
         toast.success("Connection accepted!");
         fetchRequests();
         fetchFriends();
@@ -213,6 +215,7 @@ export default function ConnectionsPage() {
       });
 
       if (res.ok) {
+        window.dispatchEvent(new Event('campus:data-changed'));
         toast.success("Request declined");
         fetchRequests();
       } else {
@@ -243,6 +246,7 @@ export default function ConnectionsPage() {
       });
 
       if (res.ok) {
+        window.dispatchEvent(new Event('campus:data-changed'));
         toast.success("Connection removed");
         fetchFriends();
         fetchRecommendations();

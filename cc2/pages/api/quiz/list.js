@@ -1,3 +1,6 @@
+import { getPaginationParams } from "../../../lib/pagination";
+import { ObjectId } from "mongodb";
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
@@ -14,22 +17,20 @@ export default async function handler(req, res) {
     }
 
     const {
-      page = 1,
-      limit = 10,
       search = "",
       category = "",
       status = "all",
     } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const { page, limit, skip } = getPaginationParams(req);
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     let query = {};
 
     // Role-based filtering
     if (session.user.role === "faculty") {
-      query.createdBy = session.user.id;
+      query.createdBy = { $in: [session.user.id, new ObjectId(session.user.id)] };
     } else {
       // Students don't browse quizzes - they join via code
       // This endpoint is mainly for faculty to manage their quizzes
@@ -125,14 +126,6 @@ export default async function handler(req, res) {
         studentSubmissions.some(
           (sub) => sub.quizId.toString() === quiz._id.toString(),
         );
-
-      console.log(`Quiz: ${quiz.quizName}`);
-      console.log(
-        `  isActive field: ${quiz.isActive} (type: ${typeof quiz.isActive})`,
-      );
-      console.log(`  Calculated isActive: ${isActive}`);
-      console.log(`  Final status: ${status}`);
-      console.log(`  Has submitted: ${hasSubmitted}`);
 
       return {
         ...quiz,

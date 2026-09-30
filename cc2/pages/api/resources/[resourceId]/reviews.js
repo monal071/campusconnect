@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -13,6 +14,8 @@ export default async function handler(req, res) {
 
   try {
     const { db } = await connectToDatabase();
+    const existingResource = await db.collection("resources").findOne({ _id: new ObjectId(resourceId) });
+    if (!existingResource) return res.status(404).json({ error: "Resource not found" });
 
     if (req.method === "GET") {
       // Get all reviews for the resource
@@ -27,8 +30,7 @@ export default async function handler(req, res) {
         reviews.map(async (review) => {
           const author = await db
             .collection("users")
-            .findOne({ _id: review.userId })
-            .project({ name: 1, email: 1, image: 1 });
+            .findOne({ _id: ObjectId.isValid(review.userId) ? new ObjectId(review.userId) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
           return {
             ...review,
@@ -51,7 +53,7 @@ export default async function handler(req, res) {
 
       const { review, rating } = req.body;
 
-      if (!review?.trim()) {
+      if (typeof review !== "string" || !review.trim() || review.length > 5000 || !Number.isInteger(rating) || rating < 1 || rating > 5) {
         return res.status(400).json({ error: "Review content is required" });
       }
 
@@ -79,8 +81,7 @@ export default async function handler(req, res) {
 
         const author = await db
           .collection("users")
-          .findOne({ _id: session.user.id })
-          .project({ name: 1, email: 1, image: 1 });
+          .findOne({ _id: ObjectId.isValid(session.user.id) ? new ObjectId(session.user.id) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
         return res.status(200).json({
           success: true,
@@ -112,16 +113,15 @@ export default async function handler(req, res) {
       // Get author details
       const author = await db
         .collection("users")
-        .findOne({ _id: session.user.id })
-        .project({ name: 1, email: 1, image: 1 });
+        .findOne({ _id: ObjectId.isValid(session.user.id) ? new ObjectId(session.user.id) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
       // Create notification for resource owner
       const resource = await db
         .collection("resources")
-        .findOne({ _id: resourceId });
-      if (resource && resource.createdBy !== session.user.id) {
+        .findOne({ _id: new ObjectId(resourceId) });
+      if (resource && String(resource.userId ?? resource.createdBy) !== session.user.id) {
         await db.collection("notifications").insertOne({
-          userId: resource.createdBy,
+          userId: String(resource.userId ?? resource.createdBy),
           type: "resource_review",
           message: `${session.user.name} reviewed your resource`,
           resourceId,

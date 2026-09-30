@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { collectionId } = req.query;
 
-  if (!collectionId) {
+  if (typeof collectionId !== "string" || !ObjectId.isValid(collectionId)) {
     return res.status(400).json({ error: "Collection ID is required" });
   }
 
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
 
     // Verify ownership
     const collection = await db.collection("resourceCollections").findOne({
-      _id: collectionId,
+      _id: new ObjectId(collectionId),
       userId: session.user.id,
     });
 
@@ -52,7 +53,7 @@ export default async function handler(req, res) {
     });
 
     await db.collection("resourceCollections").updateOne(
-      { _id: collectionId },
+      { _id: new ObjectId(collectionId) },
       {
         $set: {
           resources: updatedResources,

@@ -1,8 +1,9 @@
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -12,10 +13,11 @@ export default async function handler(req, res) {
     try {
       const { tag, type = "all", limit = 20 } = req.query;
 
-      if (!tag) {
+      if (typeof tag !== "string" || !tag.trim() || tag.length > 100) {
         return res.status(400).json({ error: "Tag is required" });
       }
 
+      const safeTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const client = await clientPromise;
       const db = client.db();
       const results = {};
@@ -25,10 +27,10 @@ export default async function handler(req, res) {
         const posts = await db
           .collection("posts")
           .find({
-            content: { $regex: `#${tag}`, $options: "i" },
+            content: { $regex: `#${safeTag}`, $options: "i" },
           })
           .sort({ createdAt: -1 })
-          .limit(parseInt(limit))
+          .limit(Math.min(50, Math.max(1, parseInt(limit, 10) || 20)))
           .toArray();
 
         results.posts = posts;
@@ -40,13 +42,13 @@ export default async function handler(req, res) {
           .collection("resources")
           .find({
             $or: [
-              { title: { $regex: `#${tag}`, $options: "i" } },
-              { description: { $regex: `#${tag}`, $options: "i" } },
+              { title: { $regex: `#${safeTag}`, $options: "i" } },
+              { description: { $regex: `#${safeTag}`, $options: "i" } },
               { tags: { $regex: tag, $options: "i" } },
             ],
           })
           .sort({ createdAt: -1 })
-          .limit(parseInt(limit))
+          .limit(Math.min(50, Math.max(1, parseInt(limit, 10) || 20)))
           .toArray();
 
         results.resources = resources;
@@ -58,13 +60,13 @@ export default async function handler(req, res) {
           .collection("communities")
           .find({
             $or: [
-              { name: { $regex: `#${tag}`, $options: "i" } },
-              { description: { $regex: `#${tag}`, $options: "i" } },
+              { name: { $regex: `#${safeTag}`, $options: "i" } },
+              { description: { $regex: `#${safeTag}`, $options: "i" } },
               { tags: { $regex: tag, $options: "i" } },
             ],
           })
           .sort({ createdAt: -1 })
-          .limit(parseInt(limit))
+          .limit(Math.min(50, Math.max(1, parseInt(limit, 10) || 20)))
           .toArray();
 
         results.communities = communities;

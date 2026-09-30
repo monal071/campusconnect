@@ -33,3 +33,9 @@ export async function connectToDatabase() {
   const client = await getMongoClient();
   return { client, db: client.db() };
 }
+
+// Quizzes already live in a separate database in production. Keep all quiz
+// readers/writers on that database; do not silently relocate existing records.
+export function getQuizDb(client) {
+  return client.db(process.env.MONGODB_QUIZ_DB || "campusconnect");
+}

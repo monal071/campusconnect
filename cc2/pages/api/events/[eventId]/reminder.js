@@ -1,3 +1,6 @@
+import { ObjectId } from "mongodb";
+import { eventAttendance } from "../../../../lib/event-attendance";
+import { sendApiError } from "../../../../lib/api-errors";
 import { connectToDatabase } from "../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
@@ -5,7 +8,7 @@ import { authOptions } from "../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { eventId } = req.query;
 
-  if (!eventId) {
+  if (typeof eventId !== "string" || !ObjectId.isValid(eventId)) {
     return res.status(400).json({ error: "Event ID is required" });
   }
 
@@ -23,6 +26,9 @@ export default async function handler(req, res) {
     const { db } = await connectToDatabase();
     const { enabled } = req.body;
 
+    if (typeof enabled !== "boolean") return res.status(400).json({ error: "Invalid reminder setting" });
+    const attendance = await eventAttendance(db, eventId, session.user.id);
+    if (attendance.userStatus !== "going") return res.status(409).json({ error: "Join the event before setting a reminder" });
     // Update reminder setting
     await db.collection("rsvps").updateOne(
       {
@@ -32,9 +38,11 @@ export default async function handler(req, res) {
       {
         $set: {
           reminder: enabled,
+          status: "going",
           reminderUpdatedAt: new Date(),
         },
-      }
+      },
+      { upsert: true }
     );
 
     return res.status(200).json({
@@ -43,6 +51,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Reminder API error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return sendApiError(res, error);
   }
 }

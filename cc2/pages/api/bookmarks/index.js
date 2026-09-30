@@ -1,4 +1,4 @@
-import clientPromise from "../../../utils/mongodb";
+import clientPromise, { getQuizDb } from "../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -62,9 +62,9 @@ export default async function handler(req, res) {
                   .findOne({ _id: new ObjectId(bookmark.itemId) });
                 break;
               case "quiz":
-                item = await db
+                item = await getQuizDb(client)
                   .collection("quizzes")
-                  .findOne({ _id: new ObjectId(bookmark.itemId) });
+                  .findOne({ _id: new ObjectId(bookmark.itemId) }, { projection: { questions: 0, submissions: 0, quizCode: 0 } });
                 break;
             }
           } catch (error) {
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       // Add bookmark
       const { itemId, type, title, description } = req.body;
 
-      if (!itemId || !type) {
+      if (typeof itemId !== "string" || !ObjectId.isValid(itemId) || !["post", "resource", "event", "job", "quiz"].includes(type)) {
         return res.status(400).json({ error: "Item ID and type are required" });
       }
 
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
       // Remove bookmark
       const { itemId, type } = req.query;
 
-      if (!itemId || !type) {
+      if (typeof itemId !== "string" || !ObjectId.isValid(itemId) || !["post", "resource", "event", "job", "quiz"].includes(type)) {
         return res.status(400).json({ error: "Item ID and type are required" });
       }
 

@@ -1,6 +1,8 @@
+import { ObjectId } from "mongodb";
+import { getPaginationParams } from "../../../../lib/pagination";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
-import { connectToDatabase } from "../../../../utils/mongodb";
+import { connectToDatabase, getQuizDb } from "../../../../utils/mongodb";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -12,31 +14,35 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
-      const { db } = await connectToDatabase();
+      const { client, db } = await connectToDatabase();
 
-      const limit = parseInt(req.query.limit) || 10;
-      const page = parseInt(req.query.page) || 1;
-      const skip = (page - 1) * limit;
+      const { limit, page, skip } = getPaginationParams(req);
 
       // Only allow users to see their own activities or if they're viewing another user's public profile
       // Users are stored by email, not ObjectId — use string-based lookup
-      const targetUserEmail = userId || session.user.email;
+      const lookup = typeof userId === "string" ? userId : session.user.id;
+      const targetUser = await db.collection("users").findOne(ObjectId.isValid(lookup) ? { _id: new ObjectId(lookup) } : { email: lookup.toLowerCase() });
+      if (!targetUser) return res.status(404).json({ error: "User not found" });
+      const identities = [targetUser.email, String(targetUser._id), targetUser._id];
 
       // Fetch activities from various collections
-      const activities = [];
+      const recorded = await db.collection("userActivity").find({ userId: { $in: identities } }).sort({ timestamp: -1 }).limit(skip + limit).toArray();
+      const activities = recorded.map(item => ({ _id: item._id, type: item.type === "event_join" ? "event" : item.type === "connection_accepted" ? "connection" : item.type, description: item.content, timestamp: item.timestamp, link: item.eventId ? "/events" : "/connections" }));
 
       // Posts — try both email-based and string userId fields
       const posts = await db
         .collection("posts")
         .find({
           $or: [
-            { userEmail: targetUserEmail },
-            { "author.email": targetUserEmail },
-            { userId: targetUserEmail },
+            { userEmail: { $in: identities } },
+            { "author.email": { $in: identities } },
+            { "author.id": { $in: identities } },
+            { createdBy: { $in: identities } },
+            { userId: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       posts.forEach((post) => {
@@ -57,13 +63,15 @@ export default async function handler(req, res) {
         .collection("resources")
         .find({
           $or: [
-            { userEmail: targetUserEmail },
-            { "author.email": targetUserEmail },
-            { userId: targetUserEmail },
+            { userEmail: { $in: identities } },
+            { "author.email": { $in: identities } },
+            { "author.id": { $in: identities } },
+            { createdBy: { $in: identities } },
+            { userId: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       resources.forEach((resource) => {
@@ -82,13 +90,15 @@ export default async function handler(req, res) {
         .collection("events")
         .find({
           $or: [
-            { userEmail: targetUserEmail },
-            { "author.email": targetUserEmail },
-            { userId: targetUserEmail },
+            { userEmail: { $in: identities } },
+            { "author.email": { $in: identities } },
+            { "author.id": { $in: identities } },
+            { createdBy: { $in: identities } },
+            { userId: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       events.forEach((event) => {
@@ -103,17 +113,17 @@ export default async function handler(req, res) {
       });
 
       // Quizzes
-      const quizzes = await db
+      const quizzes = await getQuizDb(client)
         .collection("quizzes")
         .find({
           $or: [
-            { userEmail: targetUserEmail },
-            { createdBy: targetUserEmail },
-            { userId: targetUserEmail },
+            { userEmail: { $in: identities } },
+            { createdBy: { $in: identities } },
+            { userId: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       quizzes.forEach((quiz) => {
@@ -132,15 +142,15 @@ export default async function handler(req, res) {
         .collection("connections")
         .find({
           $or: [
-            { userEmail: targetUserEmail },
-            { connectedUserEmail: targetUserEmail },
-            { userId: targetUserEmail },
-            { connectedUserId: targetUserEmail },
+            { userEmail: { $in: identities } },
+            { connectedUserEmail: { $in: identities } },
+            { userId: { $in: identities } },
+            { connectedUserId: { $in: identities } },
           ],
           status: "accepted",
         })
         .sort({ acceptedAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       for (const connection of connections) {
@@ -163,16 +173,16 @@ export default async function handler(req, res) {
       }
 
       // Bookmarks
-      const bookmarks = await db
+      const bookmarks = String(targetUser._id) !== session.user.id ? [] : await db
         .collection("bookmarks")
         .find({
           $or: [
-            { userId: targetUserEmail },
-            { userEmail: targetUserEmail },
+            { userId: { $in: identities } },
+            { userEmail: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       bookmarks.forEach((bookmark) => {
@@ -194,12 +204,12 @@ export default async function handler(req, res) {
         .collection("follows")
         .find({
           $or: [
-            { follower: targetUserEmail },
-            { followerId: targetUserEmail },
+            { follower: { $in: identities } },
+            { followerId: { $in: identities } },
           ],
         })
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(skip + limit)
         .toArray();
 
       for (const follow of follows) {

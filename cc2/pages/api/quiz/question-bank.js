@@ -1,16 +1,18 @@
-import { getSession } from "next-auth/react";
+import { getQuizDb } from "../../../utils/mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   const client = await clientPromise;
-  const db = client.db();
+  const db = getQuizDb(client);
   const questionBank = db.collection("questionBank");
 
   if (req.method === "GET") {

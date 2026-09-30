@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     const { resourceId } = req.body;
 
-    if (!resourceId) {
+    if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
       return res.status(400).json({ error: 'Resource ID is required' });
     }
 

@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -23,10 +24,11 @@ export default async function handler(req, res) {
     const { db } = await connectToDatabase();
     const { commentId } = req.body;
 
-    if (!commentId) {
+    if (typeof commentId !== "string" || !ObjectId.isValid(commentId)) {
       return res.status(400).json({ error: "Comment ID is required" });
     }
 
+    if (typeof commentId !== "string" || !ObjectId.isValid(commentId) || !await db.collection("resourceComments").findOne({ _id: new ObjectId(commentId), resourceId })) return res.status(404).json({ error: "Comment not found" });
     // Check if already liked
     const existingLike = await db.collection("commentLikes").findOne({
       commentId,
@@ -42,11 +44,11 @@ export default async function handler(req, res) {
 
       await db
         .collection("resourceComments")
-        .updateOne({ _id: commentId }, { $inc: { likes: -1 } });
+        .updateOne({ _id: new ObjectId(commentId) }, { $inc: { likes: -1 } });
 
       const comment = await db
         .collection("resourceComments")
-        .findOne({ _id: commentId });
+        .findOne({ _id: new ObjectId(commentId) });
 
       return res.status(200).json({
         success: true,
@@ -63,11 +65,11 @@ export default async function handler(req, res) {
 
       await db
         .collection("resourceComments")
-        .updateOne({ _id: commentId }, { $inc: { likes: 1 } });
+        .updateOne({ _id: new ObjectId(commentId) }, { $inc: { likes: 1 } });
 
       const comment = await db
         .collection("resourceComments")
-        .findOne({ _id: commentId });
+        .findOne({ _id: new ObjectId(commentId) });
 
       // Create notification for comment author
       if (comment.userId !== session.user.id) {

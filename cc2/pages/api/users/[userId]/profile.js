@@ -1,3 +1,4 @@
+import { connectionState } from "../../../../lib/connections";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
 import clientPromise from "../../../../utils/mongodb";
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
       bio: user.bio || "",
       enrollmentNo: user.enrollmentNo || null,
       createdAt: user.createdAt,
-      connectionsCount: user.connections?.length || 0,
+      connectionsCount: (await connectionState(db, String(user._id))).friends.length,
       isOwner,
     };
 

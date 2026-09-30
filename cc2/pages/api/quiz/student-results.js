@@ -1,10 +1,9 @@
-import { getSession } from 'next-auth/react';
+import { normalizedSubmission } from "../../../lib/quiz-submissions";
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { MongoClient, ObjectId } from 'mongodb';
-
-const client = new MongoClient(process.env.MONGODB_URI);
-let db = client.db('campusconnect');
+import { ObjectId } from 'mongodb';
+import clientPromise from '../../../utils/mongodb';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -12,7 +11,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    await client.connect();
+    const client = await clientPromise;
+    const db = getQuizDb(client);
     
     // Get session to authenticate user
     const session = await getServerSession(req, res, authOptions);
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
     const { quizId } = req.query;
 
-    if (!quizId) {
+    if (typeof quizId !== "string" || !ObjectId.isValid(quizId)) {
       return res.status(400).json({ message: 'Quiz ID is required' });
     }
 
@@ -39,14 +39,16 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
+    if (quiz.showResults === false) return res.status(403).json({ message: "The teacher has not enabled results for this quiz" });
     // Fetch student's submissions for this quiz
-    const submissions = await db.collection('quizSubmissions')
+    const rawSubmissions = await db.collection('quizSubmissions')
       .find({ 
         quizId: new ObjectId(quizId),
         userId: session.user.id 
       })
       .sort({ submittedAt: -1 })
       .toArray();
+    const submissions = rawSubmissions.map(sub => normalizedSubmission(sub, quiz));
 
     if (submissions.length === 0) {
       return res.status(404).json({ message: 'No submissions found for this quiz' });
@@ -56,23 +58,7 @@ export default async function handler(req, res) {
     const latestSubmission = submissions[0];
 
     // Calculate detailed results for each question
-    const detailedResults = latestSubmission.answers.map((answer, index) => {
-      const question = quiz.questions[index];
-      const correctAnswer = question.correctAnswer;
-      const isCorrect = answer === correctAnswer;
-      
-      return {
-        questionId: question._id || index,
-        question: question.question,
-        options: question.options,
-        studentAnswer: answer,
-        correctAnswer: correctAnswer,
-        isCorrect: isCorrect,
-        points: isCorrect ? (question.points || 1) : 0,
-        maxPoints: question.points || 1,
-        explanation: question.explanation || null
-      };
-    });
+    const detailedResults = latestSubmission.detailedResults;
 
     // Calculate performance metrics
     const totalCorrect = detailedResults.filter(r => r.isCorrect).length;
@@ -87,15 +73,15 @@ export default async function handler(req, res) {
     const classStats = {
       totalSubmissions: allSubmissions.length,
       averageScore: allSubmissions.length > 0 ? 
-        Math.round(allSubmissions.reduce((sum, sub) => sum + sub.percentage, 0) / allSubmissions.length) : 0,
+        Math.round(allSubmissions.reduce((sum, sub) => sum + (sub.percentageScore ?? sub.percentage ?? 0), 0) / allSubmissions.length) : 0,
       highestScore: allSubmissions.length > 0 ? 
-        Math.max(...allSubmissions.map(s => s.percentage)) : 0,
+        Math.max(...allSubmissions.map(s => (s.percentageScore ?? s.percentage ?? 0))) : 0,
       lowestScore: allSubmissions.length > 0 ? 
-        Math.min(...allSubmissions.map(s => s.percentage)) : 0
+        Math.min(...allSubmissions.map(s => (s.percentageScore ?? s.percentage ?? 0))) : 0
     };
 
     // Determine student's rank
-    const betterScores = allSubmissions.filter(sub => sub.percentage > latestSubmission.percentage).length;
+    const betterScores = allSubmissions.filter(sub => (sub.percentageScore ?? sub.percentage ?? 0) > latestSubmission.percentageScore).length;
     const rank = betterScores + 1;
     const totalStudents = allSubmissions.length;
 
@@ -110,9 +96,9 @@ export default async function handler(req, res) {
           timeLimit: quiz.timeLimit
         },
         submission: {
-          score: latestSubmission.score,
+          score: latestSubmission.totalScore,
           totalQuestions: latestSubmission.totalQuestions,
-          percentage: latestSubmission.percentage,
+          percentage: latestSubmission.percentageScore,
           grade: latestSubmission.grade,
           timeSpent: latestSubmission.timeSpent,
           submittedAt: latestSubmission.submittedAt,
@@ -129,8 +115,8 @@ export default async function handler(req, res) {
         classStatistics: classStats,
         allSubmissions: submissions.map(sub => ({
           submittedAt: sub.submittedAt,
-          score: sub.score,
-          percentage: sub.percentage,
+          score: sub.totalScore,
+          percentage: (sub.percentageScore ?? sub.percentage ?? 0),
           grade: sub.grade,
           timeSpent: sub.timeSpent
         }))

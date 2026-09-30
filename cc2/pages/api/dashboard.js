@@ -1,39 +1,21 @@
-import { getAllItems } from '../../utils/db';
-
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth/[...nextauth]";
+import clientPromise from "../../utils/mongodb";
+import { dashboardStats, upcomingEvents } from "../../lib/dashboard";
+import { sendApiError } from "../../lib/api-errors";
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+  res.setHeader("Cache-Control", "private, no-store");
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   try {
-    // Mock dashboard data - replace with actual data fetching logic
-    const dashboardData = {
-      user: {
-        name: 'Demo User',
-        email: 'demo@example.com',
-        image: '/campusconnect-logo.svg',
-        joinedDate: new Date().toISOString(),
-      },
-      stats: {
-        connections: 0,
-        posts: 0,
-        events: 0,
-        profileViews: 0,
-      },
-      recentActivity: [
-        {
-          type: 'connection',
-          title: 'Welcome to CampusConnect!',
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      upcomingEvents: [],
-      recentPosts: [],
-    };
-
-    res.status(200).json(dashboardData);
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
-  }
+    const session = await getServerSession(req, res, authOptions);
+    if (!session?.user?.id) return res.status(401).json({ error: "Not authenticated" });
+    const client = await clientPromise;
+    const db = client.db();
+    const [stats, upcoming, recentActivity, recentPosts] = await Promise.all([
+      dashboardStats(client, db, session.user), upcomingEvents(db, session.user.id),
+      db.collection("userActivity").find({ userId: { $in: [session.user.id, session.user.email] } }).sort({ timestamp: -1 }).limit(5).toArray(),
+      db.collection("posts").find({ "author.id": session.user.id }).sort({ createdAt: -1 }).limit(5).toArray(),
+    ]);
+    return res.status(200).json({ user: session.user, stats, upcomingEvents: upcoming, recentActivity, recentPosts });
+  } catch (error) { return sendApiError(res, error); }
 }

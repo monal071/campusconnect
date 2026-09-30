@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { addItem, getAllItems, deleteItem } from '../../utils/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
@@ -95,11 +96,17 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'DELETE') {
     try {
+      const session = await getServerSession(req, res, authOptions);
+      if (!session?.user?.id) return res.status(401).json({ error: "Not authenticated" });
       const { id } = req.body;
-      if (!id) {
+      if (typeof id !== "string" || !ObjectId.isValid(id)) {
         return res.status(400).json({ error: 'Missing job ID' });
       }
       
+      const client = await clientPromise;
+      const job = await client.db().collection(TABLE_NAME).findOne({ _id: new ObjectId(id) });
+      if (!job) return res.status(404).json({ error: "Job not found" });
+      if (session.user.role !== "admin" && String(job.createdBy) !== session.user.id) return res.status(403).json({ error: "Permission denied" });
       const result = await deleteItem(TABLE_NAME, id);
       
       if (result && result.success) {

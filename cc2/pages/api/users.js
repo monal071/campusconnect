@@ -1,42 +1,27 @@
-import clientPromise from '../../utils/mongodb';
-import { ObjectId } from 'mongodb';
-
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth/[...nextauth]";
+import clientPromise from "../../utils/mongodb";
+import { ObjectId } from "mongodb";
+import { publicUserFields } from "../../lib/connections";
+import { sendApiError } from "../../lib/api-errors";
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    try {
-      const { id } = req.query;
-      if (!id) return res.status(400).json({ message: 'Missing user id' });
-      const client = await clientPromise;
-      const db = client.db();
-      const user = await db.collection('users').findOne({ _id: new ObjectId(id) }, { projection: { password: 0 } });
-      if (!user) return res.status(404).json({ message: 'User not found' });
-      res.status(200).json({ user });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to fetch user profile' });
+  res.setHeader("Cache-Control", "private, no-store");
+  if (!["GET", "PUT"].includes(req.method)) return res.status(405).json({ message: "Method not allowed" });
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    if (!session?.user?.id) return res.status(401).json({ message: "Not authenticated" });
+    const id = req.query.id || session.user.id;
+    if (typeof id !== "string" || !ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid user ID" });
+    if (req.method === "PUT" && id !== session.user.id) return res.status(403).json({ message: "You can only edit your own profile" });
+    const client = await clientPromise;
+    const users = client.db().collection("users");
+    if (req.method === "PUT") {
+      const { name } = req.body || {};
+      if (typeof name !== "string" || !name.trim() || name.length > 100) return res.status(400).json({ message: "Name must contain 1–100 characters" });
+      const user = await users.findOneAndUpdate({ _id: new ObjectId(id) }, { $set: { name: name.trim(), updatedAt: new Date() } }, { returnDocument: "after", projection: publicUserFields });
+      return user ? res.status(200).json({ user }) : res.status(404).json({ message: "User not found" });
     }
-    return;
-  }
-
-  if (req.method === 'PUT') {
-    try {
-      const { name } = req.body;
-      // You should get user id from session in production, here we use a query param for demo
-      const { id } = req.query;
-      if (!id || !name) return res.status(400).json({ message: 'Missing user id or name' });
-      const client = await clientPromise;
-      const db = client.db();
-      const result = await db.collection('users').findOneAndUpdate(
-        { _id: new ObjectId(id) },
-        { $set: { name, updatedAt: new Date() } },
-        { returnDocument: 'after', projection: { password: 0 } }
-      );
-      if (!result.value) return res.status(404).json({ message: 'User not found' });
-      res.status(200).json({ user: result.value });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to update user name' });
-    }
-    return;
-  }
-
-  res.status(405).json({ message: 'Method not allowed' });
+    const user = await users.findOne({ _id: new ObjectId(id) }, { projection: id === session.user.id ? { password: 0 } : publicUserFields });
+    return user ? res.status(200).json({ user }) : res.status(404).json({ message: "User not found" });
+  } catch (error) { return sendApiError(res, error); }
 }

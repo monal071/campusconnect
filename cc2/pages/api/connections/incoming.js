@@ -1,57 +1,20 @@
-import clientPromise from '../../../utils/mongodb';
-import { ObjectId } from 'mongodb';
-
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+import clientPromise from "../../../utils/mongodb";
+import { ObjectId } from "mongodb";
+import { connectionState, publicUserFields } from "../../../lib/connections";
+import { sendApiError } from "../../../lib/api-errors";
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-  
+  res.setHeader("Cache-Control", "private, no-store");
+  if (req.method !== "GET") return res.status(405).json({ message: "Method not allowed" });
   try {
-    const userId = req.query.id;
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
-    }
-    
+    const session = await getServerSession(req, res, authOptions);
+    if (!session?.user?.id) return res.status(401).json({ message: "Not authenticated" });
+    if (req.query.id && req.query.id !== session.user.id) return res.status(403).json({ message: "Access denied" });
     const client = await clientPromise;
     const db = client.db();
-    
-    // Get current user to check their pending requests
-    const currentUser = await db.collection('users').findOne({ 
-      _id: new ObjectId(userId) 
-    });
-    
-    if (!currentUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Get the list of user IDs who sent requests to current user
-    const requestIds = Array.isArray(currentUser.requests) ? currentUser.requests : [];
-    
-    if (requestIds.length === 0) {
-      return res.status(200).json({ incoming: [] });
-    }
-    
-    // Convert string IDs to ObjectIds for MongoDB query
-    const objectIds = requestIds.map(id => {
-      try {
-        return new ObjectId(id);
-      } catch {
-        return id; // Keep as string if conversion fails
-      }
-    });
-    
-    // Find users who sent the requests
-    const incoming = await db.collection('users').find({
-      _id: { $in: objectIds }
-    }).project({ 
-      password: 0, 
-      requests: 0,
-      friends: 0 
-    }).toArray();
-    
-    res.status(200).json({ incoming });
-  } catch (error) {
-    console.error('Error fetching incoming requests:', error);
-    res.status(500).json({ message: 'Failed to fetch incoming requests' });
-  }
+    const state = await connectionState(db, session.user.id);
+    const people = await db.collection("users").find({ _id: { $in: state.incoming.map(id => new ObjectId(id)) } }).project(publicUserFields).toArray();
+    return res.status(200).json({ incoming: people });
+  } catch (error) { return sendApiError(res, error); }
 }

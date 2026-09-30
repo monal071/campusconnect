@@ -1,3 +1,4 @@
+import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db("campusconnect");
+    const db = getQuizDb(client);
 
     const { quizId } = req.query;
     const userRole = session.user.role;
@@ -94,6 +95,7 @@ export default async function handler(req, res) {
       let query = {
         $or: [
           { createdBy: teacherId },
+          { createdBy: new ObjectId(teacherId) },
           { createdBy: teacherEmail },
           { createdByName: teacherEmail },
         ],

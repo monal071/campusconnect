@@ -32,10 +32,10 @@ export default async function handler(req, res) {
               id => id !== currentUserId
             );
             
-            const otherUser = await db.collection('users').findOne(
+            const otherUser = ObjectId.isValid(otherParticipantId) ? await db.collection('users').findOne(
               { _id: new ObjectId(otherParticipantId) },
               { projection: { name: 1, email: 1, image: 1, role: 1 } }
-            );
+            ) : null;
 
             return {
               ...conversation,
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       // Create or get existing conversation
       const { participantId } = req.body;
       
-      if (!participantId) {
+      if (typeof participantId !== "string" || !ObjectId.isValid(participantId)) {
         return res.status(400).json({ message: 'Participant ID is required' });
       }
 

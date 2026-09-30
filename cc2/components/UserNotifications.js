@@ -87,8 +87,9 @@ export default function UserNotifications() {
       
       toast.success(action === 'accept' ? 'Friend request accepted!' : 'Friend request declined');
       
+      window.dispatchEvent(new Event("campus:data-changed"));
       // Remove the notification from the list
-      setNotifications(prev => prev.filter(notification => notification._id !== notificationId));
+      setNotifications(prev => prev.filter(notification => notification.senderId !== senderId || notification.type !== 'friend_request'));
       
     } catch (error) {
       console.error('Error handling friend request:', error);

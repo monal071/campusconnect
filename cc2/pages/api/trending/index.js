@@ -1,4 +1,4 @@
-import clientPromise from "../../../utils/mongodb";
+import clientPromise, { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import { cache, cacheTTL } from "../../../lib/redis";
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     }
 
     const { type = "all", limit = 10 } = req.query;
-    const limitNum = parseInt(limit);
+    const limitNum = Math.min(20, Math.max(1, parseInt(limit, 10) || 10));
 
     // Try Redis cache first — key includes type + limit so different queries are cached separately
     const cacheKey = `trending:${type}:${limitNum}`;
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     if (type === "all" || type === "resources") {
       const resources = await db
         .collection("resources")
-        .find({})
+        .find({ isPublic: { $ne: false } })
         .sort({ views: -1, likes: -1 })
         .limit(limitNum)
         .toArray();
@@ -58,29 +58,29 @@ export default async function handler(req, res) {
 
     // Get popular quizzes (by submission count)
     if (type === "all" || type === "quizzes") {
-      const quizzes = await db
+      const quizzes = await getQuizDb(client)
         .collection("quizzes")
         .aggregate([
           {
             $addFields: {
-              submissionCount: { $size: { $ifNull: ["$submissions", []] } },
+              submissionCount: { $ifNull: ["$stats.totalSubmissions", 0] },
             },
           },
           { $sort: { submissionCount: -1 } },
           { $limit: limitNum },
         ])
         .toArray();
-      results.quizzes = quizzes;
+      results.quizzes = quizzes.map(({ questions, submissions, quizCode, ...quiz }) => quiz);
     }
 
     // Get upcoming popular events
     if (type === "all" || type === "events") {
-      const events = await db
-        .collection("events")
-        .find({ date: { $gte: new Date() } })
-        .sort({ attendees: -1 })
-        .limit(limitNum)
-        .toArray();
+      const events = await db.collection("events").aggregate([
+        { $match: { status: "approved" } },
+        { $addFields: { eventDate: { $convert: { input: "$date", to: "date", onError: null, onNull: null } } } },
+        { $match: { eventDate: { $gte: new Date() } } },
+        { $sort: { attendees: -1 } }, { $limit: limitNum },
+      ]).toArray();
       results.events = events;
     }
 

@@ -1,3 +1,4 @@
+import { getPaginationParams } from "../../../lib/pagination";
 import { getServerSession } from 'next-auth/next';
 import clientPromise from '../../../utils/mongodb';
 import { authOptions } from '../auth/[...nextauth]';
@@ -17,9 +18,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       // Get messages for a conversation
-      const { conversationId, page = 1, limit = 50 } = req.query;
+      const { conversationId } = req.query;
+      const { page, limit } = getPaginationParams(req);
       
-      if (!conversationId) {
+      if (typeof conversationId !== "string" || !ObjectId.isValid(conversationId)) {
         return res.status(400).json({ message: 'Conversation ID is required' });
       }
 
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
           .find({ conversationId: new ObjectId(conversationId) })
           .sort({ createdAt: -1 })
           .skip(skip)
-          .limit(parseInt(limit))
+          .limit(limit)
           .toArray();
 
         // Reverse to show oldest first
@@ -60,7 +62,7 @@ export default async function handler(req, res) {
       // Send a message
       const { conversationId, content, imageUrl } = req.body;
       
-      if (!conversationId || (!content?.trim() && !imageUrl)) {
+      if (typeof conversationId !== "string" || !ObjectId.isValid(conversationId) || (content !== undefined && (typeof content !== "string" || content.length > 5000)) || (imageUrl && (typeof imageUrl !== "string" || !imageUrl.startsWith("https://"))) || (!content?.trim() && !imageUrl)) {
         return res.status(400).json({ message: 'Conversation ID and content or image are required' });
       }
 
@@ -133,7 +135,7 @@ export default async function handler(req, res) {
       // Mark messages as read
       const { conversationId } = req.body;
       
-      if (!conversationId) {
+      if (typeof conversationId !== "string" || !ObjectId.isValid(conversationId)) {
         return res.status(400).json({ message: 'Conversation ID is required' });
       }
 

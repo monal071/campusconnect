@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
@@ -5,7 +6,7 @@ import { authOptions } from "../../auth/[...nextauth]";
 export default async function handler(req, res) {
   const { resourceId } = req.query;
 
-  if (!resourceId) {
+  if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
     return res.status(400).json({ error: "Resource ID is required" });
   }
 
@@ -13,6 +14,8 @@ export default async function handler(req, res) {
 
   try {
     const { db } = await connectToDatabase();
+    const existingResource = await db.collection("resources").findOne({ _id: new ObjectId(resourceId) });
+    if (!existingResource) return res.status(404).json({ error: "Resource not found" });
 
     if (req.method === "GET") {
       // Get all comments for a resource
@@ -32,13 +35,12 @@ export default async function handler(req, res) {
         comments.map(async (comment) => {
           const author = await db
             .collection("users")
-            .findOne({ _id: comment.userId })
-            .project({ name: 1, email: 1, image: 1 });
+            .findOne({ _id: ObjectId.isValid(comment.userId) ? new ObjectId(comment.userId) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
           // Get replies
           const replies = await db
             .collection("resourceComments")
-            .find({ parentId: comment._id })
+            .find({ parentId: { $in: [comment._id, String(comment._id)] }, resourceId })
             .sort({ createdAt: 1 })
             .toArray();
 
@@ -46,13 +48,12 @@ export default async function handler(req, res) {
             replies.map(async (reply) => {
               const replyAuthor = await db
                 .collection("users")
-                .findOne({ _id: reply.userId })
-                .project({ name: 1, email: 1, image: 1 });
+                .findOne({ _id: ObjectId.isValid(reply.userId) ? new ObjectId(reply.userId) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
               // Check if current user liked this reply
               const isLiked = session?.user
                 ? (await db.collection("commentLikes").findOne({
-                    commentId: reply._id,
+                    commentId: { $in: [reply._id, String(reply._id)] },
                     userId: session.user.id,
                   })) !== null
                 : false;
@@ -68,7 +69,7 @@ export default async function handler(req, res) {
           // Check if current user liked this comment
           const isLiked = session?.user
             ? (await db.collection("commentLikes").findOne({
-                commentId: comment._id,
+                commentId: { $in: [comment._id, String(comment._id)] },
                 userId: session.user.id,
               })) !== null
             : false;
@@ -96,15 +97,16 @@ export default async function handler(req, res) {
 
       const { content, parentId = null } = req.body;
 
-      if (!content?.trim()) {
+      if (typeof content !== "string" || !content.trim() || content.length > 5000) {
         return res.status(400).json({ error: "Comment content is required" });
       }
 
+      if (parentId && (typeof parentId !== "string" || !ObjectId.isValid(parentId) || !await db.collection("resourceComments").findOne({ _id: new ObjectId(parentId), resourceId, parentId: null }))) return res.status(400).json({ error: "Invalid parent comment" });
       const newComment = {
         resourceId,
         userId: session.user.id,
         content: content.trim(),
-        parentId,
+        parentId: parentId ? new ObjectId(parentId) : null,
         likes: 0,
         edited: false,
         createdAt: new Date(),
@@ -118,16 +120,15 @@ export default async function handler(req, res) {
       // Get author details
       const author = await db
         .collection("users")
-        .findOne({ _id: session.user.id })
-        .project({ name: 1, email: 1, image: 1 });
+        .findOne({ _id: ObjectId.isValid(session.user.id) ? new ObjectId(session.user.id) : null }, { projection: { name: 1, email: 1, image: 1 } });
 
       // Create notification for resource owner (if not self-comment)
       const resource = await db
         .collection("resources")
-        .findOne({ _id: resourceId });
-      if (resource && resource.createdBy !== session.user.id) {
+        .findOne({ _id: new ObjectId(resourceId) });
+      if (resource && String(resource.userId ?? resource.createdBy) !== session.user.id) {
         await db.collection("notifications").insertOne({
-          userId: resource.createdBy,
+          userId: String(resource.userId ?? resource.createdBy),
           type: "resource_comment",
           message: `${session.user.name} commented on your resource`,
           resourceId,
@@ -142,7 +143,7 @@ export default async function handler(req, res) {
       if (parentId) {
         const parentComment = await db
           .collection("resourceComments")
-          .findOne({ _id: parentId });
+          .findOne({ _id: new ObjectId(parentId) });
         if (parentComment && parentComment.userId !== session.user.id) {
           await db.collection("notifications").insertOne({
             userId: parentComment.userId,
@@ -175,7 +176,7 @@ export default async function handler(req, res) {
 
       const { commentId, content } = req.body;
 
-      if (!commentId || !content?.trim()) {
+      if (typeof commentId !== "string" || !ObjectId.isValid(commentId) || typeof content !== "string" || !content.trim() || content.length > 5000) {
         return res
           .status(400)
           .json({ error: "Comment ID and content are required" });
@@ -183,7 +184,7 @@ export default async function handler(req, res) {
 
       // Verify ownership
       const comment = await db.collection("resourceComments").findOne({
-        _id: commentId,
+        _id: new ObjectId(commentId), resourceId,
         userId: session.user.id,
       });
 
@@ -194,7 +195,7 @@ export default async function handler(req, res) {
       }
 
       await db.collection("resourceComments").updateOne(
-        { _id: commentId },
+        { _id: new ObjectId(commentId) },
         {
           $set: {
             content: content.trim(),
@@ -222,13 +223,13 @@ export default async function handler(req, res) {
 
       const { commentId } = req.body;
 
-      if (!commentId) {
+      if (typeof commentId !== "string" || !ObjectId.isValid(commentId)) {
         return res.status(400).json({ error: "Comment ID is required" });
       }
 
       // Verify ownership
       const comment = await db.collection("resourceComments").findOne({
-        _id: commentId,
+        _id: new ObjectId(commentId), resourceId,
         userId: session.user.id,
       });
 
@@ -240,7 +241,7 @@ export default async function handler(req, res) {
 
       // Delete comment and all its replies
       await db.collection("resourceComments").deleteMany({
-        $or: [{ _id: commentId }, { parentId: commentId }],
+        $or: [{ _id: new ObjectId(commentId) }, { parentId: { $in: [commentId, new ObjectId(commentId)] } }],
       });
 
       // Delete associated likes

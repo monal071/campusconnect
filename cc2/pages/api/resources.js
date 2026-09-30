@@ -273,7 +273,7 @@ export default async function handler(req, res) {
 
       const { resourceId, ...updateData } = req.body;
 
-      if (!resourceId) {
+      if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
         return res.status(400).json({ error: "Resource ID is required" });
       }
 
@@ -295,8 +295,8 @@ export default async function handler(req, res) {
 
       // Check ownership or admin role
       if (
-        resource.userId.toString() !== user._id.toString() &&
-        user.role !== "admin"
+        String(resource.userId) !== String(user?._id) &&
+        user?.role !== "admin"
       ) {
         return res.status(403).json({ error: "Permission denied" });
       }
@@ -332,7 +332,7 @@ export default async function handler(req, res) {
 
       const { resourceId } = req.body;
 
-      if (!resourceId) {
+      if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
         return res.status(400).json({ error: "Resource ID is required" });
       }
 
@@ -354,9 +354,9 @@ export default async function handler(req, res) {
 
       // Check ownership, faculty role, or admin role
       if (
-        resource.userId.toString() !== user._id.toString() &&
-        user.role !== "admin" &&
-        user.role !== "faculty"
+        String(resource.userId) !== String(user?._id) &&
+        user?.role !== "admin" &&
+        user?.role !== "faculty"
       ) {
         return res.status(403).json({ error: "Permission denied" });
       }
@@ -383,7 +383,7 @@ export default async function handler(req, res) {
 
       const { resourceId, action } = req.body;
 
-      if (!resourceId) {
+      if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
         return res.status(400).json({ error: "Resource ID is required" });
       }
 
@@ -400,7 +400,7 @@ export default async function handler(req, res) {
 
       // Handle verify action - only faculty can verify
       if (action === "verify") {
-        if (user.role !== "faculty") {
+        if (user?.role !== "faculty") {
           return res
             .status(403)
             .json({ error: "Only faculty can verify resources" });
