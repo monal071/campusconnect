@@ -33,10 +33,10 @@ test("MongoDB backend regressions (isolated temporary database)", { skip: proces
   let session;
   const mockClient = { db: () => db, startSession: () => client.startSession() };
   const load = sourceLoader({ "next-auth/next": { getServerSession: async () => session }, "next-auth": { getServerSession: async () => session }, databaseModule: { __esModule: true, default: Promise.resolve(mockClient), connectToDatabase: async () => ({ client: mockClient, db }), getQuizDb: () => db } });
-  const call = async (file, method, body = {}, query = {}) => {
+  const call = async (file, method, body = {}, query = {}, headers = {}) => {
     let result;
     const res = { statusCode: 200, setHeader() {}, status(code) { this.statusCode = code; return this; }, json(value) { result = { status: this.statusCode, body: value }; return result; } };
-    await load("pages/api/" + file).default({ method, body, query, headers: {} }, res);
+    await load("pages/api/" + file).default({ method, body, query, headers }, res);
     return result;
   };
   const a = { _id: new ObjectId(), email: "student-a@example.test", name: "Student A", role: "student", friends: [], requests: [] };
@@ -45,7 +45,7 @@ test("MongoDB backend regressions (isolated temporary database)", { skip: proces
   const as = user => { session = { user: { ...user, id: String(user._id) } }; };
   try {
     // Precreate collections so transaction tests also work on older Atlas versions.
-    for (const collection of ["users", "connections", "connectionRequests", "notifications", "friendships", "userActivity", "events", "rsvps", "quizzes", "quizSubmissions", "pending_events", "rateLimits", "conversations", "messages"]) await db.createCollection(collection);
+    for (const collection of ["users", "connections", "connectionRequests", "notifications", "friendships", "userActivity", "events", "rsvps", "quizzes", "quizSubmissions", "quizAttempts", "pending_events", "rateLimits", "conversations", "messages"]) await db.createCollection(collection);
     await db.collection("users").insertMany([a, b]);
     await t.test("request persistence, retry safety, rejection, and ownership", async () => {
       as(a);
@@ -169,9 +169,13 @@ test("MongoDB backend regressions (isolated temporary database)", { skip: proces
       await db.collection("quizzes").insertOne(quiz);
       as(b);
       const quizId = String(quiz._id);
-      assert.equal((await call("quiz/get.js", "GET", {}, { code: "TEST01" })).body.quiz.questions[0].correctAnswer, undefined);
-      const results = await Promise.all([1, 2].map(() => call("quiz/submit.js", "POST", { quizId, answers: ["A"], studentId: "spoof", studentName: "spoof" })));
-      assert.deepEqual(results.map(r => r.status).sort(), [200, 409]);
+      const joined = await call("quiz/get.js", "GET", {}, { code: "TEST01" });
+      assert.equal(joined.status, 200);
+      assert.equal(joined.body.quiz.questions[0].correctAnswer, undefined);
+      const { attemptId, version } = joined.body.quiz.attempt;
+      const results = await Promise.all([1, 2].map(() => call("quiz/submit.js", "POST", { quizId, attemptId, version, answers: ["A"], studentId: "spoof", studentName: "spoof" })));
+      assert.deepEqual(results.map(r => r.status).sort(), [200, 200]);
+      assert.equal(await db.collection("quizSubmissions").countDocuments({ quizId: quiz._id }), 1);
       const stored = await db.collection("quizSubmissions").findOne({ quizId: quiz._id });
       assert.notEqual(stored.studentId, "spoof");
       assert.equal(stored.percentageScore, 100);
@@ -182,6 +186,114 @@ test("MongoDB backend regressions (isolated temporary database)", { skip: proces
       as(a); session.user.role = "faculty";
       assert.equal((await call("dashboard/stats.js", "GET")).body.data.quizzes.totalQuizzes, 1);
       assert.equal((await call("quiz/results.js", "GET", {}, { quizId })).body.results.statistics.highestScore, 100);
+    });
+
+    await t.test("private resources are hidden from lists, search, collections, bookmarks and direct routes", async () => {
+      const resource = { _id: new ObjectId(), userId: a._id, title: "#private", description: "Confidential", isPublic: false, url: "https://example.test/private", tags: ["private"] };
+      await db.collection("resources").insertOne(resource);
+      const id = String(resource._id);
+      session = null;
+      assert.equal((await call("resources.js", "GET")).body.data.some(r => String(r._id) === id), false);
+      as(b);
+      assert.equal((await call("resources.js", "GET", {}, { search: "#private" })).body.total, 0);
+      assert.equal((await call("search/hashtag.js", "GET", {}, { tag: "private", type: "resources" })).body.resources.length, 0);
+      for (const route of ["comments", "reviews", "versions", "rating"]) {
+        assert.equal((await call(`resources/[resourceId]/${route}.js`, "GET", {}, { resourceId: id })).status, 404);
+      }
+      assert.equal((await call("resources/download.js", "POST", { resourceId: id })).status, 404);
+      await db.collection("bookmarks").insertOne({ userId: b._id, itemId: id, type: "resource", title: "Old bookmark" });
+      assert.equal((await call("bookmarks/index.js", "GET")).body.bookmarks.length, 0);
+      as(a);
+      assert.equal((await call("resources.js", "GET", {}, { search: "#private" })).body.total, 1);
+      const collection = await call("resources/collections.js", "POST", { name: "Public collection", isPublic: true, resources: [id] });
+      as(b);
+      const collections = (await call("resources/collections.js", "GET")).body.collections;
+      const found = collections.find(c => String(c._id) === String(collection.body.collection._id));
+      assert.equal(found.resources.length, 0);
+      assert.equal(found.resourceDetails.length, 0);
+      as(a); assert.equal((await call("resources/[resourceId]/versions.js", "GET", {}, { resourceId: id })).status, 200);
+    });
+    await t.test("role changes and account deletion invalidate existing session permissions", async () => {
+      const { refreshSessionToken } = load("lib/session-user.js");
+      const user = { _id: new ObjectId(), email: "session@example.test", role: "admin" };
+      await db.collection("users").insertOne(user);
+      const token = { email: user.email, userId: String(user._id), role: "admin" };
+      await db.collection("users").updateOne({ _id: user._id }, { $set: { role: "student" } });
+      assert.equal((await refreshSessionToken(db, token)).role, "student");
+      await db.collection("users").deleteOne({ _id: user._id });
+      assert.equal(await refreshSessionToken(db, token), null);
+      await db.collection("users").insertOne({ ...user, _id: new ObjectId() });
+      assert.equal(await refreshSessionToken(db, token), null);
+    });
+    await t.test("concurrent chat reads, sends and clears keep unread counts consistent", async () => {
+      const { changeChat } = load("lib/chat.js");
+      const id = new ObjectId();
+      await db.collection("conversations").insertOne({ _id: id, participants: [aid, bid], unreadCounts: { [aid]: 0, [bid]: 0 } });
+      for (const action of ["read", "clear"]) {
+        await Promise.all([
+          ...Array.from({ length: 3 }, (_, i) => changeChat(mockClient, db, String(id), aid, "send", { content: `message ${i}` })),
+          changeChat(mockClient, db, String(id), bid, action),
+        ]);
+        const actual = await db.collection("messages").countDocuments({ conversationId: id, readBy: { $ne: bid } });
+        const conversation = await db.collection("conversations").findOne({ _id: id });
+        assert.equal(conversation.unreadCounts[bid], actual);
+      }
+    });
+    await t.test("quiz saves resume with the same deadline and late answers cannot replace saved answers", async () => {
+      const quiz = { _id: new ObjectId(), quizName: "Timed", isActive: true, timeLimit: 1, allowRetakes: false, questions: [{ question: "Pick A", options: ["A", "B"], correctAnswer: "A" }] };
+      await db.collection("quizzes").insertOne(quiz);
+      as(b);
+      const quizId = String(quiz._id);
+      assert.equal((await call("quiz/submit.js", "POST", { quizId, answers: ["A"] })).status, 409);
+      const [one, two] = await Promise.all([1, 2].map(() => call("quiz/attempt.js", "POST", { quizId })));
+      assert.equal(one.status, 200); assert.equal(two.status, 200);
+      assert.equal(one.body.attemptId, two.body.attemptId);
+      assert.equal(+one.body.deadline, +two.body.deadline);
+      assert.equal(one.body.quiz.questions[0].correctAnswer, undefined);
+      const { attemptId } = one.body;
+      const save = await call("quiz/attempt.js", "PUT", { quizId, attemptId, version: 0, answers: ["B"] });
+      assert.equal(save.status, 200);
+      assert.equal((await call("quiz/attempt.js", "PUT", { quizId, attemptId, version: 0, answers: ["A"] })).status, 409);
+      const resumed = await call("quiz/attempt.js", "POST", { quizId });
+      assert.deepEqual(resumed.body.answers, ["B"]);
+      assert.equal(+resumed.body.deadline, +one.body.deadline);
+      await db.collection("quizAttempts").updateOne({ _id: `${quizId}:${bid}` }, { $set: { startedAt: new Date(Date.now() - 61000), deadline: new Date(Date.now() - 1000) } });
+      assert.equal((await call("quiz/attempt.js", "PUT", { quizId, attemptId, version: 1, answers: ["A"] })).status, 409);
+      const result = await call("quiz/submit.js", "POST", { quizId, attemptId, version: 1, answers: ["A"], timeSpent: 0 });
+      assert.equal(result.status, 200);
+      assert.equal(result.body.submission.totalScore, 0);
+      assert.equal(result.body.submission.timeSpent, 60);
+      assert.equal((await call("quiz/attempt.js", "POST", { quizId })).status, 409);
+    });
+    await t.test("event pagination reaches records after the first twenty", async () => {
+      await db.collection("events").insertMany(Array.from({ length: 25 }, (_, i) => ({ title: `Page event ${i}`, description: "Pagination", status: "approved", createdAt: new Date() })));
+      await db.collection("events").insertOne({ message: "Legacy approval response", status: "approved", createdAt: new Date() });
+      const first = await call("events.js", "GET", {}, { page: "1" });
+      const second = await call("events.js", "GET", {}, { page: "2" });
+      assert.equal(first.body.pagination.total, 25);
+      assert.equal(first.body.events.length, 20);
+      assert.ok(second.body.events.length > 0);
+      assert.equal(first.body.pagination.hasMore, true);
+      assert.ok(second.body.events.every(event => !first.body.events.some(other => String(other._id) === String(event._id))));
+    });
+    await t.test("reminders deliver once, respect opt-out and authenticate the cron endpoint", async () => {
+      const { deliverEventReminders } = load("lib/event-reminders.js");
+      const now = new Date();
+      const event = { _id: new ObjectId(), title: "Reminder event", status: "approved", date: new Date(+now + 86400000) };
+      await db.collection("events").insertOne(event);
+      await db.collection("rsvps").insertMany([
+        { eventId: String(event._id), userId: aid, status: "going", reminder: true },
+        { eventId: String(event._id), userId: bid, status: "going", reminder: false },
+      ]);
+      await Promise.all([1, 2].map(() => deliverEventReminders(db, { now })));
+      assert.equal(await db.collection("notifications").countDocuments({ type: "event_reminder", eventId: String(event._id), userId: aid }), 1);
+      assert.equal(await db.collection("notifications").countDocuments({ type: "event_reminder", userId: bid }), 0);
+      assert.equal((await call("cron/event-reminders.js", "GET")).status, 401);
+      const previous = process.env.CRON_SECRET;
+      try {
+        process.env.CRON_SECRET = "isolated-test-only";
+        assert.equal((await call("cron/event-reminders.js", "GET", {}, {}, { authorization: "Bearer isolated-test-only" })).status, 200);
+      } finally { if (previous === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = previous; }
     });
   } finally {
     // Only the randomly named database created by this test may be removed.

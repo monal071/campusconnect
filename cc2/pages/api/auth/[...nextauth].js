@@ -1,3 +1,4 @@
+import { refreshSessionToken } from "../../../lib/session-user";
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "../../../utils/mongodb";
@@ -55,7 +56,6 @@ export const authOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // Only refresh token once per day (was 5 min - caused excessive DB queries)
   },
   pages: {
     signIn: "/login",
@@ -125,36 +125,14 @@ export const authOptions = {
       return `${baseUrl}/dashboard`;
     },
 
-    async jwt({ token, user, trigger }) {
-      // On first sign-in or when session update is triggered
-      if (user || trigger === "update" || !token.role) {
-        try {
-          const client = await Promise.race([
-            clientPromise,
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("MongoDB timeout")), 3000),
-            ),
-          ]);
-          const db = client.db();
-          const dbUser = await db
-            .collection("users")
-            .findOne({ email: (user?.email || token.email)?.toLowerCase() });
-
-          if (dbUser) {
-            token.role = dbUser.role || null;
-            token.userId = dbUser._id.toString();
-            token.department = dbUser.department || null;
-            token.institute = dbUser.institute || null;
-            token.isProfileComplete = dbUser.isProfileComplete || false;
-            token.createdAt = dbUser.createdAt?.toISOString?.() || null;
-            token.dbName = dbUser.name;
-            token.dbImage = dbUser.image;
-          }
-        } catch (error) {
-          console.error("JWT callback error:", error);
-        }
+    async jwt({ token, user }) {
+      try {
+        const client = await clientPromise;
+        return await refreshSessionToken(client.db(), token, user);
+      } catch (error) {
+        console.error("Session account check failed:", error);
+        return null;
       }
-      return token;
     },
 
     async session({ session, token }) {

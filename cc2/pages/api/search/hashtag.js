@@ -1,3 +1,4 @@
+import { resourceVisibility } from "../../../lib/resource-access";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
       if (type === "all" || type === "resources") {
         const resources = await db
           .collection("resources")
-          .find({
+          .find({ $and: [resourceVisibility(session?.user)],
             $or: [
               { title: { $regex: `#${safeTag}`, $options: "i" } },
               { description: { $regex: `#${safeTag}`, $options: "i" } },

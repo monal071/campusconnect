@@ -105,7 +105,7 @@ export default function JoinQuizModal({ isOpen, onClose, onQuizFound }) {
 
                 <div className="mb-6">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                    Enter the 6-character quiz code provided by your instructor.
+                    Enter your instructor&apos;s quiz code. Joining starts the timer; joining again resumes your saved attempt.
                   </p>
 
                   <form onSubmit={handleSubmit}>

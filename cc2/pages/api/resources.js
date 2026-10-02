@@ -1,3 +1,4 @@
+import { resourceVisibility } from "../../lib/resource-access";
 import clientPromise from "../../utils/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
@@ -49,7 +50,9 @@ export default async function handler(req, res) {
       const skipNum = (pageNum - 1) * limitNum;
 
       // Build filter query
-      let filterQuery = {};
+      res.setHeader("Cache-Control", "private, no-store");
+      const session = await getServerSession(req, res, authOptions);
+      let filterQuery = { $and: [resourceVisibility(session?.user)] };
 
       // Filter by type
       if (type && type !== "all") {
@@ -68,10 +71,12 @@ export default async function handler(req, res) {
 
       // Search functionality
       if (search) {
+        if (typeof search !== "string" || search.length > 200) return res.status(400).json({ error: "Invalid search" });
+        const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         filterQuery.$or = [
-          { title: { $regex: search, $options: "i" } },
-          { description: { $regex: search, $options: "i" } },
-          { tags: { $in: [new RegExp(search, "i")] } },
+          { title: { $regex: escapedSearch, $options: "i" } },
+          { description: { $regex: escapedSearch, $options: "i" } },
+          { tags: { $in: [new RegExp(escapedSearch, "i")] } },
         ];
       }
 
@@ -94,6 +99,7 @@ export default async function handler(req, res) {
         sortQuery = { updatedAt: -1 };
       }
 
+      sortQuery._id = -1;
       const [totalCount, resources] = await Promise.all([
         db.collection("resources").countDocuments(filterQuery),
         db.collection("resources").find(filterQuery).sort(sortQuery).skip(skipNum).limit(limitNum).toArray(),

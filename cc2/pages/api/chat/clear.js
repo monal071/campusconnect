@@ -1,3 +1,4 @@
+import { changeChat } from "../../../lib/chat";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { connectToDatabase } from '../../../utils/mongodb';
@@ -20,37 +21,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'Conversation ID is required' });
     }
 
-    const { db } = await connectToDatabase();
+    const { client, db } = await connectToDatabase();
     const userId = session.user.id;
-    const convId = new ObjectId(conversationId);
 
-    // Verify the user is part of this conversation
-    const conversation = await db.collection('conversations').findOne({
-      _id: convId,
-      participants: userId
-    });
-
-    if (!conversation) {
-      return res.status(404).json({ message: 'Conversation not found or access denied' });
-    }
-
-    // Delete all messages in this conversation
-    const deleteResult = await db.collection('messages').deleteMany({
-      conversationId: convId
-    });
-
-    // Update conversation's lastMessage to null and lastMessageAt to current time
-    await db.collection('conversations').updateOne(
-      { _id: convId },
-      {
-        $set: {
-          unreadCounts: Object.fromEntries(conversation.participants.map(id => [String(id), 0])),
-          lastMessage: null,
-          lastMessageAt: new Date(),
-          updatedAt: new Date()
-        }
-      }
-    );
+    const deleteResult = await changeChat(client, db, conversationId, userId, "clear");
 
     res.status(200).json({ 
       message: 'Chat cleared successfully',
@@ -59,6 +33,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Clear chat error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Internal server error' });
   }
 }

@@ -114,7 +114,7 @@ export default function QuizPage() {
         throw new Error(result.message || "Failed to submit quiz");
       }
 
-      toast.success("Quiz submitted successfully!");
+      toast.success(result.message || "Quiz submitted successfully!");
       setShowTakeModal(false);
       setSelectedQuiz(null);
       fetchStudentHistory();

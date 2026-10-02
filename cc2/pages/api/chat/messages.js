@@ -1,3 +1,4 @@
+import { changeChat } from "../../../lib/chat";
 import { getPaginationParams } from "../../../lib/pagination";
 import { getServerSession } from 'next-auth/next';
 import clientPromise from '../../../utils/mongodb';
@@ -67,51 +68,7 @@ export default async function handler(req, res) {
       }
 
       try {
-        // Verify user is part of the conversation
-        const conversation = await db.collection('conversations').findOne({
-          _id: new ObjectId(conversationId),
-          participants: { $in: [currentUserId] }
-        });
-
-        if (!conversation) {
-          return res.status(404).json({ message: 'Conversation not found' });
-        }
-
-        // Create new message
-        const newMessage = {
-          conversationId: new ObjectId(conversationId),
-          senderId: currentUserId,
-          content: content?.trim() || "",
-          imageUrl: imageUrl || null,
-          createdAt: new Date(),
-          readBy: [currentUserId], // Sender has read the message
-          messageType: imageUrl ? 'image' : 'text'
-        };
-
-        const result = await db.collection('messages').insertOne(newMessage);
-        newMessage._id = result.insertedId;
-
-        // Update conversation with last message info
-        const otherParticipantId = conversation.participants.find(
-          id => id !== currentUserId
-        );
-
-        await db.collection('conversations').updateOne(
-          { _id: new ObjectId(conversationId) },
-          {
-            $set: {
-              lastMessageAt: newMessage.createdAt,
-              lastMessage: {
-                content: content?.trim() || "Sent an image",
-                senderId: currentUserId,
-                createdAt: newMessage.createdAt
-              }
-            },
-            $inc: {
-              [`unreadCounts.${otherParticipantId}`]: 1
-            }
-          }
-        );
+        const newMessage = await changeChat(client, db, conversationId, currentUserId, "send", { content, imageUrl });
 
         // Get sender info for the response
         const sender = await db.collection('users').findOne(
@@ -127,7 +84,7 @@ export default async function handler(req, res) {
         });
       } catch (error) {
         console.error('Error sending message:', error);
-        return res.status(500).json({ message: 'Failed to send message' });
+        return res.status(error.status || 500).json({ message: error.status ? error.message : 'Failed to send message' });
       }
     }
 
@@ -140,41 +97,12 @@ export default async function handler(req, res) {
       }
 
       try {
-        // Verify user is part of the conversation
-        const conversation = await db.collection('conversations').findOne({
-          _id: new ObjectId(conversationId),
-          participants: { $in: [currentUserId] }
-        });
-
-        if (!conversation) {
-          return res.status(404).json({ message: 'Conversation not found' });
-        }
-
-        // Mark all messages in conversation as read by current user
-        await db.collection('messages').updateMany(
-          { 
-            conversationId: new ObjectId(conversationId),
-            readBy: { $ne: currentUserId }
-          },
-          { 
-            $addToSet: { readBy: currentUserId }
-          }
-        );
-
-        // Reset unread count for current user
-        await db.collection('conversations').updateOne(
-          { _id: new ObjectId(conversationId) },
-          {
-            $set: {
-              [`unreadCounts.${currentUserId}`]: 0
-            }
-          }
-        );
+        await changeChat(client, db, conversationId, currentUserId, "read");
 
         return res.status(200).json({ message: 'Messages marked as read' });
       } catch (error) {
         console.error('Error marking messages as read:', error);
-        return res.status(500).json({ message: 'Failed to mark messages as read' });
+        return res.status(error.status || 500).json({ message: error.status ? error.message : 'Failed to mark messages as read' });
       }
     }
 

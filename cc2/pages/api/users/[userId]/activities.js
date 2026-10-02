@@ -1,3 +1,4 @@
+import { resourceVisibility } from "../../../../lib/resource-access";
 import { ObjectId } from "mongodb";
 import { getPaginationParams } from "../../../../lib/pagination";
 import { getServerSession } from "next-auth/next";
@@ -61,7 +62,7 @@ export default async function handler(req, res) {
       // Resources
       const resources = await db
         .collection("resources")
-        .find({
+        .find({ $and: [resourceVisibility(session?.user)],
           $or: [
             { userEmail: { $in: identities } },
             { "author.email": { $in: identities } },

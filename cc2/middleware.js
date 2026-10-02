@@ -6,7 +6,7 @@ const publicReads = new Set(["/api/events", "/api/resources", "/api/jobs", "/api
 
 export async function middleware(req) {
   const path = req.nextUrl.pathname;
-  if (publicPages.has(path) || path.startsWith("/api/auth/") || path === "/api/uploadthing" ||
+  if (publicPages.has(path) || path.startsWith("/api/auth/") || path === "/api/uploadthing" || path === "/api/cron/event-reminders" ||
       (req.method === "GET" && publicReads.has(path))) {
     return NextResponse.next();
   }

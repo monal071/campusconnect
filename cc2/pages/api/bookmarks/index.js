@@ -1,3 +1,4 @@
+import { resourceVisibility } from "../../../lib/resource-access";
 import clientPromise, { getQuizDb } from "../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
               case "resource":
                 item = await db
                   .collection("resources")
-                  .findOne({ _id: new ObjectId(bookmark.itemId) });
+                  .findOne({ $and: [resourceVisibility(session?.user)], _id: new ObjectId(bookmark.itemId) });
                 break;
               case "event":
                 item = await db

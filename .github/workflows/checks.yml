@@ -1,0 +1,46 @@
+name: Application checks
+on:
+  push:
+    branches: [sgp6]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cc2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cc2/package-lock.json
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=moderate
+      - run: npm run lint
+      - run: npx next typegen
+      - run: npm run typecheck
+      - name: Start isolated MongoDB replica set
+        run: |
+          docker run -d --name regression-mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            docker exec regression-mongo mongosh --quiet --eval 'db.adminCommand({ping:1})' && break
+            sleep 2
+          done
+          docker exec regression-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
+          for i in $(seq 1 30); do
+            docker exec regression-mongo mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) quit(1)' && break
+            sleep 2
+          done
+      - run: npm test
+        env:
+          RUN_DB_TESTS: '1'
+          MONGODB_TEST_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true
+      - run: npm run build
+        env:
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: ci-only-not-a-production-secret

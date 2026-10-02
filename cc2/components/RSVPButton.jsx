@@ -108,7 +108,7 @@ export default function RSVPButton({ eventId, event, onUpdate }) {
 
       if (res.ok) {
         setReminder(!reminder);
-        toast.success(!reminder ? "Reminder set!" : "Reminder removed");
+        toast.success(!reminder ? "In-app reminder enabled for the two days before this event" : "Reminder removed");
       }
     } catch (error) {
       toast.error("Failed to toggle reminder");
@@ -268,7 +268,7 @@ export default function RSVPButton({ eventId, event, onUpdate }) {
                     <div className="flex-1 text-left">
                       <div className="font-medium">Event Reminder</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {reminder ? "Enabled" : "Set reminder"}
+                        {reminder ? "Enabled" : "Set in-app reminder"}
                       </div>
                     </div>
                     {reminder && (

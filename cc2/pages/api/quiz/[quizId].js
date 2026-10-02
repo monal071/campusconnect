@@ -1,3 +1,5 @@
+import { startQuizAttempt } from "../../../lib/quiz-attempts";
+import { sendApiError } from "../../../lib/api-errors";
 import { studentQuestions } from "../../../lib/quiz-questions";
 import { getQuizDb } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth/next";
@@ -63,11 +65,13 @@ export default async function handler(req, res) {
       }
 
       // Return appropriate data based on role
+      const attempt = session.user.role === "student" ? await startQuizAttempt(client, db, quizId, session.user.id) : null;
       const responseData = {
         _id: quiz._id,
         quizName: quiz.quizName,
         description: quiz.description,
-        questions: session.user.role === "student" ? studentQuestions(quiz, session.user.id) : quiz.questions,
+        questions: attempt ? attempt.quiz.questions : quiz.questions,
+        attempt,
         totalQuestions: quiz.totalQuestions,
         totalPoints: quiz.totalPoints,
         timeLimit: quiz.timeLimit,
@@ -216,6 +220,6 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error("Quiz management error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendApiError(res, error);
   }
 }

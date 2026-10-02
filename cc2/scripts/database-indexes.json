@@ -40,6 +40,13 @@
           "userId": 1,
           "status": 1
         }
+      },
+      {
+        "key": {
+          "reminder": 1,
+          "status": 1,
+          "userId": 1
+        }
       }
     ],
     "notifications": [
@@ -275,6 +282,20 @@
         "key": {
           "userId": 1,
           "submittedAt": -1
+        }
+      }
+    ],
+    "quizAttempts": [
+      {
+        "key": {
+          "quizId": 1,
+          "userId": 1
+        }
+      },
+      {
+        "key": {
+          "status": 1,
+          "deadline": 1
         }
       }
     ]

@@ -1,9 +1,10 @@
+import { withResourceAccess } from "../../../../../lib/resource-access";
 import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../../../utils/mongodb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]";
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const { resourceId } = req.query;
 
   if (typeof resourceId !== "string" || !ObjectId.isValid(resourceId)) {
@@ -123,3 +124,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export default withResourceAccess(handler);

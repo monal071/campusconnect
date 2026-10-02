@@ -1,3 +1,4 @@
+import { resourceVisibility } from "../../../lib/resource-access";
 import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../../utils/mongodb";
 import { getServerSession } from "next-auth";
@@ -42,7 +43,7 @@ export default async function handler(req, res) {
             collection.resources?.map((r) => r.resourceId) || [];
           const resources = await db
             .collection("resources")
-            .find({ _id: { $in: resourceIds.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id)) } })
+            .find({ $and: [resourceVisibility(session?.user)], _id: { $in: resourceIds.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id)) } })
             .project({ title: 1, type: 1 })
             .toArray();
 
@@ -53,7 +54,8 @@ export default async function handler(req, res) {
 
           return {
             ...collection,
-            resourceCount: resourceIds.length,
+            resources: (collection.resources || []).filter(item => resources.some(resource => String(resource._id) === String(item.resourceId))),
+            resourceCount: resources.length,
             resourceDetails: resources,
             creator,
           };

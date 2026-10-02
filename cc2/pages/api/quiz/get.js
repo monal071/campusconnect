@@ -1,3 +1,5 @@
+import { startQuizAttempt } from "../../../lib/quiz-attempts";
+import { sendApiError } from "../../../lib/api-errors";
 import { studentQuestions } from "../../../lib/quiz-questions";
 import { getQuizDb } from "../../../utils/mongodb";
 import clientPromise from "../../../utils/mongodb";
@@ -6,6 +8,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
   try {
     if (req.method !== "GET")
       return res.status(405).json({ message: "Method not allowed" });
@@ -43,11 +46,13 @@ export default async function handler(req, res) {
       });
     }
 
+    const attempt = session.user.role === "student" ? await startQuizAttempt(client, db, String(quiz._id), session.user.id) : null;
     const responseQuiz = {
       _id: quiz._id,
       quizName: quiz.quizName,
       description: quiz.description,
-      questions: studentQuestions(quiz, session.user.id),
+      questions: attempt ? attempt.quiz.questions : studentQuestions(quiz, session.user.id),
+      attempt,
       totalQuestions: quiz.totalQuestions,
       totalPoints: quiz.totalPoints,
       timeLimit: quiz.timeLimit,
@@ -64,6 +69,6 @@ export default async function handler(req, res) {
     res.status(200).json({ quiz: responseQuiz });
   } catch (error) {
     console.error("Quiz get API error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendApiError(res, error);
   }
 }

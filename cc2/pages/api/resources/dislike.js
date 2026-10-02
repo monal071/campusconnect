@@ -1,8 +1,9 @@
+import { withResourceAccess } from "../../../lib/resource-access";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import clientPromise from "../../../utils/mongodb";
 import { ObjectId } from "mongodb";
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ message: "Method not allowed" });
   try {
     const session = await getServerSession(req, res, authOptions);
@@ -19,3 +20,5 @@ export default async function handler(req, res) {
     return res.status(200).json({ liked: resource.likedBy.includes(id), disliked: resource.dislikedBy.includes(id), likes: resource.likes, dislikes: resource.dislikes });
   } catch { return res.status(500).json({ message: "Failed to update resource reaction" }); }
 }
+
+export default withResourceAccess(handler);

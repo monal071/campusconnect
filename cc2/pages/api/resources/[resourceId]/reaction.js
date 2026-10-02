@@ -1,3 +1,4 @@
+import { withResourceAccess } from "../../../../lib/resource-access";
 import clientPromise from "../../../../utils/mongodb";
 import { ObjectId } from "mongodb";
 import { getServerSession } from "next-auth/next";
@@ -9,7 +10,7 @@ const reactionSchema = z.object({
   emoji: z.string().min(1, "Emoji is required").max(10, "Invalid emoji"),
 });
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -76,3 +77,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Failed to update reaction" });
   }
 }
+
+export default withResourceAccess(handler);

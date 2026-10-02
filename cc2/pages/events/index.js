@@ -44,16 +44,21 @@ export default function Events() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const response = await fetch("/api/events");
+        const response = await fetch(`/api/events?page=${page}&limit=20`);
         if (!response.ok) {
           throw new Error("Failed to fetch events");
         }
         const data = await response.json();
+        setPagination(data.pagination || { totalPages: 1, total: data.events?.length || 0 });
         // API returns { events: [...] }
         setEvents(
           Array.isArray(data)
@@ -71,7 +76,7 @@ export default function Events() {
       }
     };
     fetchEvents();
-  }, []);
+  }, [page, retry]);
 
   const handleCreateEvent = async (eventData) => {
     try {
@@ -242,11 +247,7 @@ export default function Events() {
   }
 
   if (error) {
-    return <ErrorMessage message={error} onRetry={() => {}} />;
-  }
-
-  if (!session) {
-    return null;
+    return <ErrorMessage message={error} onRetry={() => setRetry(value => value + 1)} />;
   }
 
   return (
@@ -260,7 +261,7 @@ export default function Events() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                Upcoming Events
+                Campus Events
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
                 Discover and attend amazing events happening on campus
@@ -286,7 +287,7 @@ export default function Events() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Events</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{events.length}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pagination.total}</p>
               </div>
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <CalendarTodayIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -297,7 +298,7 @@ export default function Events() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Upcoming</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Upcoming on this page</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {events.filter(e => new Date(e.date) > new Date()).length}
                 </p>
@@ -311,7 +312,7 @@ export default function Events() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Event Types</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Event types on this page</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {new Set(events.map(e => e.type || 'in-person')).size}
                 </p>
@@ -367,6 +368,13 @@ export default function Events() {
               </motion.button>
             )}
           </div>
+        )}
+        {pagination.totalPages > 1 && (
+          <nav aria-label="Event pages" className="flex justify-center items-center gap-4 my-8">
+            <button className="px-4 py-2 rounded border disabled:opacity-40" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>Previous</button>
+            <span>Page {page} of {pagination.totalPages}</span>
+            <button className="px-4 py-2 rounded border disabled:opacity-40" disabled={page >= pagination.totalPages} onClick={() => setPage(value => value + 1)}>Next</button>
+          </nav>
         )}
       </main>
       <EventFormModal

@@ -46,8 +46,8 @@ export default async function handler(req, res) {
 
       const queryResult = await paginatedQuery(
         db.collection(COLLECTION),
-        { status: "approved" },
-        { page, limit, sort: { createdAt: -1 } }
+        { status: "approved", title: { $type: "string", $ne: "" }, description: { $exists: true } },
+        { page, limit, sort: { createdAt: -1, _id: -1 } }
       );
 
       const validEvents = (queryResult.data || []).filter(

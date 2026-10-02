@@ -1,3 +1,4 @@
+import { deliverEventReminders } from "../../lib/event-reminders";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import clientPromise from '../../utils/mongodb';
@@ -17,6 +18,7 @@ export default async function handler(req, res) {
     const db = client.db();
 
     if (req.method === 'GET') {
+      await deliverEventReminders(db, { userId: session.user.id });
       const state = await connectionState(db, session.user.id);
       // Only actual pending requests are actionable, including old unresolved notifications.
       const pendingIds = state.incoming.flatMap(id => [id, new ObjectId(id)]);
