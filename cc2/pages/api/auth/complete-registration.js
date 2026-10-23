@@ -53,8 +53,13 @@ export default async function handler(req, res) {
 
     const existing = await db.collection("users").findOne({ email });
     if (!existing) return res.status(404).json({ message: "Sign in again before registering" });
-    const allowedRole = existing.role || existing.detectedRole || (/^\d{2}[a-z]{2,4}\d{2,4}$/.test(email.split("@")[0]) ? "student" : "faculty");
-    if (role !== allowedRole) return res.status(403).json({ message: "Your account role cannot be changed during registration" });
+
+    // Once a role has been assigned, it should not change during the registration
+    // flow. New accounts may still choose a valid role before the profile is
+    // finalized, even if the email-based heuristic is only a suggestion.
+    if (existing.role && existing.role !== role) {
+      return res.status(403).json({ message: "Your account role cannot be changed during registration" });
+    }
 
     // Build update data
     const updateData = {

@@ -12,22 +12,23 @@ function isAllowedEmail(email) {
   return !!domain && ALLOWED_DOMAINS.some((d) => domain === d || domain.endsWith("." + d));
 }
 
-// Detect role from email pattern
-// Students: enrollment numbers like 23dce087@charusat.edu.in
-// Faculty/staff: name-based emails like john.doe@charusat.edu.in
+// Detect role from email pattern.
+// CHARUSAT student IDs usually begin with a 2-digit admission year, then a
+// department code, then a numeric roll/enrollment segment. Some users also have
+// a name suffix appended to the generated email alias, so accept variants like
+// 23dce085 or 23dce085jalkumar.
 function detectRoleFromEmail(email) {
   const localPart = email.toLowerCase().split("@")[0];
-  // Student pattern: starts with 2 digits (year), then department code, then number
-  if (/^\d{2}[a-z]{2,4}\d{2,4}$/.test(localPart)) {
+  if (/^\d{2}[a-z]{2,6}\d{2,5}(?:[a-z]+)?$/.test(localPart)) {
     return "student";
   }
   return "faculty";
 }
 
-// Extract department from student email (e.g., 23dce087 -> DCE)
+// Extract department from student email (e.g., 23dce085 -> DCE)
 function extractDeptFromEmail(email) {
   const localPart = email.toLowerCase().split("@")[0];
-  const match = localPart.match(/^\d{2}([a-z]{2,4})\d{2,4}$/);
+  const match = localPart.match(/^\d{2}([a-z]{2,6})\d{2,5}(?:[a-z]+)?$/);
   if (match) {
     return match[1].toUpperCase();
   }
