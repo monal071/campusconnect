@@ -18,6 +18,7 @@ export default function App({
   pageProps: { session, ...pageProps },
 }) {
   const [mounted, setMounted] = useState(false);
+  const [enhancementsReady, setEnhancementsReady] = useState(false);
   const router = useRouter();
   const isPublicPage = ["/", "/login", "/signup", "/auth/signin"].includes(router.pathname);
 
@@ -37,6 +38,22 @@ export default function App({
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (isPublicPage) {
+      setEnhancementsReady(false);
+      return;
+    }
+
+    const enableEnhancements = () => setEnhancementsReady(true);
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(enableEnhancements, { timeout: 2000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(enableEnhancements, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [isPublicPage]);
+
   return (
     <ErrorBoundary>
       <SessionProvider session={session}>
@@ -52,13 +69,13 @@ export default function App({
               <ImprovedToaster />
 
               {/* Keyboard Shortcuts */}
-              {mounted && !isPublicPage && <KeyboardShortcuts />}
+              {enhancementsReady && !isPublicPage && <KeyboardShortcuts />}
 
               {/* PWA Install Prompt */}
               {mounted && !isPublicPage && <PWAInstallPrompt />}
 
               {/* Onboarding Tour (shows for new users) */}
-              {mounted && !isPublicPage && <OnboardingTour />}
+              {enhancementsReady && !isPublicPage && <OnboardingTour />}
             </Layout>
           </ThemeProvider>
         </RecoilRoot>

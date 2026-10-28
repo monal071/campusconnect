@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 
@@ -6,49 +6,48 @@ export default function ProgressBar() {
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const completionTimer = useRef(null);
 
   useEffect(() => {
-    let timer;
-
     const handleRouteChangeStart = () => {
+      clearTimeout(completionTimer.current);
       setIsLoading(true);
       setProgress(10);
     };
 
-    const handleRouteChangeComplete = () => {
+    const handleRouteChangeEnd = () => {
       setProgress(100);
-      timer = setTimeout(() => {
+      clearTimeout(completionTimer.current);
+      completionTimer.current = setTimeout(() => {
         setIsLoading(false);
         setProgress(0);
-      }, 300);
-    };
-
-    const handleRouteChangeError = () => {
-      setProgress(100);
-      timer = setTimeout(() => {
-        setIsLoading(false);
-        setProgress(0);
+        completionTimer.current = null;
       }, 300);
     };
 
     router.events.on("routeChangeStart", handleRouteChangeStart);
-    router.events.on("routeChangeComplete", handleRouteChangeComplete);
-    router.events.on("routeChangeError", handleRouteChangeError);
-
-    // Increment progress gradually
-    if (isLoading && progress < 90) {
-      timer = setTimeout(() => {
-        setProgress((prev) => Math.min(prev + Math.random() * 10, 90));
-      }, 200);
-    }
+    router.events.on("routeChangeComplete", handleRouteChangeEnd);
+    router.events.on("routeChangeError", handleRouteChangeEnd);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(completionTimer.current);
       router.events.off("routeChangeStart", handleRouteChangeStart);
-      router.events.off("routeChangeComplete", handleRouteChangeComplete);
-      router.events.off("routeChangeError", handleRouteChangeError);
+      router.events.off("routeChangeComplete", handleRouteChangeEnd);
+      router.events.off("routeChangeError", handleRouteChangeEnd);
     };
-  }, [router, isLoading, progress]);
+  }, [router.events]);
+
+  useEffect(() => {
+    if (!isLoading) return undefined;
+
+    const interval = setInterval(() => {
+      setProgress((currentProgress) =>
+        Math.min(currentProgress + Math.random() * 10, 90)
+      );
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   if (!isLoading && progress === 0) return null;
 
@@ -110,7 +109,7 @@ export function CircularProgress({
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="transform -rotate-90">
         {/* Background circle */}
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -120,7 +119,7 @@ export function CircularProgress({
           className="text-gray-200 dark:text-gray-700"
         />
         {/* Progress circle */}
-        <motion.circle
+        <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}

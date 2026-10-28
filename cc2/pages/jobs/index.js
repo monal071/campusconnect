@@ -116,12 +116,12 @@ export default function Jobs() {
             placeholder="Search jobs..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="input flex-1"
+            className="input min-w-0 flex-1 text-slate-900 dark:text-white"
           />
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="input"
+            className="input sm:w-64 sm:flex-none"
           >
             <option value="all">All Types</option>
             <option value="Full-time">Full-time</option>

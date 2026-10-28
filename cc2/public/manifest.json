@@ -10,7 +10,7 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/campusconnect-logo.svg",
+      "src": "/campusconnect-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

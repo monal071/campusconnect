@@ -146,7 +146,10 @@ export default function AddResourceModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleClose}>
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto p-4 sm:py-8"
+          onDoubleClick={handleClose}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -155,33 +158,33 @@ export default function AddResourceModal({
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
           />
 
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl border border-gray-200 dark:border-gray-700"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {isEditing ? "Edit Resource" : "Add New Resource"}
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Share your knowledge with the community! All students,
-                      faculty, and members can contribute resources.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleClose}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-4"
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
+          <div className="relative flex w-full justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-2xl transform overflow-y-auto rounded-xl border border-gray-200 bg-white p-6 text-left align-middle shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:max-h-[calc(100vh-4rem)]"
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {isEditing ? "Edit Resource" : "Add New Resource"}
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Share your knowledge with the community! All students,
+                    faculty, and members can contribute resources.
+                  </p>
                 </div>
+                <button
+                  onClick={handleClose}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-4"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
 
                 {error && (
                   <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -460,7 +463,6 @@ export default function AddResourceModal({
                   </div>
                 </form>
               </motion.div>
-            </div>
           </div>
         </div>
       )}

@@ -105,16 +105,22 @@ const Header = () => {
                 className="flex items-center"
               >
                 <Image
-                  src="/campusconnect-logo.svg"
+                  src="/campusconnect-wordmark.svg"
                   alt="CampusConnect Logo"
-                  width={40}
-                  height={40}
-                  className="rounded-lg"
+                  width={196}
+                  height={36}
+                  className="rounded bg-[#f8faf6] transition-transform duration-300 hover:scale-105 dark:hidden"
                   priority
                 />
-                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                  CampusConnect
-                </span>
+                <Image
+                  src="/campusconnect-wordmark-dark.svg"
+                  alt=""
+                  aria-hidden="true"
+                  width={196}
+                  height={36}
+                  className="hidden transition-transform duration-300 hover:scale-105 dark:block"
+                  priority
+                />
               </motion.div>
             </Link>
           </div>

@@ -91,12 +91,16 @@ export default function AddJobModal({ isOpen, onClose, onAdd }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black bg-opacity-50 p-4 sm:py-8"
+      onDoubleClick={handleClose}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl m-4"
+        onDoubleClick={(event) => event.stopPropagation()}
+        className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-lg bg-gray-800 p-6 sm:max-h-[calc(100vh-4rem)]"
       >
         <h2 className="text-2xl font-bold text-white mb-6">Add New Job</h2>
         <form onSubmit={handleSubmit} className="space-y-6">

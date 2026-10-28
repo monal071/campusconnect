@@ -14,7 +14,7 @@ import AddIcon from "@mui/icons-material/Add";
 import FolderIcon from "@mui/icons-material/Folder";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function AdminPage() {
+export default function AdminPage() { 
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession({
     required: true,
@@ -1376,4 +1376,5 @@ export default function AdminPage() {
       />
     </div>
   );
+  
 }

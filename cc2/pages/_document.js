@@ -4,6 +4,8 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <link rel="icon" type="image/svg+xml" href="/campusconnect-icon.svg" />
+
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
 
@@ -11,7 +13,7 @@ export default function Document() {
         <meta name="theme-color" content="#173b32" />
 
         {/* Apple Touch Icon */}
-        <link rel="apple-touch-icon" href="/campusconnect-logo.svg" />
+        <link rel="apple-touch-icon" href="/campusconnect-icon.svg" />
 
         {/* PWA Meta Tags */}
         <meta name="application-name" content="CampusConnect" />

@@ -81,7 +81,7 @@ export default function Login() {
           <div className="max-w-md">
             <div className="flex items-center mb-8">
               <Image
-                src="/campusconnect-logo.svg"
+                src="/campusconnect-icon.svg"
                 alt="CampusConnect Logo"
                 width={60}
                 height={60}

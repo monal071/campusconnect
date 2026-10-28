@@ -199,7 +199,7 @@ export default function Dashboard() {
               </div>
               <Link
                 href="/profile"
-                className="bg-white bg-opacity-25 hover:bg-opacity-40 transition-colors duration-200 py-2 px-4 rounded-lg text-sm font-medium"
+                className="bg-white bg-opacity-25 text-gray-900 hover:bg-opacity-40 transition-colors duration-200 py-2 px-4 rounded-lg text-sm font-medium"
               >
                 <div className="flex items-center">
                   <PencilIcon className="w-4 h-4 mr-2" />

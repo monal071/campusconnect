@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -51,6 +51,7 @@ export default function Resources() {
   const [totalResources, setTotalResources] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const previousSearchQuery = useRef(searchQuery);
 
   const resourceTypes = [
     { value: "all", label: "All Types" },
@@ -137,6 +138,9 @@ export default function Resources() {
 
   // Debounced search effect
   useEffect(() => {
+    if (searchQuery === previousSearchQuery.current) return;
+    previousSearchQuery.current = searchQuery;
+
     const handler = setTimeout(() => {
       fetchResources(1, true);
     }, 400);
@@ -376,16 +380,10 @@ export default function Resources() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Resources
-              </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Discover and share academic resources, documents, books, and
-                learning materials. Everyone can contribute!
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Resources
+            </h1>
             {session ? (
               <button
                 onClick={() => setShowAddModal(true)}
@@ -395,19 +393,23 @@ export default function Resources() {
                 Add Resource
               </button>
             ) : (
-              <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Want to contribute?
-                </p>
-                <button
-                  onClick={() => (window.location.href = "/login")}
-                  className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-                >
-                  Sign In to Add Resources
-                </button>
-              </div>
+              <button
+                onClick={() => (window.location.href = "/login")}
+                className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Sign In to Add Resources
+              </button>
             )}
           </div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Discover and share academic resources, documents, books, and
+            learning materials. Everyone can contribute!
+          </p>
+          {!session && (
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Want to contribute?
+            </p>
+          )}
         </div>
 
         {/* Stats Bar */}

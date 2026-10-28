@@ -49,28 +49,15 @@ export default function AddEventModal({ open, onClose, onSave }) {
         throw new Error('Event date cannot be in the past');
       }
 
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          date: eventDateTime.toISOString(),
-          location: formData.location,
-          type: formData.type,
-          notes: formData.notes
-        }),
+      await onSave({
+        title: formData.title,
+        description: formData.description,
+        date: eventDateTime.toISOString(),
+        location: formData.location,
+        type: formData.type,
+        notes: formData.notes,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create event');
-      }
-
-      const newEvent = await response.json();
-      onSave(newEvent);
       onClose();
       
       // Reset form
@@ -138,6 +125,7 @@ export default function AddEventModal({ open, onClose, onSave }) {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Enter event description"
                   />

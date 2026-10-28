@@ -45,7 +45,7 @@ self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data?.json() || {}; } catch { data = { body: event.data?.text() }; }
   event.waitUntil(self.registration.showNotification(data.title || "CampusConnect", {
-    body: data.body || "You have a new notification", icon: "/campusconnect-logo.svg", data: data.url || "/dashboard",
+    body: data.body || "You have a new notification", icon: "/campusconnect-icon.svg", data: data.url || "/dashboard",
   }));
 });
 self.addEventListener("notificationclick", (event) => {

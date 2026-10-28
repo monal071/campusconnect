@@ -1,218 +1,206 @@
-import toast from 'react-hot-toast';
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { format } from 'date-fns';
+import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
+import { CalendarIcon, MapPinIcon, UserGroupIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { format } from "date-fns";
 
-export default function EventCard({ event, isAuthenticated, userId }) {
-  // All hooks must be called unconditionally before any early return
+export default function EventCard({ event, isAuthenticated, userId, onJoined }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [joinedCount, setJoinedCount] = useState(
-    event && Array.isArray(event.joined) ? event.joined.length : 0
+    Array.isArray(event?.joined) ? event.joined.length : 0,
   );
   const [hasJoined, setHasJoined] = useState(
-    event && Array.isArray(event.joined) && userId ? event.joined.includes(userId) : false
+    Boolean(userId && event?.joined?.some((id) => String(id) === String(userId))),
   );
   const [joining, setJoining] = useState(false);
+
   useEffect(() => {
     setJoinedCount(Array.isArray(event?.joined) ? event.joined.length : 0);
-    setHasJoined(Boolean(userId && event?.joined?.includes(userId)));
+    setHasJoined(
+      Boolean(
+        userId &&
+        event?.joined?.some((id) => String(id) === String(userId)),
+      ),
+    );
   }, [event?.joined, userId]);
 
-  // Safety check for event prop — placed AFTER hooks (React rules of hooks)
-  if (!event || typeof event !== 'object') {
-    return (
-      <div className="card p-4 mb-4 bg-gray-100 dark:bg-gray-800">
-        <p className="text-gray-500 dark:text-gray-400">Invalid event data</p>
-      </div>
-    );
-  }
+  if (!event || typeof event !== "object") return null;
 
-  const handleJoin = async (e) => {
-    e.stopPropagation();
+  const parsedDate = event.date ? new Date(event.date) : null;
+  const validDate = parsedDate && Number.isFinite(parsedDate.getTime());
+  const isUpcoming = validDate && parsedDate.getTime() >= Date.now();
+  const isPending = event.status === "pending";
+  const isRejected = event.status === "rejected";
+  const category = String(event.category || event.type || "Campus event");
+  const registrationDeadline = event.registrationDeadline
+    ? new Date(event.registrationDeadline)
+    : null;
+  const validDeadline =
+    registrationDeadline && Number.isFinite(registrationDeadline.getTime());
+  const dateLabel = validDate
+    ? { month: format(parsedDate, "MMM"), day: format(parsedDate, "d") }
+    : { month: "TBD", day: "--" };
+
+  const handleJoin = async () => {
     if (!userId || !event._id || joining) return;
     setJoining(true);
     try {
-      const res = await fetch('/api/events', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/events", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId: event._id, userId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not join this event");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not join this event");
       if (data.success) {
         setHasJoined(true);
         setJoinedCount(data.joinedCount ?? joinedCount + 1);
+        onJoined?.();
         window.dispatchEvent(new Event("campus:data-changed"));
         toast.success("Event joined");
       }
     } catch (error) {
       toast.error(error.message);
-    } finally { setJoining(false); }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Date TBD';
-    try {
-      const date = new Date(dateString);
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid Date';
-      }
-      return format(date, 'PPP p'); // Example: April 29, 2024, 9:00 AM
-    } catch (error) {
-      return dateString || 'Date TBD';
-    }
-  };
-
-  const isUpcoming = (dateString) => {
-    if (!dateString) return false;
-    try {
-      const eventDate = new Date(dateString);
-      return eventDate > new Date() && !isNaN(eventDate.getTime());
-    } catch {
-      return false;
-    }
-  };
-
-  const getEventTypeColor = (type) => {
-    if (!type) return 'bg-gray-500/10 text-gray-400';
-    switch (type.toLowerCase()) {
-      case 'conference':
-        return 'bg-purple-500/10 text-purple-400';
-      case 'workshop':
-        return 'bg-blue-500/10 text-blue-400';
-      case 'networking':
-        return 'bg-green-500/10 text-green-400';
-      default:
-        return 'bg-gray-500/10 text-gray-400';
-    }
-  };
-
-  const getBadgeClass = (type) => {
-    if (!type) return 'badge-slate';
-    switch (type.toLowerCase()) {
-      case 'conference':
-        return 'badge-purple';
-      case 'workshop':
-        return 'badge-blue';
-      case 'networking':
-        return 'badge-green';
-      default:
-        return 'badge-slate';
+    } finally {
+      setJoining(false);
     }
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="card p-4 mb-4 animate-fade-in cursor-pointer hover:shadow-md transition-shadow duration-300"
-      onClick={() => setIsExpanded(!isExpanded)}
+    <article
+      tabIndex={0}
+      aria-label={`Event: ${event.title || "Untitled event"}. Activate to expand details.`}
+      onClick={(clickEvent) => {
+        if (!clickEvent.target.closest("button")) {
+          setIsExpanded((expanded) => !expanded);
+        }
+      }}
+      onKeyDown={(keyEvent) => {
+        if (
+          keyEvent.target === keyEvent.currentTarget &&
+          (keyEvent.key === "Enter" || keyEvent.key === " ")
+        ) {
+          keyEvent.preventDefault();
+          setIsExpanded((expanded) => !expanded);
+        }
+      }}
+      className="cursor-pointer rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-800 dark:bg-gray-800/80 dark:hover:border-indigo-700"
     >
-      <div className="flex flex-col space-y-4">
-        {/* Event Type Badge */}
-        <div className="flex justify-between items-start">
-          <span className={`badge ${getBadgeClass(event.type)}`}>
-            {event.type || 'Event'}
-          </span>
-          {event.date && isUpcoming(event.date) && (
-            <span className="badge badge-success">
-              Upcoming
-            </span>
-          )}
+      <div className="flex gap-3 sm:gap-4">
+        <div className="flex h-[72px] w-[64px] shrink-0 flex-col items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-200">
+          <span className="text-xs font-bold uppercase tracking-wide">{dateLabel.month}</span>
+          <span className="text-2xl font-bold leading-tight">{dateLabel.day}</span>
         </div>
 
-        {/* Event Title */}
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{event.title || 'Untitled Event'}</h3>
-
-        {/* Event Description */}
-        <p className={`text-slate-600 dark:text-slate-400 ${isExpanded ? '' : 'line-clamp-2'}`}>
-          {event.description || 'No description available.'}
-        </p>
-
-
-        {/* Event Details */}
-        <div className="space-y-2">
-          {event.date && (
-            <div className="flex items-center text-slate-500 dark:text-slate-400">
-              <CalendarIcon className="h-5 w-5 mr-2" />
-              <span>{formatDate(event.date)}</span>
-            </div>
+        <div className="min-w-0 flex-1">
+          <span className="inline-flex max-w-full truncate rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+            {category}
+          </span>
+          <h3 className="mt-2 text-lg font-bold leading-snug text-gray-900 dark:text-white">
+            {event.title || "Untitled event"}
+          </h3>
+          {event.description && (
+            <p className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${isExpanded ? "" : "line-clamp-2"}`}>
+              {event.description}
+            </p>
           )}
-          {event.location && (
-            <div className="flex items-center text-slate-500 dark:text-slate-400">
-              <MapPinIcon className="h-5 w-5 mr-2" />
-              <span>{event.location}</span>
-            </div>
-          )}
-          <div className="flex items-center text-slate-500 dark:text-slate-400">
-            <UserGroupIcon className="h-5 w-5 mr-2" />
-            <span>Joined: <span className="font-medium text-slate-700 dark:text-slate-300">{joinedCount}</span></span>
+
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
+            {validDate && (
+              <span className="inline-flex items-center gap-1.5">
+                <ClockIcon className="h-4 w-4" />
+                {format(parsedDate, "h:mm a")}
+              </span>
+            )}
+            {event.location && (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPinIcon className="h-4 w-4" />
+                {event.location}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5">
+              <UserGroupIcon className="h-4 w-4" />
+              {joinedCount} attending
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="mt-4 border-t border-gray-200 pt-4 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 shrink-0" />
+            <span>{validDate ? format(parsedDate, "EEEE, MMMM d, yyyy 'at' h:mm a") : "Date to be announced"}</span>
           </div>
           {event.maxAttendees && (
-            <div className="flex items-center text-slate-500 dark:text-slate-400">
-              <span>Max Attendees: <span className="font-medium text-slate-700 dark:text-slate-300">{event.maxAttendees}</span></span>
+            <p className="mt-2">Capacity: {event.maxAttendees} attendees</p>
+          )}
+          {validDeadline && (
+            <p className="mt-2">
+              Registration closes {format(registrationDeadline, "MMM d, yyyy 'at' h:mm a")}
+            </p>
+          )}
+          {event.organizer && (
+            <div className="mt-3">
+              <p className="font-semibold text-gray-800 dark:text-gray-200">
+                {event.organizer.name || "Organizer"}
+              </p>
+              {event.organizer.contact && <p>{event.organizer.contact}</p>}
             </div>
           )}
-          {event.registrationDeadline && (
-            <div className="flex items-center text-slate-500 dark:text-slate-400">
-              <ClockIcon className="h-5 w-5 mr-2" />
-              <span>Registration Deadline: {formatDate(event.registrationDeadline)}</span>
+          {Array.isArray(event.tags) && event.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {event.tags.map((tag, index) => (
+                <span key={`${tag}-${index}`} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs dark:bg-gray-700">
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
-          <div className="flex justify-end">
-            {isAuthenticated && !hasJoined && (
-              <button
-                className="btn btn-success btn-sm hover-lift"
-                onClick={handleJoin}
-                disabled={joining}
-              >
-                Join Event
-              </button>
-            )}
-            {isAuthenticated && hasJoined && (
-              <span className="badge badge-success">Joined</span>
-            )}
-          </div>
         </div>
+      )}
 
-        {/* Expanded Content */}
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 space-y-4 animate-fade-in"
+      <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 dark:border-gray-700">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {isPending
+            ? "Awaiting admin approval"
+            : isRejected
+              ? "Submission rejected"
+              : isUpcoming
+                ? "Registration open"
+                : "Event has ended"}
+        </span>
+        {isPending || isRejected ? (
+          <span className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+            isPending
+              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+              : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
+          }`}>
+            {isPending ? "Pending" : "Rejected"}
+          </span>
+        ) : hasJoined ? (
+          <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">
+            Joined
+          </span>
+        ) : isAuthenticated && isUpcoming && String(event.createdBy) !== String(userId) ? (
+          <button
+            type="button"
+            onClick={handleJoin}
+            disabled={joining}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {/* Tags */}
-            {event.tags && event.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {event.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="badge badge-blue"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Organizer Info */}
-            {event.organizer && (
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                <h4 className="text-slate-800 dark:text-white font-medium mb-2">Organizer</h4>
-                <div className="text-slate-600 dark:text-slate-400">
-                  <p>{event.organizer.name}</p>
-                  <p>{event.organizer.contact}</p>
-                </div>
-              </div>
-            )}
-          </motion.div>
+            {joining ? "Registering..." : "Register"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            onClick={() => setIsExpanded((expanded) => !expanded)}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+          >
+            {isExpanded ? "Hide details" : "View details"}
+          </button>
         )}
       </div>
-    </motion.div>
+    </article>
   );
-} 
+}

@@ -113,7 +113,7 @@ export default async function handler(req, res) {
         await invalidateCache.events();
         return res.status(201).json({ message: "Event added successfully", event: { ...createdEvent, _id: inserted.insertedId } });
       } else {
-        await db.collection("pending_events").insertOne({
+        const pendingEvent = {
           ...event,
           joined: [],
           createdBy: session.user.id,
@@ -124,25 +124,33 @@ export default async function handler(req, res) {
             name: session.user.name,
             email: session.user.email,
           },
-        });
+        };
+        const inserted = await db.collection("pending_events").insertOne(pendingEvent);
+        let warning;
+        try {
+          const admins = await db.collection("users").find({ role: "admin" }).toArray();
+          const notifications = admins.map((admin) => ({
+            userId: admin._id.toString(),
+            type: "event",
+            message: `New event "${event.title}" submitted by ${session.user.name} awaiting approval`,
+            link: "/admin",
+            read: false,
+            createdAt: new Date(),
+          }));
 
-        const admins = await db.collection("users").find({ role: "admin" }).toArray();
-        const notifications = admins.map((admin) => ({
-          userId: admin._id.toString(),
-          type: "event",
-          message: `New event "${event.title}" submitted by ${session.user.name} awaiting approval`,
-          link: "/admin",
-          read: false,
-          createdAt: new Date(),
-        }));
-
-        if (notifications.length > 0) {
-          await db.collection("notifications").insertMany(notifications);
+          if (notifications.length > 0) {
+            await db.collection("notifications").insertMany(notifications);
+          }
+        } catch (notificationError) {
+          console.error("Event saved, but admin notification failed:", notificationError);
+          warning = "Event was saved for approval, but admin notifications could not be sent.";
         }
 
         return res.status(201).json({
           message: "Event submitted for approval. You will be notified once reviewed.",
           isPending: true,
+          eventId: inserted.insertedId,
+          ...(warning ? { warning } : {}),
         });
       }
     } catch (error) {

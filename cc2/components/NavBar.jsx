@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
+import { fetchJSON } from "../utils/fetch-json";
 import ThemeSwitcher from "./ThemeSwitcher";
 const ConnectModal = dynamic(() => import("./ConnectModal"), { ssr: false });
 const ChatList = dynamic(() => import("./ChatList"), { ssr: false });
@@ -22,6 +23,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CloseIcon from "@mui/icons-material/Close";
+import { RocketLaunchIcon } from "@heroicons/react/24/outline";
 
 export default function NavBar() {
   const router = useRouter();
@@ -58,10 +60,18 @@ export default function NavBar() {
         const activeRole = role;
         setUserRole(activeRole);
 
-        // Fetch connection requests when logged in
-        fetchConnectionRequests();
-        fetchUnreadMessages();
-        fetchNotifications();
+        const loadAccountActivity = () => {
+          fetchConnectionRequests();
+          fetchUnreadMessages();
+          fetchNotifications();
+        };
+        if ("requestIdleCallback" in window) {
+          const idleId = window.requestIdleCallback(loadAccountActivity, { timeout: 1200 });
+          return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timeoutId = window.setTimeout(loadAccountActivity, 0);
+        return () => window.clearTimeout(timeoutId);
       } else {
         setUserName(localStorage.getItem("guestName") || "User");
         setUserRole(null);
@@ -79,15 +89,12 @@ export default function NavBar() {
   // Fetch notifications
   const fetchNotifications = async () => {
     try {
-      const response = await fetch("/api/notifications");
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-        const unread = (data.notifications || []).filter((n) => !n.read).length;
-        setUnreadNotifications(unread);
-      }
+      const data = await fetchJSON("/api/notifications");
+      setNotifications(data.notifications || []);
+      const unread = (data.notifications || []).filter((n) => !n.read).length;
+      setUnreadNotifications(unread);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.warn("Unable to refresh notifications:", error);
     }
   };
 
@@ -103,33 +110,27 @@ export default function NavBar() {
         fetchNotifications();
       }
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      console.warn("Unable to mark notification as read:", error);
     }
   };
 
   // Fetch connection requests
   const fetchConnectionRequests = async () => {
     try {
-      const response = await fetch("/api/connection-requests");
-      if (response.ok) {
-        const data = await response.json();
-        setPendingRequests((data.receivedRequests || []).length);
-      }
+      const data = await fetchJSON("/api/connection-requests");
+      setPendingRequests((data.receivedRequests || []).length);
     } catch (error) {
-      console.error("Error fetching connection requests:", error);
+      console.warn("Unable to refresh connection requests:", error);
     }
   };
 
   // Fetch unread messages count
   const fetchUnreadMessages = async () => {
     try {
-      const response = await fetch("/api/chat/unread-count");
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadMessages(data.unreadCount || 0);
-      }
+      const data = await fetchJSON("/api/chat/unread-count");
+      setUnreadMessages(data.unreadCount || 0);
     } catch (error) {
-      console.error("Error fetching unread messages:", error);
+      console.warn("Unable to refresh unread messages:", error);
     }
   };
 
@@ -273,18 +274,28 @@ export default function NavBar() {
           <div className="flex-shrink-0">
             <Link
               href={userRole === "admin" ? "/admin" : "/dashboard"}
+              prefetch={false}
+              onMouseEnter={() => router.prefetch(userRole === "admin" ? "/admin" : "/dashboard")}
+              onFocus={() => router.prefetch(userRole === "admin" ? "/admin" : "/dashboard")}
               className="flex items-center"
             >
               <Image
-                src="/campusconnect-logo.svg"
+                src="/campusconnect-wordmark.svg"
                 alt="CampusConnect Logo"
-                width={36}
+                width={196}
                 height={36}
-                className="transition-transform duration-300 hover:rotate-12"
+                className="rounded bg-[#f8faf6] transition-transform duration-300 hover:scale-105 dark:hidden"
+                priority
               />
-              <span className="ml-2 text-xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">
-                CampusConnect
-              </span>
+              <Image
+                src="/campusconnect-wordmark-dark.svg"
+                alt=""
+                aria-hidden="true"
+                width={196}
+                height={36}
+                className="hidden transition-transform duration-300 hover:scale-105 dark:block"
+                priority
+              />
             </Link>
           </div>
         </div>
@@ -307,6 +318,9 @@ export default function NavBar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
+                  onMouseEnter={() => router.prefetch(item.href)}
+                  onFocus={() => router.prefetch(item.href)}
                   className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
                     isActive
                       ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 font-semibold"
@@ -328,6 +342,9 @@ export default function NavBar() {
               (userRole === "faculty" || userRole === "student") && (
                 <Link
                   href="/quiz"
+                  prefetch={false}
+                  onMouseEnter={() => router.prefetch("/quiz")}
+                  onFocus={() => router.prefetch("/quiz")}
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 ${
                     router.pathname.startsWith("/quiz")
                       ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 font-semibold"
@@ -356,6 +373,18 @@ export default function NavBar() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3">
+          {session && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("campus:start-tour"))}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              title="Start tour"
+              aria-label="Start tour"
+            >
+              <RocketLaunchIcon className="h-5 w-5" />
+              <span className="hidden sm:inline">Tour</span>
+            </button>
+          )}
           <ThemeSwitcher />
 
           {/* Notification Bell */}
@@ -713,6 +742,9 @@ export default function NavBar() {
                       <Link
                         key={item.href}
                         href={item.href}
+                        prefetch={false}
+                        onMouseEnter={() => router.prefetch(item.href)}
+                        onFocus={() => router.prefetch(item.href)}
                         className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                           isActive
                             ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold"
@@ -737,6 +769,9 @@ export default function NavBar() {
                 (userRole === "faculty" || userRole === "student") && (
                   <Link
                     href="/quiz"
+                    prefetch={false}
+                    onMouseEnter={() => router.prefetch("/quiz")}
+                    onFocus={() => router.prefetch("/quiz")}
                     className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       router.pathname.startsWith("/quiz")
                         ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold"

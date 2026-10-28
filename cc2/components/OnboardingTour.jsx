@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 import {
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckCircleIcon,
-  RocketLaunchIcon,
 } from "@heroicons/react/24/outline";
 
 const TOUR_STEPS = [
@@ -108,19 +108,32 @@ const TOUR_STEPS = [
 ];
 
 export default function OnboardingTour({ onComplete }) {
+  const { status } = useSession();
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [hasCompletedTour, setHasCompletedTour] = useState(false);
 
   useEffect(() => {
+    if (status !== "authenticated") {
+      setIsActive(false);
+      return;
+    }
+
     // Check if user has completed tour
     const completed = localStorage.getItem("onboarding-completed");
     if (!completed) {
-      // Start tour after a brief delay
-      setTimeout(() => setIsActive(true), 1000);
-    } else {
-      setHasCompletedTour(true);
+      const timeoutId = window.setTimeout(() => setIsActive(true), 1000);
+      return () => window.clearTimeout(timeoutId);
     }
+  }, [status]);
+
+  useEffect(() => {
+    const startTour = () => {
+      setCurrentStep(0);
+      setIsActive(true);
+    };
+
+    window.addEventListener("campus:start-tour", startTour);
+    return () => window.removeEventListener("campus:start-tour", startTour);
   }, []);
 
   const handleNext = () => {
@@ -144,14 +157,7 @@ export default function OnboardingTour({ onComplete }) {
   const completeTour = () => {
     localStorage.setItem("onboarding-completed", "true");
     setIsActive(false);
-    setHasCompletedTour(true);
     if (onComplete) onComplete();
-  };
-
-  const restartTour = () => {
-    setCurrentStep(0);
-    setIsActive(true);
-    setHasCompletedTour(false);
   };
 
   const step = TOUR_STEPS[currentStep];
@@ -159,6 +165,8 @@ export default function OnboardingTour({ onComplete }) {
     ? document.querySelector(step.target)
     : null;
   const targetRect = targetElement?.getBoundingClientRect();
+
+  if (status !== "authenticated") return null;
 
   const getTooltipPosition = () => {
     if (!targetRect || step.position === "center") {
@@ -205,19 +213,6 @@ export default function OnboardingTour({ onComplete }) {
 
     return style;
   };
-
-  if (hasCompletedTour && !isActive) {
-    return (
-      <button
-        onClick={restartTour}
-        className="fixed bottom-20 right-4 z-40 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full shadow-lg hover:bg-blue-600 transition-colors lg:bottom-4"
-        title="Restart tour"
-      >
-        <RocketLaunchIcon className="inline-block h-5 w-5 mr-2" />
-        Tour
-      </button>
-    );
-  }
 
   return (
     <AnimatePresence>

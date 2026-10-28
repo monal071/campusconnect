@@ -1,0 +1,10 @@
+<svg width="240" height="44" viewBox="0 0 240 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="1" width="42" height="42" rx="13" fill="#173B32"/>
+  <path d="M10 18L22 12L34 18L22 24L10 18Z" stroke="#F8FAF6" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M14 20V27C18.9 30.5 25.1 30.5 30 27V20" stroke="#F8FAF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 18V25" stroke="#F8FAF6" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="34" cy="27" r="1.6" fill="#F8FAF6"/>
+  <text x="54" y="30" fill="#F8FAF6" font-family="Arial, Helvetica, sans-serif" font-size="21" letter-spacing="-0.8">
+    <tspan font-weight="700">campus</tspan><tspan font-weight="400">connect</tspan><tspan fill="#E47D49" font-weight="700">.</tspan>
+  </text>
+</svg>
